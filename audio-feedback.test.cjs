@@ -23,26 +23,33 @@ function fakeContext({ fail = false } = {}) {
 let passed = 0;
 function test(name, fn) { try { fn(); passed += 1; console.log(`ok ${passed} - ${name}`); } catch (error) { console.error(`not ok - ${name}`); throw error; } }
 
-test("sound preference defaults off and rejects untrusted versions and shapes", () => {
-  assert.deepEqual(audio.normalizeAudioPreference(null), { version: 1, enabled: false });
-  assert.deepEqual(audio.normalizeAudioPreference({ version: 0, enabled: true }), { version: 1, enabled: false });
-  assert.deepEqual(audio.normalizeAudioPreference({ version: 2, enabled: true }), { version: 1, enabled: false });
-  assert.deepEqual(audio.normalizeAudioPreference({ version: 1, enabled: "yes" }), { version: 1, enabled: false });
+test("sound preference defaults on and rejects untrusted versions and shapes", () => {
+  const defaults = { version: 2, enabled: true, effectsVolume: .5, musicVolume: .5 };
+  assert.deepEqual(audio.normalizeAudioPreference(null), defaults);
+  assert.deepEqual(audio.normalizeAudioPreference({ version: 0, enabled: false }), defaults);
+  assert.deepEqual(audio.normalizeAudioPreference({ version: 2, enabled: false }), { ...defaults, enabled: false });
+  assert.deepEqual(audio.normalizeAudioPreference({ version: 2, enabled: false, effectsVolume: "loud", musicVolume: 4 }), { version: 2, enabled: false, effectsVolume: .5, musicVolume: 1 });
+  assert.deepEqual(audio.normalizeAudioPreference({ version: 1, enabled: false }), { ...defaults, enabled: false });
   assert.equal(audio.parseAudioPreference("{bad").recovered, true);
 });
 
 test("sound preference persists independently and reloads safely", () => {
   const memory = storage();
   const store = new audio.AudioPreferenceStore(memory);
-  assert.equal(store.enabled(), false);
-  store.setEnabled(true);
-  assert.equal(new audio.AudioPreferenceStore(memory).enabled(), true);
-  assert.deepEqual(JSON.parse(memory.read(audio.AUDIO_PREFERENCE_KEY)), { version: 1, enabled: true });
+  assert.equal(store.enabled(), true);
+  store.setEnabled(false);
+  assert.equal(new audio.AudioPreferenceStore(memory).enabled(), false);
+  store.setEffectsVolume(.7);
+  store.setMusicVolume(.25);
+  assert.deepEqual(JSON.parse(memory.read(audio.AUDIO_PREFERENCE_KEY)), { version: 2, enabled: false, effectsVolume: .7, musicVolume: .25 });
+  assert.equal(new audio.AudioPreferenceStore(memory).effectsVolume(), .7);
+  assert.equal(new audio.AudioPreferenceStore(memory).musicVolume(), .25);
 });
 
 test("muted sounds never initialize or play", () => {
   let initialized = 0;
-  const engine = new audio.SoundEngine(new audio.AudioPreferenceStore(storage()), { contextFactory: () => { initialized += 1; return fakeContext(); } });
+  const preference = new audio.AudioPreferenceStore(storage()); preference.setEnabled(false);
+  const engine = new audio.SoundEngine(preference, { contextFactory: () => { initialized += 1; return fakeContext(); } });
   assert.deepEqual(engine.play("gather"), { played: false, reason: "muted" });
   assert.equal(initialized, 0);
 });
@@ -50,6 +57,7 @@ test("muted sounds never initialize or play", () => {
 test("audio initializes lazily after enable and schedules original tones", () => {
   let initialized = 0;
   const store = new audio.AudioPreferenceStore(storage());
+  store.setEnabled(false);
   const context = fakeContext();
   const engine = new audio.SoundEngine(store, { contextFactory: () => { initialized += 1; return context; }, now: () => 100 });
   engine.setEnabled(true);
@@ -107,7 +115,7 @@ test("each coin sample gets the requested live volume and playback-rate jitter",
   engine.activate();
   assert.deepEqual(engine.play("coin", { bypassCooldown: true }), { played: true, source: "sample" });
   assert.equal(created[0].src, "assets/audio/coin.mp3");
-  assert.equal(created[0].volume, .27);
+  assert.equal(created[0].volume, .135);
   assert.equal(created[0].playbackRate, 1.1);
 });
 
@@ -145,6 +153,103 @@ test("gather plays the entire trimmed file from the beginning", () => {
   assert.equal(sample.currentTime, 0);
   assert.equal(timers.length, 0);
   assert.equal(sample.paused, 0);
+});
+
+test("music starts randomly after interaction then crossfades through the numbered loop", () => {
+  let now = 0;
+  const scheduled = [];
+  const created = [];
+  const makeMusic = src => {
+    const listeners = {};
+    const sample = { src, currentTime: 0, duration: 10, volume: 0, plays: 0, pauses: 0, play() { this.plays += 1; }, pause() { this.pauses += 1; }, addEventListener(name, callback) { listeners[name] = callback; }, emit(name) { listeners[name]?.(); } };
+    created.push(sample); return sample;
+  };
+  const store = new audio.AudioPreferenceStore(storage());
+  const music = new audio.MusicEngine(store, { audioFactory: makeMusic, random: () => .5, now: () => now, schedule: callback => { scheduled.push(callback); return scheduled.length; }, cancelSchedule: () => {}, fadeMs: 2000 });
+  assert.equal(music.current, null);
+  assert.equal(music.activate(), true);
+  assert.equal(created[0].src, "assets/audio/music2.mp3");
+  assert.equal(created[0].volume, .5);
+  created[0].currentTime = 8;
+  created[0].emit("timeupdate");
+  assert.equal(created[1].src, "assets/audio/music3.mp3");
+  assert.equal(created[1].volume, 0);
+  now = 2000; scheduled.shift()();
+  assert.equal(created[0].pauses, 1);
+  assert.equal(music.current.index, 2);
+  assert.equal(created[1].volume, .5);
+  music.setMusicVolume(.25);
+  assert.equal(created[1].volume, .25);
+  created[1].currentTime = 8;
+  created[1].emit("timeupdate");
+  assert.equal(created[2].src, "assets/audio/music1.mp3");
+});
+
+test("music skips unavailable tracks and remains retryable after playback failures", () => {
+  const created = [];
+  const outcomes = ["throw", "reject", "ok"];
+  const audioFactory = src => {
+    const outcome = outcomes.shift() || "reject";
+    const sample = { src, currentTime: 0, duration: 10, volume: 0, pauses: 0, pause() { this.pauses += 1; }, addEventListener() {}, play() {
+      if (outcome === "throw") throw new Error("blocked");
+      if (outcome === "reject") return { then() { return { catch(reject) { reject(new Error("missing")); } }; } };
+      return undefined;
+    } };
+    created.push(sample); return sample;
+  };
+  const store = new audio.AudioPreferenceStore(storage());
+  const music = new audio.MusicEngine(store, { audioFactory, random: () => 0 });
+  assert.equal(music.activate(), true);
+  assert.deepEqual(created.map(item => item.src), ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"]);
+  assert.equal(music.current.index, 2);
+  assert.equal(music.pending, null);
+  music.stop();
+  assert.equal(music.current, null);
+  assert.equal(music.activate(), true, "a later interaction can retry after all state was cleared");
+});
+
+test("visibility pause preserves an in-progress crossfade and cyclic position", () => {
+  let now = 0;
+  let nextTimer = 1;
+  const timers = new Map();
+  const created = [];
+  const audioFactory = src => {
+    const listeners = {};
+    const sample = { src, currentTime: 0, duration: 10, volume: 0, plays: 0, pauses: 0, play() { this.plays += 1; }, pause() { this.pauses += 1; }, addEventListener(name, callback) { listeners[name] = callback; }, emit(name) { listeners[name]?.(); } };
+    created.push(sample); return sample;
+  };
+  const music = new audio.MusicEngine(new audio.AudioPreferenceStore(storage()), { audioFactory, random: () => 0, now: () => now, schedule: callback => { const id = nextTimer++; timers.set(id, callback); return id; }, cancelSchedule: id => timers.delete(id), fadeMs: 2000 });
+  music.activate();
+  created[0].currentTime = 8; created[0].emit("timeupdate");
+  assert.equal(music.current.index, 0); assert.equal(music.next.index, 1);
+  music.setPaused(true);
+  assert.equal(music.current.index, 0); assert.equal(music.next.index, 1); assert.ok(music.fade);
+  now = 5000;
+  music.setPaused(false);
+  now = 7000;
+  const resumeTimer = [...timers.values()].at(-1); resumeTimer();
+  assert.equal(music.current.index, 1);
+  assert.equal(music.next, null);
+});
+
+test("a failed next track keeps the currently playing music alive", () => {
+  let calls = 0;
+  let currentSample;
+  const audioFactory = src => {
+    const listeners = {};
+    const succeeds = calls++ === 0;
+    const sample = { src, currentTime: 0, duration: 10, volume: 0, pauses: 0, play() { return succeeds ? undefined : { then() { return { catch(reject) { reject(new Error("unavailable")); } }; } }; }, pause() { this.pauses += 1; }, addEventListener(name, callback) { listeners[name] = callback; }, emit(name) { listeners[name]?.(); } };
+    if (succeeds) currentSample = sample;
+    return sample;
+  };
+  const music = new audio.MusicEngine(new audio.AudioPreferenceStore(storage()), { audioFactory, random: () => 0 });
+  music.activate();
+  currentSample.currentTime = 8; currentSample.emit("timeupdate");
+  assert.equal(music.current.index, 0);
+  assert.equal(music.current.transitioning, false);
+  assert.equal(music.next, null);
+  assert.equal(music.pending, null);
+  assert.equal(currentSample.volume, .5);
 });
 
 test("audio failure is silent, sticky, and never blocks", () => {

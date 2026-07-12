@@ -118,6 +118,46 @@ for (const recipe of game.RECIPES) {
     assert.ok(game.INGREDIENTS[ingredientId].unlock <= recipe.unlock, `${recipe.id}: ingredient unlocks after recipe`);
   }
 }
+
+function tenMinuteChargedYield(config) {
+  return (config.maxCharges + Math.floor(600 / config.rechargeSeconds)) * config.amountPerCharge;
+}
+
+const gatherCandidates = [
+  { id: "frequent-small", maxCharges: 3, rechargeSeconds: 15, amountPerCharge: 2 },
+  { id: "chosen-balanced", ...game.GATHER_CONFIG },
+  { id: "scarce-large", maxCharges: 3, rechargeSeconds: 60, amountPerCharge: 5 },
+];
+const gatherCandidateRows = gatherCandidates.map(config => ({ ...config, tenMinuteItems: tenMinuteChargedYield(config) }));
+const chosenGather = gatherCandidateRows.find(row => row.id === "chosen-balanced");
+assert.ok(chosenGather.rechargeSeconds >= 20 && chosenGather.rechargeSeconds <= 45, "chosen recharge should create a decision without a minute-long first-session wait");
+assert.ok(chosenGather.tenMinuteItems >= 60 && chosenGather.tenMinuteItems <= 75, "chosen charged yield should stay in the modeled non-stalling band");
+
+const pressureStart = Date.UTC(2026, 6, 12, 13);
+const targeted = game.defaultState(pressureStart);
+const smart = game.defaultState(pressureStart);
+targeted.level = smart.level = 2;
+targeted.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+smart.ingredients = { ...targeted.ingredients };
+game.setGatherTarget(targeted, "crystal");
+const pressureRandom = seededRandom(42);
+for (let second = 0; second <= 180; second += 5) {
+  game.chargedGather(targeted, pressureStart + second * 1000, pressureRandom);
+  game.chargedGather(smart, pressureStart + second * 1000, pressureRandom);
+}
+assert.ok(targeted.ingredients.crystal >= 24, "targeted pressure run should reliably stock a scarce unlocked ingredient");
+assert.ok(targeted.ingredients.crystal > smart.ingredients.crystal * 2, "targeting should materially outperform smart mix for a chosen scarce ingredient");
+const nearCap = game.defaultState(pressureStart);
+nearCap.ingredients = { herb: game.storageCap(nearCap) - 1, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+game.setGatherTarget(nearCap, "herb");
+assert.equal(game.chargedGather(nearCap, pressureStart, () => 0).added, 1, "targeted harvest should stop exactly at storage capacity");
+assert.equal(game.totalIngredients(nearCap), game.storageCap(nearCap));
+const offlinePressure = game.defaultState(pressureStart);
+assert.equal(game.grantOfflineIngredients(offlinePressure, game.OFFLINE_CAP_SECONDS, () => 0), 0, "offline gathering must not erase first-session scarcity before a delivery");
+offlinePressure.stats.orders = 1;
+game.grantOfflineIngredients(offlinePressure, game.OFFLINE_CAP_SECONDS, () => 0);
+assert.equal(game.totalIngredients(offlinePressure), Math.floor(game.storageCap(offlinePressure) * .75));
+assert.ok(game.storageCap(offlinePressure) - game.totalIngredients(offlinePressure) >= game.GATHER_CONFIG.maxCharges * game.GATHER_CONFIG.amountPerCharge, "offline soft cap must leave room for a full targeted charge stock");
 assert.ok(Object.keys(game.INGREDIENTS).length >= 6);
 assert.ok(game.RECIPES.length >= 8);
 assert.ok(game.CUSTOMERS.length >= 12);
@@ -126,3 +166,6 @@ assert.ok(game.ACHIEVEMENTS.length >= 8);
 const results = STRATEGIES.flatMap(strategy => [7, 42, 2026].map(seed => simulate(strategy, seed)));
 console.log("10-minute economy strategy simulations passed:");
 for (const result of results) console.log(JSON.stringify(result));
+console.log("Charged-gather tuning candidates:");
+for (const row of gatherCandidateRows) console.log(JSON.stringify(row));
+console.log(JSON.stringify({ targetedCrystal180s: targeted.ingredients.crystal, smartCrystal180s: smart.ingredients.crystal, storageCap: game.storageCap(nearCap), offlineSoftCap: game.totalIngredients(offlinePressure) }));

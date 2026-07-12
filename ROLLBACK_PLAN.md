@@ -6,7 +6,7 @@
 - Gameplay save: version `1`, key `pocket-potion-works-v1`.
 - Platform state: `pocket-potion-works-platform-v1`.
 - Sound preference: `pocket-potion-works-audio-v1`.
-- Current service-worker cache: `ppw-shell-v17`.
+- Current service-worker cache: `ppw-shell-v25`.
 - Record the exact commit and tag at release time; do not rely on a temporary branch name as release identity.
 
 Do not rename, clear, merge, or downgrade versioned storage keys during rollback.
@@ -25,7 +25,7 @@ Stop distribution or forward-fix for startup failure, save loss/corruption, futu
 
 ## Audio rollback
 
-Sound begins Off and must never block gameplay. If a sample fails or causes unacceptable playback, retain the mute path and fall back to synthesized cues or remove the affected mapping in a forward fix. Keep audio files local and update the complete cache list and provenance record whenever assets change.
+Sound begins On but must always remain immediately mutable and must never block gameplay. If an effect fails, retain the mute path and fall back to synthesized cues or remove the affected mapping in a forward fix. If music fails, skip unavailable tracks and keep gameplay running; music is streamed on demand and must never receive the HTML offline fallback. Keep audio files local and update budgets, delivery policy, and provenance whenever assets change.
 
 ## Fake-platform safeguards
 

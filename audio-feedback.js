@@ -5,9 +5,10 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.PPWAudio = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function audioFeedbackFactory() {
-  const AUDIO_PREFERENCE_VERSION = 1;
+  const AUDIO_PREFERENCE_VERSION = 2;
   const AUDIO_PREFERENCE_KEY = "pocket-potion-works-audio-v1";
-  const DEFAULT_AUDIO_PREFERENCE = Object.freeze({ version: AUDIO_PREFERENCE_VERSION, enabled: false });
+  const DEFAULT_AUDIO_PREFERENCE = Object.freeze({ version: AUDIO_PREFERENCE_VERSION, enabled: true, effectsVolume: .5, musicVolume: .5 });
+  const MUSIC_TRACKS = Object.freeze(["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"]);
 
   const SEQUENCES = Object.freeze({
     tap: [[520, .035, .025]],
@@ -54,10 +55,10 @@
   }
 
   function normalizeAudioPreference(input) {
-    if (!input || input.version !== AUDIO_PREFERENCE_VERSION || typeof input.enabled !== "boolean") {
-      return { ...DEFAULT_AUDIO_PREFERENCE };
-    }
-    return { version: AUDIO_PREFERENCE_VERSION, enabled: input.enabled };
+    if (input?.version === 1 && typeof input.enabled === "boolean") return { ...DEFAULT_AUDIO_PREFERENCE, enabled: input.enabled };
+    if (!input || input.version !== AUDIO_PREFERENCE_VERSION || typeof input.enabled !== "boolean") return { ...DEFAULT_AUDIO_PREFERENCE };
+    const volume = value => Number.isFinite(Number(value)) ? Math.max(0, Math.min(1, Number(value))) : .5;
+    return { version: AUDIO_PREFERENCE_VERSION, enabled: input.enabled, effectsVolume: volume(input.effectsVolume), musicVolume: volume(input.musicVolume) };
   }
 
   function parseAudioPreference(raw) {
@@ -74,11 +75,19 @@
       this.preference = raw === null ? { ...DEFAULT_AUDIO_PREFERENCE } : parseAudioPreference(raw).preference;
     }
     enabled() { return this.preference.enabled; }
-    setEnabled(enabled) {
-      this.preference = normalizeAudioPreference({ version: AUDIO_PREFERENCE_VERSION, enabled: Boolean(enabled) });
+    effectsVolume() { return this.preference.effectsVolume; }
+    musicVolume() { return this.preference.musicVolume; }
+    persist(next) {
+      this.preference = normalizeAudioPreference(next);
       try { this.storage?.setItem?.(this.key, JSON.stringify(this.preference)); } catch { /* Audio preference never blocks play. */ }
+      return this.snapshot();
+    }
+    setEnabled(enabled) {
+      this.persist({ ...this.preference, version: AUDIO_PREFERENCE_VERSION, enabled: Boolean(enabled) });
       return this.enabled();
     }
+    setEffectsVolume(volume) { return this.persist({ ...this.preference, effectsVolume: volume }).effectsVolume; }
+    setMusicVolume(volume) { return this.persist({ ...this.preference, musicVolume: volume }).musicVolume; }
     snapshot() { return { ...this.preference }; }
   }
 
@@ -106,6 +115,7 @@
       this.sampleTimers = new Map();
     }
     enabled() { return this.preferenceStore.enabled(); }
+    effectsVolume() { return this.preferenceStore.effectsVolume(); }
     setEnabled(enabled) {
       const next = this.preferenceStore.setEnabled(enabled);
       if (!next) this.stop();
@@ -159,7 +169,7 @@
           oscillator.frequency.setValueAtTime(frequency, cursor);
           oscillator.connect(gain);
           gain.gain.setValueAtTime(0, cursor);
-          gain.gain.linearRampToValueAtTime(volume, cursor + .008);
+          gain.gain.linearRampToValueAtTime(volume * this.effectsVolume(), cursor + .008);
           gain.gain.exponentialRampToValueAtTime(.0001, cursor + duration);
           oscillator.start(cursor);
           oscillator.stop(cursor + duration + .01);
@@ -179,7 +189,7 @@
         const sample = this.audioFactory(settings.src);
         if (!sample) return this.playSequence(name);
         sample.preload = "auto";
-        sample.volume = settings.volume;
+        sample.volume = settings.volume * this.effectsVolume();
         sample.playbackRate = settings.playbackRate;
         sample.preservesPitch = settings.preservesPitch;
         if ("mozPreservesPitch" in sample) sample.mozPreservesPitch = settings.preservesPitch;
@@ -210,7 +220,7 @@
       }
     }
     play(name, { bypassCooldown = false } = {}) {
-      if (!this.enabled()) return { played: false, reason: "muted" };
+      if (!this.enabled() || this.effectsVolume() <= 0) return { played: false, reason: "muted" };
       const sequence = SEQUENCES[name];
       if (!sequence && !SAMPLE_CUES[name]) return { played: false, reason: "unknown" };
       const playedAt = this.now();
@@ -222,8 +232,166 @@
     }
   }
 
+  class MusicEngine {
+    constructor(preferenceStore, { audioFactory, random = Math.random, now = () => Date.now(), schedule = (callback, delay) => setTimeout(callback, delay), cancelSchedule = timer => clearTimeout(timer), tracks = MUSIC_TRACKS, fadeMs = 2200 } = {}) {
+      this.preferenceStore = preferenceStore;
+      this.audioFactory = audioFactory || (src => {
+        const AudioConstructor = globalThis.Audio;
+        return AudioConstructor ? new AudioConstructor(src) : null;
+      });
+      this.random = random;
+      this.now = now;
+      this.schedule = schedule;
+      this.cancelSchedule = cancelSchedule;
+      this.tracks = [...tracks];
+      this.fadeMs = fadeMs;
+      this.interacted = false;
+      this.paused = false;
+      this.current = null;
+      this.next = null;
+      this.pending = null;
+      this.fade = null;
+      this.fadeTimer = null;
+      this.generation = 0;
+    }
+    enabled() { return this.preferenceStore.enabled() && this.preferenceStore.musicVolume() > 0; }
+    targetVolume() { return this.preferenceStore.musicVolume(); }
+    activate() {
+      this.interacted = true;
+      if (!this.enabled() || this.paused || this.current || this.pending || !this.tracks.length) return false;
+      const index = Math.floor(Math.max(0, Math.min(.999999, Number(this.random()) || 0)) * this.tracks.length);
+      return this.start(index, null, 0);
+    }
+    createTrack(index) {
+      try {
+        const audio = this.audioFactory(this.tracks[index]);
+        if (!audio) return null;
+        audio.preload = "auto";
+        audio.loop = false;
+        audio.volume = 0;
+        const entry = { audio, index, transitioning: false };
+        audio.addEventListener?.("timeupdate", () => this.maybeTransition(entry));
+        audio.addEventListener?.("ended", () => {
+          if (this.current === entry && !entry.transitioning) this.start((index + 1) % this.tracks.length, entry, 0);
+        }, { once: true });
+        return entry;
+      } catch { return null; }
+    }
+    start(index, previous = null, attempt = 0) {
+      if (!this.enabled() || this.paused || this.pending) return false;
+      const entry = this.createTrack(index);
+      if (!entry) return this.handleStartFailure(index, previous, attempt);
+      if (previous) previous.transitioning = true;
+      this.pending = entry;
+      const generation = this.generation;
+      const success = () => {
+        if (generation !== this.generation || this.paused || !this.enabled()) {
+          try { entry.audio.pause?.(); } catch { /* Ignore stale playback. */ }
+          if (this.pending === entry) this.pending = null;
+          if (previous) previous.transitioning = false;
+          return;
+        }
+        if (this.pending === entry) this.pending = null;
+        if (previous && this.current === previous) this.crossfade(previous, entry);
+        else if (!previous && !this.current) { entry.audio.volume = this.targetVolume(); this.current = entry; }
+        else { try { entry.audio.pause?.(); } catch { /* Ignore superseded playback. */ } }
+      };
+      const failure = () => {
+        try { entry.audio.pause?.(); entry.audio.currentTime = 0; } catch { /* Best-effort cleanup. */ }
+        if (this.pending === entry) this.pending = null;
+        if (previous) previous.transitioning = false;
+        if (generation === this.generation) this.handleStartFailure(index, previous, attempt);
+      };
+      try {
+        const started = entry.audio.play?.();
+        if (started?.then) started.then(success).catch(failure); else success();
+      } catch { failure(); }
+      return true;
+    }
+    handleStartFailure(index, previous, attempt) {
+      if (attempt + 1 < this.tracks.length && this.enabled() && !this.paused) return this.start((index + 1) % this.tracks.length, previous, attempt + 1);
+      if (previous) {
+        previous.transitioning = false;
+        try { previous.audio.volume = this.targetVolume(); } catch { /* Keep the working track. */ }
+      }
+      return false;
+    }
+    maybeTransition(entry) {
+      if (this.current !== entry || entry.transitioning || !Number.isFinite(entry.audio.duration)) return;
+      if (entry.audio.duration - entry.audio.currentTime <= this.fadeMs / 1000) {
+        this.start((entry.index + 1) % this.tracks.length, entry, 0);
+      }
+    }
+    crossfade(previous, next) {
+      this.next = next;
+      this.fade = { previous, next, progress: 0, lastAt: this.now(), generation: this.generation };
+      this.fadeStep();
+    }
+    fadeStep() {
+      const fade = this.fade;
+      if (!fade || this.paused || fade.generation !== this.generation) return;
+      if (!this.enabled()) return this.stop();
+      const elapsed = Math.max(0, this.now() - fade.lastAt);
+      fade.lastAt = this.now();
+      fade.progress = Math.max(0, Math.min(1, fade.progress + elapsed / this.fadeMs));
+      const progress = fade.progress;
+        const volume = this.targetVolume();
+        try { fade.previous.audio.volume = volume * (1 - progress); fade.next.audio.volume = volume * progress; } catch { /* Best-effort fade. */ }
+        if (progress >= 1) {
+          try { fade.previous.audio.pause?.(); fade.previous.audio.currentTime = 0; } catch { /* Best-effort cleanup. */ }
+          fade.previous.transitioning = false;
+          this.current = fade.next; this.next = null; this.fade = null; this.fadeTimer = null;
+        } else this.fadeTimer = this.schedule(() => this.fadeStep(), 50);
+    }
+    setMusicVolume(volume) {
+      const nextVolume = this.preferenceStore.setMusicVolume(volume);
+      try {
+        if (this.fade) { this.fade.previous.audio.volume = nextVolume * (1 - this.fade.progress); this.fade.next.audio.volume = nextVolume * this.fade.progress; }
+        else if (this.current) this.current.audio.volume = this.enabled() ? nextVolume : 0;
+      } catch { /* Best-effort live volume. */ }
+      if (!this.enabled()) this.stop(); else if (this.interacted && !this.current) this.activate();
+      return nextVolume;
+    }
+    syncEnabled() {
+      if (!this.enabled()) this.stop(); else if (this.interacted && !this.paused) this.activate();
+    }
+    setPaused(paused) {
+      this.paused = Boolean(paused);
+      if (this.paused) {
+        if (this.fadeTimer !== null) this.cancelSchedule(this.fadeTimer);
+        this.fadeTimer = null;
+        for (const entry of [this.current, this.next]) { try { entry?.audio?.pause?.(); } catch { /* Best-effort pause. */ } }
+        return;
+      }
+      const resume = (entry, onFailure) => {
+        if (!entry) return;
+        try { const result = entry.audio.play?.(); if (result?.catch) result.catch(onFailure); } catch { onFailure(); }
+      };
+      resume(this.current, () => this.stop());
+      resume(this.next, () => this.cancelFadeKeepCurrent());
+      if (this.fade) { this.fade.lastAt = this.now(); this.fadeTimer = this.schedule(() => this.fadeStep(), 50); }
+      if (this.interacted && !this.current && !this.pending) this.activate();
+    }
+    cancelFadeKeepCurrent() {
+      if (!this.fade) return;
+      if (this.fadeTimer !== null) this.cancelSchedule(this.fadeTimer);
+      try { this.fade.next.audio.pause?.(); this.fade.next.audio.currentTime = 0; this.fade.previous.audio.volume = this.targetVolume(); } catch { /* Best-effort recovery. */ }
+      this.fade.previous.transitioning = false;
+      this.current = this.fade.previous; this.next = null; this.fade = null; this.fadeTimer = null;
+    }
+    stop() {
+      this.generation += 1;
+      if (this.fadeTimer !== null) this.cancelSchedule(this.fadeTimer);
+      this.fadeTimer = null;
+      for (const entry of [this.current, this.next, this.pending]) {
+        try { entry?.audio?.pause?.(); if (entry?.audio) entry.audio.currentTime = 0; } catch { /* Best-effort stop. */ }
+      }
+      this.current = null; this.next = null; this.pending = null; this.fade = null;
+    }
+  }
+
   return Object.freeze({
-    AUDIO_PREFERENCE_VERSION, AUDIO_PREFERENCE_KEY, DEFAULT_AUDIO_PREFERENCE, SEQUENCES, SAMPLE_CUES, sampleSettings, coinChimeCount,
-    normalizeAudioPreference, parseAudioPreference, AudioPreferenceStore, SoundEngine,
+    AUDIO_PREFERENCE_VERSION, AUDIO_PREFERENCE_KEY, DEFAULT_AUDIO_PREFERENCE, MUSIC_TRACKS, SEQUENCES, SAMPLE_CUES, sampleSettings, coinChimeCount,
+    normalizeAudioPreference, parseAudioPreference, AudioPreferenceStore, SoundEngine, MusicEngine,
   });
 });

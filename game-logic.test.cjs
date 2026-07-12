@@ -170,11 +170,45 @@ test("the first post-level order includes a newly unlocked recipe", () => {
 
 test("charged gathering limits bursts and recharges forgivingly", () => {
   const state = game.defaultState(NOW);
-  assert.equal(game.chargedGather(state, NOW, () => 0).added, 2);
-  assert.equal(game.chargedGather(state, NOW, () => 0).added, 2);
-  assert.equal(game.chargedGather(state, NOW, () => 0).added, 2);
+  assert.equal(game.chargedGather(state, NOW, () => 0).added, game.GATHER_CONFIG.amountPerCharge);
+  assert.equal(game.chargedGather(state, NOW, () => 0).added, game.GATHER_CONFIG.amountPerCharge);
+  assert.equal(game.chargedGather(state, NOW, () => 0).added, game.GATHER_CONFIG.amountPerCharge);
   assert.equal(game.chargedGather(state, NOW, () => 0).added, 0);
-  assert.equal(game.chargedGather(state, NOW + 3000, () => 0).added, 2);
+  assert.equal(game.chargedGather(state, NOW + game.GATHER_CONFIG.rechargeSeconds * 1000, () => 0).added, game.GATHER_CONFIG.amountPerCharge);
+});
+
+test("offline ingredients wait for the first delivery and preserve harvest space", () => {
+  const state = game.defaultState(NOW);
+  assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 0);
+  assert.equal(game.totalIngredients(state), 11);
+  state.stats.orders = 1;
+  assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 34);
+  assert.equal(game.totalIngredients(state), Math.floor(game.storageCap(state) * .75));
+  assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 0);
+});
+
+test("charged gathering can intentionally target an unlocked ingredient", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  assert.equal(game.setGatherTarget(state, "crystal"), true);
+  const before = state.ingredients.crystal;
+  const result = game.chargedGather(state, NOW, () => 0);
+  assert.equal(result.targetId, "crystal");
+  assert.equal(state.ingredients.crystal - before, game.GATHER_CONFIG.amountPerCharge);
+  assert.equal(game.setGatherTarget(state, "mist"), false);
+  assert.equal(state.gather.targetId, "crystal");
+  assert.equal(game.setGatherTarget(state, null), true);
+  assert.equal(state.gather.targetId, null);
+});
+
+test("gather target migrates safely and rejects locked or unknown values", () => {
+  const state = game.defaultState(NOW);
+  state.gather.targetId = "crystal";
+  assert.equal(game.normalizeState(state, NOW).gather.targetId, null);
+  state.level = 2;
+  assert.equal(game.normalizeState(state, NOW).gather.targetId, "crystal");
+  state.gather.targetId = "bogus";
+  assert.equal(game.normalizeState(state, NOW).gather.targetId, null);
 });
 
 test("tutorial maps exact tonic actions to precise targets", () => {
@@ -196,7 +230,7 @@ test("tutorial maps exact tonic actions to precise targets", () => {
   game.collectBrew(state, NOW + 30000);
   assert.deepEqual(
     { status: game.beginnerQuest(state, NOW + 30000).status, selector: game.beginnerQuest(state, NOW + 30000).targetSelector },
-    { status: "needs-delivery", selector: '[data-order="1"]' },
+    { status: "needs-delivery", selector: '[data-quick-deliver="1"]' },
   );
 });
 
@@ -215,6 +249,10 @@ test("tutorial recognizes coin, ingredient, upgrade, and new unlock states", () 
   assert.equal(quest.targetSelector, '[data-upgrade="basket"]');
   state.upgrades.garden = 1;
   state.level = 2;
+  quest = game.beginnerQuest(state, NOW);
+  assert.equal(quest.status, "choose-gather-target");
+  assert.equal(quest.targetSelector, '[data-gather-target="crystal"]');
+  game.setGatherTarget(state, "crystal");
   quest = game.beginnerQuest(state, NOW);
   assert.equal(quest.status, "gather-new-ingredient");
   assert.equal(quest.targetKind, "gather-and-pantry");
@@ -238,7 +276,7 @@ test("tutorial maps Clarity waiting, collection, delivery, and completion", () =
   assert.equal(game.beginnerQuest(state, NOW + 1000).targetSelector, "#brewSlot");
   assert.equal(game.beginnerQuest(state, NOW + 66000).targetSelector, "#collectBrewButton");
   game.collectBrew(state, NOW + 66000);
-  assert.equal(game.beginnerQuest(state, NOW + 66000).targetSelector, '[data-order="44"]');
+  assert.equal(game.beginnerQuest(state, NOW + 66000).targetSelector, '[data-quick-deliver="44"]');
   state.discovery.delivered.clarity = 1;
   assert.equal(game.beginnerQuest(state), null);
 });

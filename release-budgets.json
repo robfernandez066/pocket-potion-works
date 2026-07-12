@@ -1,12 +1,12 @@
 {
-  "totalRuntimeBytes": 380000,
+  "totalRuntimeBytes": 24000000,
   "files": {
     "index.html": 12000,
     "style.css": 32000,
     "game-logic.js": 33000,
     "platform-adapters.js": 24000,
-    "audio-feedback.js": 13000,
-    "app.js": 45000,
+    "audio-feedback.js": 22000,
+    "app.js": 50000,
     "manifest.webmanifest": 1500,
     "icon.svg": 3000,
     "service-worker.js": 4000,
@@ -17,6 +17,9 @@
     "assets/audio/gather.mp3": 12000,
     "assets/audio/confirm.mp3": 38000,
     "assets/audio/levelup.ogg": 16000,
-    "assets/audio/tap.ogg": 7000
+    "assets/audio/tap.ogg": 7000,
+    "assets/audio/music1.mp3": 8200000,
+    "assets/audio/music2.mp3": 7600000,
+    "assets/audio/music3.mp3": 7300000
   }
 }

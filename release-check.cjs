@@ -3,13 +3,16 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { resolveRequestPath, securityHeaders } = require("./serve.cjs");
+const { resolveRequestPath, securityHeaders, mime, parseByteRange } = require("./serve.cjs");
+const { MUSIC_TRACKS } = require("./audio-feedback.js");
 const automatedOnly = process.argv.includes("--automated-only");
 
 const runtimeFiles = ["index.html", "style.css", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
 const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
+const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
+assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
-for (const file of [...runtimeFiles, ...runtimeAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v2.json"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
+for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v2.json"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const text = Object.fromEntries(runtimeFiles.map(file => [file, fs.readFileSync(file, "utf8")]));
 const manifest = JSON.parse(text["manifest.webmanifest"]);
@@ -73,6 +76,11 @@ for (const header of ["Content-Security-Policy", "X-Content-Type-Options", "Refe
 assert.equal(resolveRequestPath("/%2e%2e%2f%2e%2e%2fWindows/win.ini"), null);
 assert.equal(resolveRequestPath("/%E0%A4%A"), null);
 assert.ok(resolveRequestPath("/index.html")?.endsWith(`${path.sep}index.html`));
+assert.equal(mime[".mp3"], "audio/mpeg");
+assert.equal(mime[".ogg"], "audio/ogg");
+assert.deepEqual(parseByteRange("bytes=0-99", 1000), { start: 0, end: 99 });
+assert.deepEqual(parseByteRange("bytes=-100", 1000), { start: 900, end: 999 });
+assert.equal(parseByteRange("bytes=1000-", 1000), null);
 
 const budgets = JSON.parse(fs.readFileSync("release-budgets.json", "utf8"));
 let total = 0;
@@ -106,7 +114,7 @@ assert.match(readiness, /Installable PWA \| \*\*NO-GO for public release\*\*/);
 assert.match(readiness, /Native app stores \| \*\*NO-GO\*\*/);
 assert.match(readiness, /Production monetization, analytics, accounts, or cloud \| \*\*NO-GO\*\*/);
 for (const phrase of ["PWA install/update", "Browser lifecycle", "Screen reader", "Physical iOS/iPadOS", "Physical Android", "Native iOS/Android wrappers"]) assert.ok(matrix.includes(phrase), `device matrix is missing separately blocked coverage: ${phrase}`);
-console.log(`Automated release checks passed: ${runtimeFiles.length + runtimeAssets.length} runtime files, ${releaseDocs.length} release documents, ${total}/${budgets.totalRuntimeBytes} runtime bytes.`);
+console.log(`Automated release checks passed: ${runtimeFiles.length + runtimeAssets.length + streamedAssets.length} runtime files, ${releaseDocs.length} release documents, ${total}/${budgets.totalRuntimeBytes} runtime bytes.`);
 if (incomplete.length) {
   const detail = incomplete.map(check => `${check.id}=${check.status}`).join(", ");
   assert.match(readiness, /Local browser prototype release candidate \| \*\*NO-GO pending browser evidence\*\*/);

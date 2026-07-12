@@ -29,12 +29,13 @@ The checks cover syntax, deterministic gameplay and economy behavior, scripted m
 
 ## Current game
 
-- Gather ingredients, brew timed potions, collect bottles, fulfill customer orders, buy upgrades, and prestige.
+- Use Smart mix or target an unlocked ingredient with three charged harvests, then brew timed potions, collect bottles, fulfill customer orders, buy upgrades, and prestige.
 - Six ingredients, eight recipes, twelve customer variants, five upgrade tracks, daily goals, and eight achievements.
 - State-aware First Steps guidance with exact targets and cross-view prompts.
-- Versioned local saves, safe recovery, and a four-hour offline-progress cap.
+- Compact remembered Pantry/Recipe sections, inline Workshop delivery, and a contextual brew shortcut reduce tab and scroll movement.
+- Versioned local saves, safe recovery, and four-hour offline progress that begins after the first delivery and preserves targeted-harvest space.
 - Charcoal-black and purple mobile interface with safe areas, reduced motion, keyboard support, and 44px touch targets.
-- Local offline audio samples for gathering, brewing, collecting, delivery, coins, level-ups, and taps. Sound starts Off and persists locally.
+- Local sound effects plus a three-track Pixabay-licensed background playlist credited to Trycja via Pixabay. Sound starts On; effects and music each default to 50% and persist independently.
 - Coin rewards use capped sound tiers rather than one sound per coin.
 - Explicit fake rewarded-ad and purchase demonstrations. No real advertising, billing, analytics transmission, accounts, cloud save, or store integration exists.
 
