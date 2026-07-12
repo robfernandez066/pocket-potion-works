@@ -65,6 +65,7 @@
           <div class="ingredient-grid" id="ingredientGrid"></div>
 
           <div class="section-heading"><div><p class="eyebrow">CAULDRON</p><h2>Brew a potion</h2></div><span id="brewQueueLabel">Ready</span></div>
+          <div class="sr-only" id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="brew-slot" id="brewSlot"></div>
           <div class="potion-shelf" id="potionShelf" aria-label="Bottled potions and requested recipes"></div>
           <div class="recipe-list" id="recipeList"></div>
@@ -127,6 +128,7 @@
     <template id="particleTemplate"><span class="tap-particle">+1</span></template>
     <script src="game-logic.js"></script>
     <script src="platform-adapters.js"></script>
+    <script src="audio-feedback.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
