@@ -8,14 +8,14 @@
       "description": "Current dark-theme/audio build: full loop, reload, overflow, and console at 390x844",
       "status": "pending",
       "environment": "",
-      "notes": "Must be rerun after owner audio and visual approval."
+      "notes": "Task 6 acceptance passed locally without overflow or console errors; keep pending until owner playtest plus reload and full release-gate evidence are recorded."
     },
     {
       "id": "mobile-loop-360x740",
       "description": "Current dark-theme/audio build: full loop, reload, overflow, and console at 360x740",
       "status": "pending",
       "environment": "",
-      "notes": "Must be rerun after owner audio and visual approval."
+      "notes": "Task 6 acceptance passed locally without overflow or console errors; keep pending until owner playtest plus reload and full release-gate evidence are recorded."
     },
     {
       "id": "keyboard-modal-focus",

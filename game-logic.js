@@ -8,6 +8,7 @@
   const SAVE_VERSION = 1;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 3, amountPerCharge: 2 });
+  const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
 
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
@@ -198,7 +199,7 @@
       const startedAt = clamp(finite(sourceBrew.startedAt, now), 0, now);
       const durationMs = int(sourceBrew.durationMs, recipeById(sourceBrew.recipeId).seconds * 1000, 1, OFFLINE_CAP_SECONDS * 1000);
       const endsAt = clamp(finite(sourceBrew.endsAt, startedAt + durationMs), startedAt, startedAt + durationMs);
-      state.brew = { recipeId: sourceBrew.recipeId, startedAt, endsAt, durationMs };
+      state.brew = { recipeId: sourceBrew.recipeId, startedAt, endsAt, durationMs, assistUses: int(sourceBrew.assistUses, 0, 0, FINISH_BREW_CONFIG.maxUsesPerBrew) };
     }
     const seenIds = new Set();
     state.orders = (Array.isArray(input.orders) ? input.orders : []).map(order => normalizeOrder(order, state)).filter(order => {
@@ -256,8 +257,26 @@
     if (state.brew || !recipe || recipe.unlock > state.level || !canAffordRecipe(state, recipe)) return false;
     for (const [id, count] of Object.entries(recipe.ingredients)) state.ingredients[id] -= count;
     const durationMs = Math.round(recipe.seconds * 1000 / brewSpeedMultiplier(state));
-    state.brew = { recipeId, startedAt: now, endsAt: now + durationMs, durationMs };
+    state.brew = { recipeId, startedAt: now, endsAt: now + durationMs, durationMs, assistUses: 0 };
     return true;
+  }
+
+  function finishBrewAssistStatus(state, now = Date.now()) {
+    if (!state?.brew) return { available: false, reason: "no-active-brew", remainingMs: 0 };
+    const remainingMs = Math.max(0, finite(state.brew.endsAt, now) - now);
+    if (remainingMs <= 0) return { available: false, reason: "brew-ready", remainingMs: 0 };
+    if (int(state.brew.assistUses, 0) >= FINISH_BREW_CONFIG.maxUsesPerBrew) return { available: false, reason: "already-used", remainingMs };
+    if (remainingMs < FINISH_BREW_CONFIG.minRemainingSeconds * 1000) return { available: false, reason: "too-close-to-ready", remainingMs };
+    return { available: true, reason: "available", remainingMs };
+  }
+
+  function applyFinishBrewAssist(state, now = Date.now()) {
+    const status = finishBrewAssistStatus(state, now);
+    if (!status.available) return { applied: false, ...status };
+    const reducedRemainingMs = Math.max(1000, Math.ceil(status.remainingMs * FINISH_BREW_CONFIG.remainingMultiplier));
+    state.brew.endsAt = now + reducedRemainingMs;
+    state.brew.assistUses = int(state.brew.assistUses, 0) + 1;
+    return { applied: true, reason: "applied", previousRemainingMs: status.remainingMs, remainingMs: reducedRemainingMs };
   }
 
   function addXp(state, amount) {
@@ -402,10 +421,10 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, orderMultiplier, brewSpeedMultiplier,
-    unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, collectBrew, addXp,
+    unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, offlineElapsedSeconds, activeElapsedSeconds,
   });
