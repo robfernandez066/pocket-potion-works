@@ -36,8 +36,10 @@ This validates the current workspace and prints the next bounded coder prompt, r
 - Action-aware First Steps guidance with exact control targeting and cross-view prompts
 - Five upgrade tracks and a prestige loop
 - Versioned local saves and capped offline progress
-- Simulated rewarded-ad and starter-bundle placements
+- Explicit fake rewarded-ad and fake purchase adapters with verified-result and replay-safe contracts
+- Versioned local consent, lifecycle, in-memory analytics, and conflict-safe local cloud-save readiness adapters
 - Installable offline web app shell
 - Mobile safe areas, reduced motion, keyboard-accessible modal, and responsive layouts
 
 Real advertising, billing, analytics, cloud saves, and app-store packaging are intentionally not connected.
+See `PLATFORM_ADAPTERS.md` for the fake-only architecture, privacy event fields, Capacitor decision, and deferred production requirements.
