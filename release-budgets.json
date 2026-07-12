@@ -1,14 +1,22 @@
 {
-  "totalRuntimeBytes": 155000,
+  "totalRuntimeBytes": 380000,
   "files": {
     "index.html": 12000,
     "style.css": 32000,
     "game-logic.js": 33000,
     "platform-adapters.js": 24000,
-    "audio-feedback.js": 8000,
+    "audio-feedback.js": 13000,
     "app.js": 45000,
     "manifest.webmanifest": 1500,
     "icon.svg": 3000,
-    "service-worker.js": 3000
+    "service-worker.js": 4000,
+    "assets/audio/bagpop.mp3": 32000,
+    "assets/audio/brew-ready.mp3": 62000,
+    "assets/audio/brew-start.mp3": 36000,
+    "assets/audio/coin.mp3": 16000,
+    "assets/audio/gather.mp3": 12000,
+    "assets/audio/confirm.mp3": 38000,
+    "assets/audio/levelup.ogg": 16000,
+    "assets/audio/tap.ogg": 7000
   }
 }

@@ -5,51 +5,52 @@
   "manualChecks": [
     {
       "id": "mobile-loop-390x844",
-      "description": "Gather, brew, collect, deliver, upgrade, reload, horizontal overflow, and console at 390x844",
-      "status": "passed",
-      "performedAt": "2026-07-12T15:31:00Z",
-      "environment": "Codex in-app Chromium browser on Windows; local Pocket Potion Works candidate",
-      "notes": "Completed gather, Meadow Tonic brew and collect, matching delivery, upgrade purchase, and reload at exactly 390x844. No visible horizontal overflow and no console warnings or errors."
+      "description": "Current dark-theme/audio build: full loop, reload, overflow, and console at 390x844",
+      "status": "pending",
+      "environment": "",
+      "notes": "Must be rerun after owner audio and visual approval."
     },
     {
       "id": "mobile-loop-360x740",
-      "description": "Gather, brew, collect, deliver, upgrade, reload, horizontal overflow, and console at 360x740",
-      "status": "passed",
-      "performedAt": "2026-07-12T15:31:00Z",
-      "environment": "Codex in-app Chromium browser on Windows; local Pocket Potion Works candidate",
-      "notes": "Completed gather, brew and collect, requested Clarity delivery, upgrade purchase, and reload at exactly 360x740. No visible horizontal overflow and no console warnings or errors."
+      "description": "Current dark-theme/audio build: full loop, reload, overflow, and console at 360x740",
+      "status": "pending",
+      "environment": "",
+      "notes": "Must be rerun after owner audio and visual approval."
     },
     {
       "id": "keyboard-modal-focus",
       "description": "Keyboard essential controls, modal focus trap, Escape close, and focus return",
-      "status": "passed",
-      "performedAt": "2026-07-12T15:31:00Z",
-      "environment": "Codex in-app Chromium browser on Windows; 360x740 candidate view",
-      "notes": "Verified native-button focus, Shift+Tab wrap from the close control to the last action, Tab wrap back to close, Escape dismissal, and focus return to Open settings."
+      "status": "pending",
+      "environment": "",
+      "notes": "Current candidate requires refreshed evidence."
     },
     {
       "id": "zoom-200-reflow",
-      "description": "Representative 200 percent zoom reflow without loss of essential controls or horizontal page overflow",
-      "status": "passed",
-      "performedAt": "2026-07-12T15:31:00Z",
-      "environment": "Codex in-app Chromium browser on Windows; 780x844 physical viewport with representative 200 percent browser zoom",
-      "notes": "The effective mobile-width layout reflowed without losing essential controls or showing horizontal page overflow."
+      "description": "Representative 200 percent zoom reflow without loss of essential controls or horizontal overflow",
+      "status": "pending",
+      "environment": "",
+      "notes": "Current candidate requires refreshed evidence."
     },
     {
       "id": "sound-off-behavior",
-      "description": "Default sound-off and muted core loop with no audio initialization, audible output, or blocked gameplay",
-      "status": "passed",
-      "performedAt": "2026-07-12T15:31:00Z",
-      "environment": "Codex in-app Chromium browser on Windows; local Pocket Potion Works candidate",
-      "notes": "Sound remained Off across reload and both exact-size core loops. No audible output was requested or produced, and gameplay was not blocked. Automated audio tests separately prove muted mode does not initialize AudioContext."
+      "description": "Default and muted core loop without audible output, initialization, or gameplay blockage",
+      "status": "pending",
+      "environment": "",
+      "notes": "Current candidate requires refreshed evidence."
+    },
+    {
+      "id": "sound-on-sample-mix",
+      "description": "Owner-approved local sample cues, pitch, volume, capped coin tiers, persistence, and fallback behavior",
+      "status": "pending",
+      "environment": "",
+      "notes": "Requires owner listening approval."
     },
     {
       "id": "csp-runtime-smoke",
-      "description": "Runtime under delivered CSP with shell load, service-worker registration, gameplay actions, Web Audio toggle, and no CSP or console errors",
-      "status": "passed",
-      "performedAt": "2026-07-12T15:31:00Z",
-      "environment": "Codex in-app Chromium browser on Windows; hardened server at http://127.0.0.1:4206",
-      "notes": "Fresh candidate shell booted under the delivered CSP with all five observed runtime assets same-origin and no CSP or console warnings or errors. Sound toggle rendered Off; audio activation remained intentionally muted and is covered by deterministic Web Audio tests. Header probe confirmed CSP, no-referrer, permissions denial, frame denial, no-sniff, and same-origin resource policy; POST returned 405 and encoded traversal returned 403."
+      "description": "Shell, service worker, gameplay, and local audio samples under delivered CSP without errors",
+      "status": "pending",
+      "environment": "",
+      "notes": "Current cache and audio asset set require refreshed evidence."
     }
   ]
 }

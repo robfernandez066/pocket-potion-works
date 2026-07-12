@@ -40,6 +40,13 @@ function feedback(message, { tone = "success", soundName, target } = {}) {
   toast(message, tone);
 }
 
+function playCoinArrivals(amount) {
+  const arrivals = AudioFeedback.coinChimeCount(amount);
+  for (let index = 0; index < arrivals; index += 1) {
+    setTimeout(() => sound.play("coin", { bypassCooldown: true }), 90 + index * 85);
+  }
+}
+
 let gameplaySaveWritesBlocked = false;
 let unsupportedSaveVersion = null;
 
@@ -390,6 +397,7 @@ function fulfillOrder(orderId) {
   checkAchievements();
   feedback(`Order delivered! +${result.reward} coins`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
   renderAll();
+  playCoinArrivals(result.reward);
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
@@ -415,7 +423,7 @@ function buyUpgrade(id) {
   const upgrade = upgradeById(id);
   if (!window.PPWLogic.buyUpgrade(state, id)) return;
   renderAll();
-  feedback(`${upgrade.name} improved to level ${state.upgrades[id]}.`, { tone: "upgrade", soundName: "upgrade", target: `[data-upgrade="${id}"]` });
+  feedback(`${upgrade.name} improved to level ${state.upgrades[id]}.`, { tone: "upgrade", soundName: "tap", target: `[data-upgrade="${id}"]` });
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
@@ -424,6 +432,7 @@ function claimDaily() {
   checkAchievements();
   toast("Daily goal complete! +50 coins and +1 stardust");
   renderAll();
+  playCoinArrivals(50);
 }
 
 function prestigeReward() { return Logic.prestigeReward(state); }
@@ -555,7 +564,8 @@ async function claimStarter() {
   const result = await purchases.purchase("apprentice_bundle");
   const fulfillment = commerceFulfillment.reconcile();
   if (result.status === "success" && fulfillment.granted === 1) {
-    feedback("Simulated apprentice bundle granted. No money was charged.", { tone: "reward", soundName: "reward", target: ".resource-bar" });
+    feedback("Simulated apprentice bundle granted. No money was charged.", { tone: "reward", soundName: "collect", target: ".resource-bar" });
+    playCoinArrivals(100);
   } else toast(`Simulated purchase ended: ${result.status}. No new bundle granted.`);
   analytics.track("purchase_result", { productId: "apprentice_bundle", status: result.status });
   renderAll();
@@ -665,6 +675,10 @@ document.querySelector("#settingsButton").addEventListener("click", showSettings
 document.querySelector("#resetSaveButton").addEventListener("click", confirmReset);
 document.querySelector("#modalClose").addEventListener("click", closeModal);
 document.querySelector("#modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
+document.addEventListener("click", event => {
+  const button = event.target.closest?.("button");
+  if (button && !button.disabled) sound.play("tap");
+});
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && !document.querySelector("#modalBackdrop").hidden) closeModal();
   if (event.key === "Tab" && !document.querySelector("#modalBackdrop").hidden) {

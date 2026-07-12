@@ -4,8 +4,8 @@
   "description": "A cozy idle alchemy game.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#fffaf0",
-  "theme_color": "#32244f",
+  "background_color": "#0b090e",
+  "theme_color": "#17131c",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }

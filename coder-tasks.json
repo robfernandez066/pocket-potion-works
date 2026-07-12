@@ -1,53 +1,75 @@
 [
   {
-    "id": 1,
-    "status": "complete",
-    "title": "Reliability foundation",
-    "model": "GPT-5.6 Sol, high reasoning",
-    "freshChat": true,
-    "prompt": "Work only in the Pocket Potion Works repository. Read AGENTS.md, README.md, app.js, verify.cjs, and the current browser-facing files before editing. Preserve the approved visual design and gameplay values. Refactor the economy, timers, orders, progression, and save normalization into testable pure logic without adding a framework or external dependency. Add automated tests for exact and insufficient ingredient costs, duplicate brew collection, duplicate order delivery, XP overflow across multiple levels, storage caps, daily reward idempotency, four-hour offline cap, future timestamps, malformed JSON, and structurally corrupted saves. Ensure generated orders are always completable with recipes unlocked at the current level. Keep the browser adapter thin and keep the existing local save compatible or add a safe migration. Run all checks and real browser QA. Stop after this task and report changed files, assumptions, validation evidence, and deferred findings.",
+    "id": 6,
+    "status": "next",
+    "releaseGate": true,
+    "title": "Current-build playtest closure",
+    "model": "Use the current efficient coding model with medium reasoning",
+    "freshChat": false,
+    "prompt": "Work only on issues found during the owner's current Pocket Potion Works playtest. Read AGENTS.md, README.md, GAMEPLAY_ROADMAP.md, and the active release/audio documentation. Do not read archive/. Preserve the charcoal-black and purple theme, current save compatibility, core loop, and fake-only platform boundaries. Fix only confirmed playtest issues, add focused regression coverage, run npm.cmd run check, and verify affected behavior at 390x844 and 360x740. Do not publish, add production services, or begin the next roadmap phase.",
     "acceptance": [
-      "Existing saves load or migrate without loss of stardust, achievements, or lifetime stats",
-      "Malformed and structurally invalid saves recover without a startup crash",
-      "Automated tests cover transactions, timers, leveling, caps, and daily reward idempotency",
-      "The visible gather-brew-collect-deliver-upgrade loop is unchanged and works after reload",
-      "npm.cmd run check passes and mobile browser QA has no console errors"
+      "Owner-reported current-build issues are resolved without unrelated feature expansion",
+      "Gather, brew, collect, deliver, and upgrade remain completable",
+      "Audio cue assignment and mix match owner decisions",
+      "Exact-size browser QA has no horizontal overflow or console errors",
+      "Current release evidence and documentation match the tested build"
     ]
   },
   {
-    "id": 2,
-    "status": "complete",
-    "title": "First-session content and balance",
-    "model": "GPT-5.6 Terra, medium-high reasoning",
-    "freshChat": false,
-    "prompt": "Continue only after Task 1 is approved. Use the new pure game logic and tests. Tune a coherent first 10-minute experience: first brew within 30 seconds, first delivery within 90 seconds, first upgrade within 3 minutes, and level 2 within 5 minutes for an engaged new player. Expand to at least 6 ingredients, 8 recipes, 12 customer variants, and 8 achievements while keeping all content data-driven. Add deterministic economy simulations that flag progression stalls, impossible orders, storage deadlocks, and runaway rewards. Do not add production ads, billing, analytics, accounts, or native packaging. Run checks and mobile browser QA, then stop and report evidence.",
-    "acceptance": ["No progression stalls in automated 10-minute simulations", "Every order is achievable at its unlock level", "New content has validation coverage", "Mobile loop remains legible at 360x740 and 390x844"]
+    "id": 7,
+    "status": "pending",
+    "title": "Potion mastery and recipe discovery",
+    "model": "Use the current efficient coding model with medium-high reasoning",
+    "freshChat": true,
+    "prompt": "After Task 6 and owner approval, design a small deterministic potion-mastery and recipe-discovery system. Keep it data-driven, offline, save-compatible, and understandable on mobile. Add meaningful recipe-specific progression without random dead ends, impossible orders, production services, or a large content dump. Present the design and migration plan for review before broad implementation.",
+    "acceptance": [
+      "Mastery adds a meaningful goal beyond player level",
+      "Existing saves migrate without losing progress",
+      "Order generation remains completable",
+      "Progression is covered by deterministic tests and economy simulation",
+      "Owner approves the scope before further content expansion"
+    ]
   },
   {
-    "id": 3,
-    "status": "complete",
-    "title": "Platform and monetization adapters",
-    "model": "GPT-5.6 Sol, high reasoning",
+    "id": 8,
+    "status": "pending",
+    "title": "Upgrade choices and customer relationships",
+    "model": "Use the current efficient coding model with medium-high reasoning",
     "freshChat": true,
-    "prompt": "After Tasks 1 and 2 are approved, design and implement platform-neutral interfaces for rewarded ads, in-app purchases, analytics events, consent state, app lifecycle, and cloud-save readiness. The browser prototype must use explicit fake adapters. Rewards must be granted only after a confirmed success callback; cancellation, timeout, unavailable inventory, duplicate callbacks, restore purchases, and offline failure must be tested. Prepare a written Capacitor packaging decision and required production credentials, but do not install SDKs, create accounts, publish, or transmit data. Preserve offline play and run all checks.",
-    "acceptance": ["Fake adapters cover success, cancel, failure, timeout, and duplicate callbacks", "No reward is granted before confirmed success", "No production service or account is connected", "Privacy-impacting events are documented"]
+    "prompt": "After mastery is approved, add clearer upgrade previews and a lightweight recurring-customer relationship system. Preserve short sessions, offline play, deterministic saves, accessibility, and mobile layout. Favor a few meaningful decisions and short request chains over large amounts of text or content.",
+    "acceptance": [
+      "Upgrade purchases show their next-level effect before confirmation",
+      "At least two upgrade paths create a meaningful choice",
+      "Recurring customers provide visible progress without blocking the core loop",
+      "No live service, account, or generated dialogue dependency is introduced"
+    ]
   },
   {
-    "id": 4,
-    "status": "complete",
-    "title": "Art sound and accessibility polish",
-    "model": "GPT-5.6 Terra, medium reasoning",
+    "id": 9,
+    "status": "pending",
+    "title": "Offline-friendly retention and customization",
+    "model": "Use the current efficient coding model with medium reasoning",
     "freshChat": true,
-    "prompt": "Polish Pocket Potion Works after the gameplay and platform contracts are approved. Improve brew, collect, delivery, level-up, and upgrade feedback; add a small original offline sound set with a mute setting; strengthen visual identity without increasing load time materially. Preserve prefers-reduced-motion, keyboard operation, focus management, 200% zoom usability, and 44px touch targets. Use only original or clearly licensed assets and document their provenance. Verify contrast and test exact mobile sizes.",
-    "acceptance": ["Mute persists", "Reduced-motion mode removes nonessential motion", "All essential controls work by keyboard", "No horizontal overflow at required phone sizes", "Asset provenance is documented"]
+    "prompt": "After the progression systems are approved, prototype workshop cosmetics, weekly request chains, and collection goals that work fully offline and do not punish missed days. Keep scope small, save-compatible, and measurable through deterministic tests and short owner playtests.",
+    "acceptance": [
+      "Retention goals work without an account or server clock",
+      "Missing a day does not cause irreversible loss or punishment",
+      "Cosmetic rewards do not alter required progression balance",
+      "Save migration and rollback behavior are documented and tested"
+    ]
   },
   {
-    "id": 5,
-    "status": "complete",
-    "title": "Release candidate",
-    "model": "GPT-5.6 Sol, high reasoning",
+    "id": 10,
+    "status": "pending",
+    "title": "Public beta decision",
+    "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
-    "prompt": "Perform an independent release-readiness pass. Complete packaging only for the store and platform accounts explicitly authorized by the owner. Replace fake adapters only when credentials and legal choices are provided. Add privacy disclosures, store listing draft, screenshots, crash/analytics verification, performance budgets, save migration test, offline test, device matrix, and rollback plan. Do not publish or spend money without explicit confirmation. Produce a go/no-go report with blocking issues and evidence.",
-    "acceptance": ["No fake production integration remains unnoticed", "Store and privacy disclosures match actual data behavior", "Device and lifecycle matrix passes", "Publishing remains an explicit owner action"]
+    "prompt": "After owner approval of the gameplay MVP, perform a fresh public-PWA beta audit. Test real install, update, offline relaunch, storage behavior, target browsers/devices, current disclosures, screenshots, support/privacy requirements, and rollback. Do not publish or connect production monetization, analytics, accounts, or cloud services without explicit owner authorization.",
+    "acceptance": [
+      "Public beta verdict is evidence-backed and target-specific",
+      "Current screenshots and disclosures match the approved build",
+      "Install, update, offline relaunch, and rollback are tested in real target environments",
+      "Publishing remains an explicit owner action"
+    ]
   }
 ]

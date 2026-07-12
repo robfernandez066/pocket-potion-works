@@ -1,5 +1,13 @@
 # Pocket Potion Works agent rules
 
+## Active documentation only
+
+- Treat only files outside `archive/` as current project direction and source of truth.
+- Do not open, search, summarize, cite, or use anything under `archive/` during normal development, planning, QA, or handoff work.
+- Archived material may be consulted only when the owner explicitly requests a deep audit, historical reconstruction, or comparison with an older decision.
+- If active documentation conflicts, stop and surface the conflict instead of consulting the archive for an answer.
+- `GAMEPLAY_ROADMAP.md` is the current product roadmap. `coder-tasks.json` is the current bounded execution queue.
+
 ## Product boundary
 
 - This repository contains only Pocket Potion Works, a mobile-first cozy idle alchemy game.
