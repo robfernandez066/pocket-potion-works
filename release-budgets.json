@@ -3,10 +3,10 @@
   "files": {
     "index.html": 12000,
     "style.css": 32000,
-    "game-logic.js": 33000,
+    "game-logic.js": 35000,
     "platform-adapters.js": 24000,
     "audio-feedback.js": 22000,
-    "app.js": 50000,
+    "app.js": 52000,
     "manifest.webmanifest": 1500,
     "icon.svg": 3000,
     "service-worker.js": 4000,

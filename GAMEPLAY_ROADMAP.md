@@ -15,7 +15,7 @@ This is the active product roadmap. Archived plans and consultant inputs are not
 
 Task 6 shipped a dismissible, timed tutorial handoff; touch-readable Market lock; visible Prosperity countdown; stable brew controls; non-occluding toasts; readable gathering rate; and idle/brewing/ready scene states. Quick-brew now uses one shared deterministic rule in gameplay and simulation: once per brew, with at least 45 seconds remaining, remove 40% of the remaining time. Automated checks and 390x844 plus 360x740 browser acceptance passed. The broader owner/release gate remains separate.
 
-## Now - meaningful gathering and a shorter workshop loop
+## Completed - meaningful gathering and a shorter workshop loop
 
 Task 7 implementation is ready for owner feel-testing. Three charged harvests now recharge every 30 seconds and yield 3 base items. The checked-in candidate comparison models 69 charged items per ten minutes, between the 15-second small-yield option (86) and 60-second large-yield option (65); existing first-session milestone simulations still pass. Players may keep Smart mix or target an unlocked Pantry ingredient. A targeted 180-second scarcity run produced 27 Starshards versus 9 from Smart mix.
 
@@ -36,14 +36,13 @@ Offline gathering begins after the first delivered order and stops at 75% of sto
 
 Exit gate: gathering creates deliberate ingredient decisions, pantry scarcity remains understandable, and one full loop can be completed with materially less tab and scroll movement.
 
-## Then - progression depth
+## Now - progression depth
 
-- Rebalance prestige against the daily reward using simulations. The daily reward already resets by local date; the problem is comparative value, not absence of reset.
-- Either add a meaningful level-8 unlock or move the prestige gate so progression does not dead-end after level 7.
-- Add per-recipe mastery with small recipe-specific improvements, journal entries, or cosmetics.
-- Add upgrade previews and a small number of mutually interesting paths.
-- Add lightweight recurring-customer progress and short special-request chains.
-- Consider a brief optional brew-start timing interaction only if it supports mastery without becoming required precision play.
+Task 8 moves starry rebirth to the final recipe unlock at level 7 and grants 3 base stardust. Across seeds 7, 42, and 2026, the checked-in realistic strategy reached level 7 in 2,425-2,730 seconds with 30-33 orders, 36-39 mastery brews, and the normal 1-stardust daily claimed. A counterfactual reset retaining only that daily stardust and the chosen rebirth both recovered to level 3 in 317 seconds with four upgrades, while the chosen grant retained 69 coins versus the baseline's 26. Four reward stardust did not improve that recovery band: it averaged 323 seconds, five upgrades, and 6 unspent coins. This supports 3 as a bounded recovery cushion, not a claimed speed boost; staying at level 7 with the daily stardust remains the stronger immediate option. Rebirth preserves the current daily state so it cannot reset the same-date claim.
+
+Each recipe now has durable mastery ranks at 3, 8, and 15 collected brews. Ranks add 4% matching-order value and survive rebirth. Upgrade cards expose exact current-to-next effects and group the existing five investments into Harvest, Brewing, and Trade paths. Recurring customers gain one trust heart every three deliveries, up to three hearts, with a visible 12-coin favor at each milestone. Trust and mastery normalize safely from existing saves and never block ordinary orders.
+
+The optional brew-start timing interaction was not added; mastery supplies the intended longer goal without precision play.
 
 Exit gate: players have at least two meaningful goals beyond player level, and prestige offers a credible long-term choice without invalidating daily play.
 

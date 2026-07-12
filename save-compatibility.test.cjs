@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const game = require("./game-logic.js");
+const v1Reader = require("./fixtures/rollback/game-save-reader-v1.cjs");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
 const fixture = name => fs.readFileSync(`fixtures/saves/${name}`, "utf8");
@@ -30,19 +31,37 @@ test("historical pre-release v1 fixture preserves durable progress, brew, and or
   assert.equal(result.state.discovery.delivered.tonic, 1);
   assert.equal(result.state.discovery.brewed.clarity, 1);
   assert.equal(result.state.discovery.delivered.clarity, 1);
+  assert.equal(result.state.mastery.tonic, 1, "legacy brew discovery migrates into mastery without inventing counts");
+  assert.deepEqual(result.state.customers["customer-0"], { deliveries: 0, hearts: 0 });
 });
 
 test("future-version fixture is detected and cannot be normalized for overwrite", () => {
-  const raw = fixture("future-version-v2.json");
+  const raw = fixture("future-version-v3.json");
   const result = game.parseSave(raw, NOW);
-  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 2 });
+  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 3 });
   assert.equal(game.shouldBlockSaveWrite(result), true);
   let stored = raw;
   if (!game.shouldBlockSaveWrite(result)) stored = JSON.stringify(result.state);
-  assert.equal(stored, raw, "v1 tooling must preserve the unsupported future save byte-for-byte");
+  assert.equal(stored, raw, "v2 tooling must preserve the unsupported future save byte-for-byte");
 });
 
-test("current v1 and malformed saves retain their existing compatibility behavior", () => {
+test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () => {
+  const current = game.defaultState(NOW);
+  current.mastery.tonic = 8;
+  current.customers["customer-0"] = { deliveries: 4, hearts: 1 };
+  const raw = JSON.stringify(current);
+  const downlevel = v1Reader.parseSave(raw);
+  assert.deepEqual(downlevel, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 2 });
+  assert.equal(v1Reader.shouldBlockSaveWrite(downlevel), true);
+  let stored = raw;
+  if (!v1Reader.shouldBlockSaveWrite(downlevel)) stored = JSON.stringify(downlevel.state);
+  assert.equal(stored, raw, "the previous reader must preserve the v2 save byte-for-byte");
+  const reloaded = game.parseSave(stored, NOW).state;
+  assert.equal(reloaded.mastery.tonic, 8);
+  assert.deepEqual(reloaded.customers["customer-0"], { deliveries: 4, hearts: 1 });
+});
+
+test("current v2 and malformed saves retain their existing compatibility behavior", () => {
   const current = game.defaultState(NOW);
   current.stardust = 4;
   assert.equal(game.parseSave(JSON.stringify(current), NOW).state.stardust, 4);

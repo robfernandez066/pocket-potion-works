@@ -1,10 +1,10 @@
 {
-  "version": 2,
+  "version": 3,
   "coins": 999,
   "xp": 12,
   "level": 9,
   "stardust": 22,
   "ingredients": { "herb": 50 },
-  "futureFeature": { "irreversibleState": true, "schema": "unknown-to-v1" },
+  "futureFeature": { "irreversibleState": true, "schema": "unknown-to-v2" },
   "lastSeen": 1783857600000
 }

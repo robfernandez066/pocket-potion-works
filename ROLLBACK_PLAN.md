@@ -3,10 +3,10 @@
 ## Release identity
 
 - Package version: `0.1.0`.
-- Gameplay save: version `1`, key `pocket-potion-works-v1`.
+- Gameplay save: version `2`, key `pocket-potion-works-v1`; the unchanged key lets v2 protect itself from a downlevel v1 build rather than silently forking data.
 - Platform state: `pocket-potion-works-platform-v1`.
 - Sound preference: `pocket-potion-works-audio-v1`.
-- Current service-worker cache: `ppw-shell-v25`.
+- Current service-worker cache: `ppw-shell-v26`.
 - Record the exact commit and tag at release time; do not rely on a temporary branch name as release identity.
 
 Do not rename, clear, merge, or downgrade versioned storage keys during rollback.
