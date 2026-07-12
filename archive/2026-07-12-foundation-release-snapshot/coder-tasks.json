@@ -1,0 +1,53 @@
+[
+  {
+    "id": 1,
+    "status": "complete",
+    "title": "Reliability foundation",
+    "model": "GPT-5.6 Sol, high reasoning",
+    "freshChat": true,
+    "prompt": "Work only in the Pocket Potion Works repository. Read AGENTS.md, README.md, app.js, verify.cjs, and the current browser-facing files before editing. Preserve the approved visual design and gameplay values. Refactor the economy, timers, orders, progression, and save normalization into testable pure logic without adding a framework or external dependency. Add automated tests for exact and insufficient ingredient costs, duplicate brew collection, duplicate order delivery, XP overflow across multiple levels, storage caps, daily reward idempotency, four-hour offline cap, future timestamps, malformed JSON, and structurally corrupted saves. Ensure generated orders are always completable with recipes unlocked at the current level. Keep the browser adapter thin and keep the existing local save compatible or add a safe migration. Run all checks and real browser QA. Stop after this task and report changed files, assumptions, validation evidence, and deferred findings.",
+    "acceptance": [
+      "Existing saves load or migrate without loss of stardust, achievements, or lifetime stats",
+      "Malformed and structurally invalid saves recover without a startup crash",
+      "Automated tests cover transactions, timers, leveling, caps, and daily reward idempotency",
+      "The visible gather-brew-collect-deliver-upgrade loop is unchanged and works after reload",
+      "npm.cmd run check passes and mobile browser QA has no console errors"
+    ]
+  },
+  {
+    "id": 2,
+    "status": "complete",
+    "title": "First-session content and balance",
+    "model": "GPT-5.6 Terra, medium-high reasoning",
+    "freshChat": false,
+    "prompt": "Continue only after Task 1 is approved. Use the new pure game logic and tests. Tune a coherent first 10-minute experience: first brew within 30 seconds, first delivery within 90 seconds, first upgrade within 3 minutes, and level 2 within 5 minutes for an engaged new player. Expand to at least 6 ingredients, 8 recipes, 12 customer variants, and 8 achievements while keeping all content data-driven. Add deterministic economy simulations that flag progression stalls, impossible orders, storage deadlocks, and runaway rewards. Do not add production ads, billing, analytics, accounts, or native packaging. Run checks and mobile browser QA, then stop and report evidence.",
+    "acceptance": ["No progression stalls in automated 10-minute simulations", "Every order is achievable at its unlock level", "New content has validation coverage", "Mobile loop remains legible at 360x740 and 390x844"]
+  },
+  {
+    "id": 3,
+    "status": "complete",
+    "title": "Platform and monetization adapters",
+    "model": "GPT-5.6 Sol, high reasoning",
+    "freshChat": true,
+    "prompt": "After Tasks 1 and 2 are approved, design and implement platform-neutral interfaces for rewarded ads, in-app purchases, analytics events, consent state, app lifecycle, and cloud-save readiness. The browser prototype must use explicit fake adapters. Rewards must be granted only after a confirmed success callback; cancellation, timeout, unavailable inventory, duplicate callbacks, restore purchases, and offline failure must be tested. Prepare a written Capacitor packaging decision and required production credentials, but do not install SDKs, create accounts, publish, or transmit data. Preserve offline play and run all checks.",
+    "acceptance": ["Fake adapters cover success, cancel, failure, timeout, and duplicate callbacks", "No reward is granted before confirmed success", "No production service or account is connected", "Privacy-impacting events are documented"]
+  },
+  {
+    "id": 4,
+    "status": "complete",
+    "title": "Art sound and accessibility polish",
+    "model": "GPT-5.6 Terra, medium reasoning",
+    "freshChat": true,
+    "prompt": "Polish Pocket Potion Works after the gameplay and platform contracts are approved. Improve brew, collect, delivery, level-up, and upgrade feedback; add a small original offline sound set with a mute setting; strengthen visual identity without increasing load time materially. Preserve prefers-reduced-motion, keyboard operation, focus management, 200% zoom usability, and 44px touch targets. Use only original or clearly licensed assets and document their provenance. Verify contrast and test exact mobile sizes.",
+    "acceptance": ["Mute persists", "Reduced-motion mode removes nonessential motion", "All essential controls work by keyboard", "No horizontal overflow at required phone sizes", "Asset provenance is documented"]
+  },
+  {
+    "id": 5,
+    "status": "complete",
+    "title": "Release candidate",
+    "model": "GPT-5.6 Sol, high reasoning",
+    "freshChat": true,
+    "prompt": "Perform an independent release-readiness pass. Complete packaging only for the store and platform accounts explicitly authorized by the owner. Replace fake adapters only when credentials and legal choices are provided. Add privacy disclosures, store listing draft, screenshots, crash/analytics verification, performance budgets, save migration test, offline test, device matrix, and rollback plan. Do not publish or spend money without explicit confirmation. Produce a go/no-go report with blocking issues and evidence.",
+    "acceptance": ["No fake production integration remains unnoticed", "Store and privacy disclosures match actual data behavior", "Device and lifecycle matrix passes", "Publishing remains an explicit owner action"]
+  }
+]

@@ -74,6 +74,79 @@ test("required cues exist and the engine suppresses rapid overlap", () => {
   assert.deepEqual(engine.play("tap"), { played: false, reason: "cooldown" });
 });
 
+test("provided files map to their intended game cues", () => {
+  assert.equal(audio.SAMPLE_CUES.tap.src, "assets/audio/tap.ogg");
+  assert.equal(audio.sampleSettings("tap", () => .5).volume, .4);
+  assert.equal(audio.sampleSettings("tap", () => .5).playbackRate, 4);
+  assert.equal(audio.sampleSettings("tap", () => .5).preservesPitch, false);
+  assert.equal(audio.SAMPLE_CUES.gather.src, "assets/audio/gather.mp3");
+  assert.equal(audio.SAMPLE_CUES.gather.startTime, undefined);
+  assert.equal(audio.SAMPLE_CUES.gather.duration, undefined);
+  assert.equal(audio.SAMPLE_CUES.brewStart.src, "assets/audio/brew-start.mp3");
+  assert.equal(audio.SAMPLE_CUES.brewReady.src, "assets/audio/brew-ready.mp3");
+  assert.equal(audio.SAMPLE_CUES.collect.src, "assets/audio/bagpop.mp3");
+  assert.equal(audio.SAMPLE_CUES.delivery.src, "assets/audio/confirm.mp3");
+  assert.equal(audio.SAMPLE_CUES.levelUp.src, "assets/audio/levelup.ogg");
+  assert.equal(audio.SAMPLE_CUES.coin.src, "assets/audio/coin.mp3");
+});
+
+test("each coin sample gets the requested live volume and playback-rate jitter", () => {
+  const created = [];
+  const randomValues = [0, 1];
+  const store = new audio.AudioPreferenceStore(storage()); store.setEnabled(true);
+  const engine = new audio.SoundEngine(store, {
+    contextFactory: () => fakeContext(),
+    audioFactory: src => {
+      const sample = { src, play: () => Promise.resolve(), addEventListener: () => {} };
+      created.push(sample);
+      return sample;
+    },
+    random: () => randomValues.shift(),
+    now: () => 100,
+  });
+  engine.activate();
+  assert.deepEqual(engine.play("coin", { bypassCooldown: true }), { played: true, source: "sample" });
+  assert.equal(created[0].src, "assets/audio/coin.mp3");
+  assert.equal(created[0].volume, .27);
+  assert.equal(created[0].playbackRate, 1.1);
+});
+
+test("tap disables pitch preservation so 4x playback raises its pitch", () => {
+  const sample = { currentTime: 0, preservesPitch: true, play: () => undefined, addEventListener: () => {} };
+  const store = new audio.AudioPreferenceStore(storage()); store.setEnabled(true);
+  const engine = new audio.SoundEngine(store, { contextFactory: () => fakeContext(), audioFactory: () => sample, now: () => 100 });
+  engine.activate();
+  assert.equal(engine.play("tap").played, true);
+  assert.equal(sample.playbackRate, 4);
+  assert.equal(sample.preservesPitch, false);
+});
+
+test("coin rewards scale through capped chime tiers instead of playing once per coin", () => {
+  const cases = [
+    [0, 0], [1, 1], [9, 1], [10, 2], [19, 2], [20, 3], [39, 3],
+    [40, 5], [79, 5], [80, 7], [149, 7], [150, 9], [10000, 9],
+  ];
+  for (const [coins, chimes] of cases) assert.equal(audio.coinChimeCount(coins), chimes, `${coins} coins`);
+});
+
+test("gather plays the entire trimmed file from the beginning", () => {
+  const timers = [];
+  const sample = { currentTime: 0, paused: 0, play: () => undefined, pause() { this.paused += 1; }, addEventListener: () => {} };
+  const store = new audio.AudioPreferenceStore(storage()); store.setEnabled(true);
+  const engine = new audio.SoundEngine(store, {
+    contextFactory: () => fakeContext(),
+    audioFactory: () => sample,
+    schedule: (callback, delay) => { timers.push({ callback, delay }); return timers.length; },
+    cancelSchedule: () => {},
+    now: () => 100,
+  });
+  engine.activate();
+  assert.equal(engine.play("gather").played, true);
+  assert.equal(sample.currentTime, 0);
+  assert.equal(timers.length, 0);
+  assert.equal(sample.paused, 0);
+});
+
 test("audio failure is silent, sticky, and never blocks", () => {
   let initialized = 0;
   const store = new audio.AudioPreferenceStore(storage()); store.setEnabled(true);

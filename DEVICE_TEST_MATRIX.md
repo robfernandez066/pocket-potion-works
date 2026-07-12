@@ -1,40 +1,44 @@
 # Device and lifecycle test matrix
 
-Automated evidence and physical/browser evidence are intentionally separate. “Pass” below never means a real device was tested unless named.
+Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio and service-worker cache `ppw-shell-v17`.
 
-## Local/browser release-candidate gate
+## Required local/browser candidate gates
 
-`release-browser-evidence.json` is the machine-readable source of truth. The final `npm.cmd run release:check` requires every row below to be `passed` with a valid date and non-empty environment. Automated-only success cannot satisfy these rows.
+`release-browser-evidence.json` is the machine-readable source of truth.
 
-| Gate ID | Required evidence | Current status |
+| Gate | Status | Required evidence |
 | --- | --- | --- |
-| `mobile-loop-390x844` | Full loop, reload, overflow, and console at exactly 390×844 | Passed 2026-07-12; see evidence JSON |
-| `mobile-loop-360x740` | Full loop, reload, overflow, and console at exactly 360×740 | Passed 2026-07-12; see evidence JSON |
-| `keyboard-modal-focus` | Essential keyboard operation, modal focus trap, Escape, and focus return | Passed 2026-07-12; see evidence JSON |
-| `zoom-200-reflow` | Representative 200% reflow with essential controls available and no page overflow | Passed 2026-07-12; see evidence JSON |
-| `sound-off-behavior` | Default/muted core loop without audible output, audio initialization, or gameplay blockage | Passed 2026-07-12; see evidence JSON |
-| `csp-runtime-smoke` | Shell, service worker, gameplay, and Web Audio toggle under delivered CSP with no console/CSP errors | Passed 2026-07-12; see evidence JSON |
+| 390x844 mobile loop | Pending | Gather, brew, collect, deliver, upgrade, reload, overflow, contrast, and console. |
+| 360x740 mobile loop | Pending | Same complete loop and checks at the narrower target. |
+| Keyboard and modal focus | Pending | Essential controls, focus trap, Escape, and focus return. |
+| Representative 200% reflow | Pending | Essential controls remain available without page overflow. |
+| Sound Off | Pending | Defaults Off, persists, initializes nothing, and never blocks gameplay. |
+| Sound On sample mix | Pending owner approval | Correct cues; tap pitch/volume; gathering, brewing, collection, delivery, level-up; capped coin tiers; persistence; graceful fallback. |
+| CSP/runtime smoke | Pending | Current shell and local audio load under delivered headers with no CSP, console, or unexpected network errors. |
 
-These gates are the manual subset for the only eligible GO target. PWA, physical-device, assistive-technology, and native evidence below remains separately NO-GO and is not waived when the local/browser gate passes.
+## Automated coverage
 
-| Area | Environment | Status | Evidence or required procedure |
-| --- | --- | --- | --- |
-| Core loop | Deterministic Node model | Pass | Gather → brew → collect → deliver → upgrade transaction test. |
-| Save reload | Deterministic Node storage | Pass | Gameplay, platform/receipt/consent, and audio namespaces reload together without key changes. |
-| Save recovery | Deterministic Node storage | Pass | Malformed gameplay and malformed platform/audio shapes recover independently. |
-| Lifecycle | Deterministic coordinator | Pass | Background suppresses active time; resume awards once; duplicate resume does not credit. |
-| Offline time | Deterministic game/coordinator | Pass | Four-hour cap and future timestamp zero-credit cases. |
-| Offline shell | Service-worker harness | Pass | Install, cache coverage, old-cache removal, cached response, network rejection, and HTML fallback. Not a browser result. |
-| Static security | Node release gate | Pass | Header policy, path containment, runtime URL/SDK scan, fake-boundary scan. |
-| 390×844 browser | Codex in-app Chromium on Windows | Pass | Full loop, reload, overflow inspection, and console check completed 2026-07-12. |
-| 360×740 browser | Codex in-app Chromium on Windows | Pass | Full loop, reload, overflow inspection, and console check completed 2026-07-12. |
-| Browser lifecycle | Chromium/WebKit/Firefox targets | Untested | Background ≥20s, resume once, reload, future clock correction, four-hour cap boundary. |
-| PWA install/update | Chosen desktop/mobile browsers | Untested | Install, standalone launch, offline relaunch, update from cache v10 to v11, storage eviction, uninstall/reinstall. |
-| Network conditions | Real browser | Untested | First load online; reload offline; slow/interrupted shell update; recover online; verify no third-party requests. |
-| Keyboard/zoom/motion | Codex in-app Chromium plus broader targets | Local keyboard and zoom gates passed; reduced-motion multi-browser row untested | Essential loop, focus trap/return, and representative 200% reflow passed locally. Broader browser and assistive-technology coverage remains outstanding. |
-| Screen reader | VoiceOver, TalkBack, NVDA or owner-approved set | Untested | Names, roles, live brew status, modal navigation, order and upgrade states. |
-| Physical iOS/iPadOS | Owner-chosen minimum/current OS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage persistence, orientation policy. |
-| Physical Android | Owner-chosen minimum/current OS | Untested | Chrome/PWA install, lifecycle, back behavior, audio, storage persistence. |
-| Native iOS/Android wrappers | None exist | Blocked | Requires authorized wrapper, signing, plugins, and store accounts. |
+| Area | Status | Evidence |
+| --- | --- | --- |
+| Core loop and transactions | Pass | Deterministic gather -> brew -> collect -> deliver -> upgrade tests. |
+| Economy and content | Pass | Twelve seeded ten-minute simulations and unlock/order invariants. |
+| Save and rollback compatibility | Pass | Current, malformed, historical v1, and unsupported future v2 fixtures. |
+| Lifecycle/offline progress | Pass | Background suppression, one resume credit, four-hour cap, and future-time zero credit. |
+| Platform boundaries | Pass | Fake ad/IAP, consent, local analytics schema, pending fulfillment, and local cloud-conflict contracts. |
+| Audio behavior | Pass | Preference safety, sample mapping, tap pitch behavior, capped coin tiers, gathering playback, fallback, and failure isolation. |
+| Offline shell | Pass | Install, complete cache list, old-cache removal, cached response, network rejection, and HTML fallback. |
+| Static security and budgets | Pass | CSP/header policy, path containment, no production SDK/endpoints, and per-file/total budgets. |
 
-Public PWA and native verdicts remain NO-GO until the applicable untested rows pass and evidence is recorded with browser/OS/device versions, date, result, console/network observations, and issue links.
+## Public PWA and native coverage
+
+| Area | Status | Required procedure |
+| --- | --- | --- |
+| Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
+| PWA install/update | Untested | Install, standalone launch, update from the previous public candidate to `ppw-shell-v17`, offline relaunch, eviction, uninstall/reinstall. |
+| Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
+| Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
+| Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |
+| Physical Android | Untested | Chrome/PWA install, lifecycle, back behavior, audio, and storage. |
+| Native iOS/Android wrappers | Blocked | Requires authorized wrapper, signing, plugins, and store accounts. |
+
+Public PWA and native targets remain NO-GO until their applicable rows pass with dated browser/OS/device evidence.

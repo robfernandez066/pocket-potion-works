@@ -7,8 +7,9 @@ const { resolveRequestPath, securityHeaders } = require("./serve.cjs");
 const automatedOnly = process.argv.includes("--automated-only");
 
 const runtimeFiles = ["index.html", "style.css", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
-const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md"];
-for (const file of [...runtimeFiles, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v2.json"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
+const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
+const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
+for (const file of [...runtimeFiles, ...runtimeAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v2.json"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const text = Object.fromEntries(runtimeFiles.map(file => [file, fs.readFileSync(file, "utf8")]));
 const manifest = JSON.parse(text["manifest.webmanifest"]);
@@ -24,6 +25,7 @@ const swShellMatch = text["service-worker.js"].match(/const SHELL = (\[[^;]+\]);
 assert.ok(swShellMatch, "service worker shell list must remain statically inspectable");
 const swShell = JSON.parse(swShellMatch[1]);
 for (const file of runtimeFiles.filter(file => file !== "service-worker.js")) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
+for (const file of runtimeAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
 assert.ok(swShell.includes("./"), "service worker cache is missing the start URL");
 
 for (const [file, source] of Object.entries(text)) {
@@ -85,7 +87,7 @@ const evidence = JSON.parse(fs.readFileSync("release-browser-evidence.json", "ut
 assert.equal(evidence.schemaVersion, 1);
 assert.equal(evidence.releaseTarget, "local-browser-release-candidate");
 assert.equal(evidence.candidateVersion, pkg.version);
-const requiredManualChecks = ["mobile-loop-390x844", "mobile-loop-360x740", "keyboard-modal-focus", "zoom-200-reflow", "sound-off-behavior", "csp-runtime-smoke"];
+const requiredManualChecks = ["mobile-loop-390x844", "mobile-loop-360x740", "keyboard-modal-focus", "zoom-200-reflow", "sound-off-behavior", "sound-on-sample-mix", "csp-runtime-smoke"];
 assert.ok(Array.isArray(evidence.manualChecks));
 assert.equal(new Set(evidence.manualChecks.map(check => check.id)).size, evidence.manualChecks.length, "browser evidence IDs must be unique");
 for (const id of requiredManualChecks) assert.ok(evidence.manualChecks.some(check => check.id === id), `browser evidence is missing required gate ${id}`);
@@ -102,14 +104,14 @@ const readiness = fs.readFileSync("RELEASE_READINESS.md", "utf8");
 const matrix = fs.readFileSync("DEVICE_TEST_MATRIX.md", "utf8");
 assert.match(readiness, /Installable PWA \| \*\*NO-GO for public release\*\*/);
 assert.match(readiness, /Native app stores \| \*\*NO-GO\*\*/);
-assert.match(readiness, /Production monetization, analytics, or cloud \| \*\*NO-GO\*\*/);
+assert.match(readiness, /Production monetization, analytics, accounts, or cloud \| \*\*NO-GO\*\*/);
 for (const phrase of ["PWA install/update", "Browser lifecycle", "Screen reader", "Physical iOS/iPadOS", "Physical Android", "Native iOS/Android wrappers"]) assert.ok(matrix.includes(phrase), `device matrix is missing separately blocked coverage: ${phrase}`);
-console.log(`Automated release checks passed: ${runtimeFiles.length} runtime files, ${releaseDocs.length} release documents, ${total}/${budgets.totalRuntimeBytes} runtime bytes.`);
+console.log(`Automated release checks passed: ${runtimeFiles.length + runtimeAssets.length} runtime files, ${releaseDocs.length} release documents, ${total}/${budgets.totalRuntimeBytes} runtime bytes.`);
 if (incomplete.length) {
   const detail = incomplete.map(check => `${check.id}=${check.status}`).join(", ");
   assert.match(readiness, /Local browser prototype release candidate \| \*\*NO-GO pending browser evidence\*\*/);
-  const taskFive = JSON.parse(fs.readFileSync("coder-tasks.json", "utf8")).find(task => task.id === 5);
-  assert.equal(taskFive?.status, "next", "Task 5 must remain next while local/browser evidence is incomplete");
+  const releaseGateTask = JSON.parse(fs.readFileSync("coder-tasks.json", "utf8")).find(task => task.releaseGate === true);
+  assert.ok(["next", "pending"].includes(releaseGateTask?.status), "The active release-gate task must remain open while browser evidence is incomplete");
   if (automatedOnly) console.log(`Local/browser final gate remains pending: ${detail}`);
   else throw new Error(`Local/browser release evidence is incomplete: ${detail}. Record real dated environment evidence before reporting GO.`);
 } else {

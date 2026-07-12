@@ -59,7 +59,7 @@ function fetchEvent(url) {
   const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v1");
   assert.ok(activeCache, "install must create a versioned shell cache");
   const shell = stores.get(activeCache);
-  for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
+  for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
 
   const activate = lifecycleEvent();
   listeners.activate(activate);
