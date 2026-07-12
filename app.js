@@ -23,6 +23,9 @@ let passiveBank = 0;
 let saveTimer = null;
 let lastFocus = null;
 let lastTickAt = Date.now();
+let tutorialBannerTimer = null;
+let pendingTutorialTarget = null;
+let lastTutorialPromptKey = null;
 
 function saveState() {
   state.lastSeen = Date.now();
@@ -93,13 +96,78 @@ function renderAll() {
   document.querySelector("#marketButton").disabled = state.stats.orders < 1;
   document.querySelector("#marketButton").title = state.stats.orders < 1 ? "Complete your first order to unlock the market" : "Open Moonlight Market";
   document.querySelector("#orderDot").hidden = !state.orders.some(order => state.potions[order.recipeId] >= order.quantity);
+  renderGatherButton();
+  renderBeginnerQuest();
   renderIngredients();
   renderBrew();
+  renderPotionShelf();
   renderRecipes();
   renderOrders();
   renderUpgrades();
   renderJournal();
   scheduleSave();
+}
+
+function renderGatherButton() {
+  Logic.rechargeGather(state);
+  const button = document.querySelector("#gatherButton");
+  const charges = state.gather.charges;
+  button.disabled = charges < 1 || totalIngredients() >= storageCap();
+  button.querySelector("strong").textContent = charges > 0 ? `Gather ingredients · ${charges}/${Logic.GATHER_CONFIG.maxCharges}` : "Garden recharging";
+  button.querySelector("small").textContent = charges > 0 ? `Charged harvest · +${manualGatherAmount()} items` : `One charge every ${Logic.GATHER_CONFIG.rechargeSeconds} seconds`;
+}
+
+function renderBeginnerQuest() {
+  const quest = Logic.beginnerQuest(state);
+  const card = document.querySelector("#beginnerQuestCard");
+  card.hidden = !quest;
+  if (!quest) { hideTutorialBanner(); return; }
+  card.dataset.targetView = quest.view;
+  card.dataset.status = quest.status;
+  document.querySelector("#beginnerQuestLabel").textContent = quest.label;
+  document.querySelector("#beginnerQuestTitle").textContent = quest.title;
+  document.querySelector("#beginnerQuestDetail").textContent = quest.detail;
+  document.querySelector("#beginnerQuestButton").textContent = quest.buttonLabel;
+}
+
+function activeView() { return document.querySelector(".view.is-active")?.dataset.view || "workshop"; }
+function motionBehavior() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"; }
+
+function goToTutorialTarget(quest) {
+  if (!quest) return;
+  hideTutorialBanner();
+  switchView(quest.view);
+  requestAnimationFrame(() => {
+    const target = document.querySelector(quest.targetSelector);
+    if (!target) return;
+    document.querySelectorAll(".tutorial-target").forEach(node => node.classList.remove("tutorial-target"));
+    target.classList.add("tutorial-target");
+    target.scrollIntoView({ behavior: motionBehavior(), block: "center" });
+    if (!target.matches("button, [href], input, select, textarea, [tabindex]")) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+    setTimeout(() => target.classList.remove("tutorial-target"), 2200);
+  });
+}
+
+function hideTutorialBanner() {
+  clearTimeout(tutorialBannerTimer);
+  pendingTutorialTarget = null;
+  document.querySelector("#tutorialBanner").hidden = true;
+  document.body.classList.remove("tutorial-prompt-visible");
+}
+
+function showTutorialTransition(before, viewBeforeAction) {
+  const after = Logic.beginnerQuest(state);
+  if (!after) { hideTutorialBanner(); return; }
+  const prompt = Logic.tutorialTransitionPrompt(before, after, viewBeforeAction);
+  if (!prompt || prompt.key === lastTutorialPromptKey) return;
+  lastTutorialPromptKey = prompt.key;
+  pendingTutorialTarget = after;
+  document.querySelector("#tutorialBannerTitle").textContent = prompt.title;
+  document.querySelector("#tutorialBannerDetail").textContent = prompt.detail;
+  document.querySelector("#tutorialBanner").hidden = false;
+  document.body.classList.add("tutorial-prompt-visible");
+  clearTimeout(tutorialBannerTimer);
 }
 
 function renderIngredients() {
@@ -134,8 +202,18 @@ function renderBrew() {
   document.querySelector("#collectBrewButton").addEventListener("click", collectBrew);
 }
 
+function renderPotionShelf() {
+  const visible = RECIPES.filter(recipe => recipe.unlock <= state.level && (state.potions[recipe.id] > 0 || state.orders.some(order => order.recipeId === recipe.id)));
+  document.querySelector("#potionShelf").innerHTML = visible.map(recipe => {
+    const requested = state.orders.some(order => order.recipeId === recipe.id);
+    return `<span class="potion-chip ${requested ? "is-requested" : ""}"><span>${recipe.icon}</span><strong>${state.potions[recipe.id]}</strong> ${recipe.name}${requested ? " · requested" : ""}</span>`;
+  }).join("");
+}
+
 function renderRecipes() {
-  document.querySelector("#recipeList").innerHTML = RECIPES.map(recipe => {
+  const visibleRecipes = RECIPES.filter(recipe => recipe.unlock <= state.level + 2);
+  const hiddenCount = RECIPES.length - visibleRecipes.length;
+  document.querySelector("#recipeList").innerHTML = visibleRecipes.map(recipe => {
     const locked = recipe.unlock > state.level;
     const disabled = locked || Boolean(state.brew) || !canAffordRecipe(recipe);
     let buttonLabel = "Brew";
@@ -143,12 +221,12 @@ function renderRecipes() {
     else if (state.brew) buttonLabel = "Busy";
     else if (!canAffordRecipe(recipe)) buttonLabel = "Need items";
     const requested = state.orders.some(order => order.recipeId === recipe.id);
-    return `<article class="recipe-card ${locked ? "is-locked" : ""}">
+    return `<article class="recipe-card ${locked ? "is-locked" : ""} ${requested ? "is-requested" : ""}">
       <span class="potion-bottle" style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
       <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small><div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div></div>
       <button class="brew-button" data-brew="${recipe.id}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
     </article>`;
-  }).join("");
+  }).join("") + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
   document.querySelectorAll("[data-brew]").forEach(button => button.addEventListener("click", () => startBrew(button.dataset.brew)));
 }
 
@@ -202,28 +280,37 @@ function renderJournal() {
 }
 
 function startBrew(recipeId) {
+  const tutorialBefore = Logic.beginnerQuest(state);
+  const viewBeforeAction = activeView();
   const recipe = recipeById(recipeId);
   if (!window.PPWLogic.startBrew(state, recipeId)) return;
   toast(`${recipe.name} is bubbling away.`);
   renderAll();
+  showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
 function collectBrew() {
+  const tutorialBefore = Logic.beginnerQuest(state);
+  const viewBeforeAction = activeView();
   const result = window.PPWLogic.collectBrew(state);
   if (!result) return;
   announceLevels(result.levels);
   checkAchievements();
   toast(`${result.recipe.name} added to your shelf!`);
   renderAll();
+  showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
 function fulfillOrder(orderId) {
+  const tutorialBefore = Logic.beginnerQuest(state);
+  const viewBeforeAction = activeView();
   const result = window.PPWLogic.fulfillOrder(state, orderId);
   if (!result) return;
   announceLevels(result.levels);
   checkAchievements();
   toast(`Order delivered! +${result.reward} coins`);
   renderAll();
+  showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
 function addXp(amount) {
@@ -232,16 +319,20 @@ function addXp(amount) {
 
 function announceLevels(levels) {
   levels.forEach(level => {
-    const unlocked = RECIPES.find(recipe => recipe.unlock === level);
-    toast(`Level ${level}! ${unlocked ? `${unlocked.name} discovered.` : "Your workshop is growing."}`);
+    const unlocks = Logic.unlocksAtLevel(level);
+    const names = [...unlocks.ingredients, ...unlocks.recipes].map(item => item.name);
+    toast(`Level ${level}! ${names.length ? `${names.join(" and ")} unlocked.` : "Your workshop is growing."}`);
   });
 }
 
 function buyUpgrade(id) {
+  const tutorialBefore = Logic.beginnerQuest(state);
+  const viewBeforeAction = activeView();
   const upgrade = upgradeById(id);
   if (!window.PPWLogic.buyUpgrade(state, id)) return;
   toast(`${upgrade.name} improved to level ${state.upgrades[id]}.`);
   renderAll();
+  showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
 function claimDaily() {
@@ -295,8 +386,9 @@ function switchView(view) {
     button.classList.toggle("is-active", active);
     if (active) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
   });
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top: 0, behavior: motionBehavior() });
   if (view === "orders") document.querySelector("#orderDot").hidden = true;
+  if (pendingTutorialTarget?.view === view) hideTutorialBanner();
 }
 
 function openModal({ icon = "✦", kicker = "POCKET POTION WORKS", title, body, actions = [] }) {
@@ -373,12 +465,21 @@ function confirmReset() {
 function showTutorial() {
   if (state.tutorialSeen) return;
   state.tutorialSeen = true;
-  openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your first customer will arrive soon. Begin by gathering ingredients, then brew a <strong>Meadow Tonic</strong> and deliver it from the Orders board.</p><p>The garden gathers slowly on its own—even while you are away.</p>`, actions: [{ label: "Open the workshop", primary: true }] });
+  openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your pantry already holds everything for a <strong>Meadow Tonic</strong>. Follow the First Steps card to brew, collect, deliver, and improve your workshop.</p><p>Charged harvests refill gently over time, and the garden grows slowly while you are away.</p>`, actions: [{ label: "Show my first step", primary: true }] });
   scheduleSave();
 }
 
 function manualGather(event) {
-  const added = addRandomIngredients(manualGatherAmount(), true);
+  const tutorialBefore = Logic.beginnerQuest(state);
+  const viewBeforeAction = activeView();
+  const result = Logic.chargedGather(state);
+  const added = result.added;
+  if (!added) {
+    toast(state.gather.charges < 1 ? "The garden is recharging. Another harvest will be ready soon." : "Your pantry is full. Brew something delicious!");
+    renderAll();
+    return;
+  }
+  toast(`Gathered ${added} fresh ingredient${added === 1 ? "" : "s"}.`);
   state.stats.taps += 1;
   if (added > 0) {
     const particle = document.querySelector("#particleTemplate").content.firstElementChild.cloneNode(true);
@@ -387,8 +488,9 @@ function manualGather(event) {
     particle.style.top = `${event.clientY || innerHeight / 2}px`;
     document.body.appendChild(particle);
     setTimeout(() => particle.remove(), 800);
-  } else toast("Your pantry is full. Brew something delicious!");
+  }
   renderAll();
+  showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
 function tick() {
@@ -404,11 +506,17 @@ function tick() {
     if (added > 0) { renderIngredients(); document.querySelector("#pantryTotal").textContent = `${formatNumber(totalIngredients())} / ${storageCap()} items`; }
   }
   if (state.brew) renderBrew();
+  renderGatherButton();
+  renderBeginnerQuest();
   if (Date.now() > state.boostUntil && state.boostUntil !== 0) { state.boostUntil = 0; renderAll(); }
 }
 
 document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => switchView(button.dataset.nav)));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
+document.querySelector("#beginnerQuestButton").addEventListener("click", () => {
+  goToTutorialTarget(Logic.beginnerQuest(state));
+});
+document.querySelector("#tutorialBannerButton").addEventListener("click", () => goToTutorialTarget(pendingTutorialTarget));
 document.querySelector("#refreshOrdersButton").addEventListener("click", refreshOrder);
 document.querySelector("#claimDailyButton").addEventListener("click", claimDaily);
 document.querySelector("#prestigeButton").addEventListener("click", confirmPrestige);

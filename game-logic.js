@@ -7,28 +7,34 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
   const SAVE_VERSION = 1;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
+  const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 3, amountPerCharge: 2 });
 
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
     mushroom: { name: "Mooshroom", icon: "♧", color: "#f0d8d5", unlock: 1 },
     crystal: { name: "Starshard", icon: "♦", color: "#dfd9f0", unlock: 2 },
+    mist: { name: "Mist Pearl", icon: "◌", color: "#d7e9ea", unlock: 3 },
     ember: { name: "Sun Ember", icon: "✹", color: "#f4dfbd", unlock: 4 },
+    lavender: { name: "Dream Lavender", icon: "❀", color: "#e7dbef", unlock: 5 },
   };
 
   const RECIPES = [
-    { id: "tonic", name: "Meadow Tonic", icon: "⚗", color: "#7ebd87", unlock: 1, seconds: 6, sell: 14, ingredients: { herb: 2, mushroom: 1 } },
-    { id: "clarity", name: "Clarity Elixir", icon: "◈", color: "#7faec3", unlock: 2, seconds: 11, sell: 27, ingredients: { herb: 3, crystal: 1 } },
-    { id: "moon", name: "Moonmilk", icon: "☾", color: "#8d79bd", unlock: 3, seconds: 17, sell: 46, ingredients: { mushroom: 2, crystal: 2 } },
-    { id: "sun", name: "Bottled Sunrise", icon: "☀", color: "#dd9c54", unlock: 4, seconds: 24, sell: 72, ingredients: { herb: 2, crystal: 1, ember: 2 } },
-    { id: "dream", name: "Dreamer's Draught", icon: "✦", color: "#c77d9b", unlock: 6, seconds: 38, sell: 118, ingredients: { mushroom: 3, crystal: 2, ember: 2 } },
+    { id: "tonic", name: "Meadow Tonic", icon: "⚗", color: "#7ebd87", unlock: 1, seconds: 30, sell: 14, ingredients: { herb: 2, mushroom: 1 } },
+    { id: "clarity", name: "Clarity Elixir", icon: "◈", color: "#7faec3", unlock: 2, seconds: 66, sell: 27, ingredients: { herb: 3, crystal: 1 } },
+    { id: "moon", name: "Moonmilk", icon: "☾", color: "#8d79bd", unlock: 3, seconds: 75, sell: 46, ingredients: { mushroom: 2, crystal: 2 } },
+    { id: "bloom", name: "Cloudbloom Tea", icon: "☁", color: "#80b8b3", unlock: 3, seconds: 78, sell: 52, ingredients: { herb: 2, mist: 2 } },
+    { id: "sun", name: "Bottled Sunrise", icon: "☀", color: "#dd9c54", unlock: 4, seconds: 88, sell: 72, ingredients: { herb: 2, crystal: 1, ember: 2 } },
+    { id: "heart", name: "Kindheart Cordial", icon: "♥", color: "#cc7f91", unlock: 5, seconds: 100, sell: 91, ingredients: { herb: 2, crystal: 1, lavender: 2 } },
+    { id: "dream", name: "Dreamer's Draught", icon: "✦", color: "#c77d9b", unlock: 6, seconds: 112, sell: 118, ingredients: { mushroom: 3, crystal: 2, ember: 2 } },
+    { id: "starlight", name: "Starlight Philter", icon: "☆", color: "#7569b4", unlock: 7, seconds: 125, sell: 156, ingredients: { mist: 2, ember: 2, lavender: 2 } },
   ];
 
   const UPGRADES = [
-    { id: "garden", name: "Moonlit Garden", icon: "☘", description: "+30% passive ingredients per level", baseCost: 45, max: 8 },
-    { id: "basket", name: "Bottomless Basket", icon: "⌄", description: "+1 ingredient per manual harvest", baseCost: 35, max: 6 },
-    { id: "cauldron", name: "Copper Cauldron", icon: "⚗", description: "Brews finish 12% faster per level", baseCost: 65, max: 7 },
-    { id: "shelves", name: "Pantry Shelves", icon: "▤", description: "+25 ingredient storage per level", baseCost: 50, max: 6 },
-    { id: "ledger", name: "Golden Ledger", icon: "●", description: "+15% order coins per level", baseCost: 80, max: 6 },
+    { id: "garden", name: "Moonlit Garden", icon: "☘", description: "+25% passive ingredients per level", baseCost: 70, max: 8 },
+    { id: "basket", name: "Bottomless Basket", icon: "⌄", description: "+1 ingredient per charged harvest", baseCost: 65, max: 6 },
+    { id: "cauldron", name: "Copper Cauldron", icon: "⚗", description: "Brews finish 10% faster per level", baseCost: 90, max: 7 },
+    { id: "shelves", name: "Pantry Shelves", icon: "▤", description: "+25 ingredient storage per level", baseCost: 85, max: 6 },
+    { id: "ledger", name: "Golden Ledger", icon: "●", description: "+12% order coins per level", baseCost: 110, max: 6 },
   ];
 
   const CUSTOMERS = [
@@ -38,6 +44,12 @@
     ["Postmaster Pip", "✉", "Special delivery—with haste!", "#d6e5ed"],
     ["Lady Bramble", "♛", "Only your finest bottle, dear.", "#efd9df"],
     ["Tink the Smith", "⚒", "For science. Probably.", "#e8ddcc"],
+    ["Fern the Gardener", "❀", "My seedlings could use a little encouragement.", "#dbe8cf"],
+    ["Captain Wren", "⚑", "A steady hand for the road ahead.", "#d8dfec"],
+    ["Nell of the Mill", "≈", "The night shift could use some sparkle.", "#e8dec7"],
+    ["Rowan the Tailor", "✂", "Something bright for a difficult hem.", "#ead7e2"],
+    ["Archivist Sol", "⌘", "For a particularly stubborn footnote.", "#d9d5e9"],
+    ["Bee Keeper Bea", "✿", "The hives have been unusually dramatic.", "#f0e0b8"],
   ];
 
   const ACHIEVEMENTS = [
@@ -46,7 +58,12 @@
     { id: "coin500", icon: "●", name: "Pocketful of Gold", description: "Earn 500 coins in total", test: s => s.stats.coinsEarned >= 500 },
     { id: "brew25", icon: "✦", name: "Practically an Expert", description: "Brew 25 potions", test: s => s.stats.brewed >= 25 },
     { id: "rebirth", icon: "★", name: "Written in the Stars", description: "Perform a starry rebirth", test: s => s.stats.prestiges >= 1 },
+    { id: "tap50", icon: "☘", name: "Green Thumb", description: "Gather by hand 50 times", test: s => s.stats.taps >= 50 },
+    { id: "levelFour", icon: "✧", name: "Village Alchemist", description: "Reach level 4", test: s => s.level >= 4 },
+    { id: "upgradeThree", icon: "⌂", name: "Cozy Improvements", description: "Buy 3 workshop upgrades", test: s => Object.values(s.upgrades).reduce((sum, level) => sum + level, 0) >= 3 },
   ];
+
+  const BEGINNER_QUESTS = Object.freeze({ steps: 7, finalRecipe: "clarity" });
 
   const isRecord = value => Boolean(value) && typeof value === "object" && !Array.isArray(value);
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -61,11 +78,13 @@
   function defaultState(now = Date.now()) {
     return {
       version: SAVE_VERSION, coins: 30, xp: 0, level: 1, stardust: 0,
-      ingredients: { herb: 7, mushroom: 4, crystal: 0, ember: 0 },
+      ingredients: { herb: 7, mushroom: 4, crystal: 0, mist: 0, ember: 0, lavender: 0 },
       potions: Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0])),
       upgrades: Object.fromEntries(UPGRADES.map(upgrade => [upgrade.id, 0])),
       brew: null, orders: [], nextOrderId: 1,
       daily: { date: todayKey(now), orders: 0, claimed: false },
+      gather: { charges: GATHER_CONFIG.maxCharges, lastRechargeAt: now },
+      discovery: { brewed: {}, delivered: {} },
       boostUntil: 0, starterClaimed: false, tutorialSeen: false,
       achievements: {},
       stats: { taps: 0, brewed: 0, orders: 0, coinsEarned: 0, prestiges: 0 },
@@ -75,13 +94,62 @@
 
   function recipeById(id) { return RECIPES.find(recipe => recipe.id === id); }
   function upgradeById(id) { return UPGRADES.find(upgrade => upgrade.id === id); }
+  function tutorialQuest({ id, step, status, title, detail, view, targetSelector, targetKind = "control", buttonLabel = "Show me" }) {
+    return { id, step, status, label: `First steps · ${step} of ${BEGINNER_QUESTS.steps}`, title, detail, view, targetSelector, targetKind, buttonLabel };
+  }
+
+  function recipeTutorialState(state, recipeId, step, purpose, now) {
+    const recipe = recipeById(recipeId);
+    if (state.brew) {
+      const matching = state.brew.recipeId === recipeId;
+      if (state.brew.endsAt <= now) return tutorialQuest({ id: `${purpose}-collect`, step, status: "ready-to-collect", title: `Collect ${matching ? recipe.name : "the finished potion"}`, detail: "The brew is ready. Use the Collect button in the cauldron panel.", view: "workshop", targetSelector: "#collectBrewButton", buttonLabel: "Show Collect" });
+      return tutorialQuest({ id: `${purpose}-waiting`, step, status: "in-progress", title: `${recipeById(state.brew.recipeId).name} is brewing`, detail: matching ? "The cauldron is working. Return when the timer reaches zero." : `Finish the current brew before starting ${recipe.name}.`, view: "workshop", targetSelector: "#brewSlot", targetKind: "status", buttonLabel: "Show timer" });
+    }
+    if (state.potions[recipeId] > 0) {
+      const order = state.orders.find(item => item.recipeId === recipeId && state.potions[recipeId] >= item.quantity);
+      if (order) return tutorialQuest({ id: `${purpose}-deliver`, step: purpose === "clarity" ? 7 : step, status: "needs-delivery", title: `Deliver ${recipe.name}`, detail: "The matching order is ready. Use its Deliver button.", view: "orders", targetSelector: `[data-order="${order.id}"]`, buttonLabel: "Show Deliver" });
+    }
+    if (canAffordRecipe(state, recipe)) return tutorialQuest({ id: `${purpose}-start`, step, status: "available-to-start", title: `Brew ${recipe.name}`, detail: "Every required ingredient is ready. Use this recipe's Brew button.", view: "workshop", targetSelector: `[data-brew="${recipeId}"]`, buttonLabel: "Show Brew" });
+    const missing = Object.entries(recipe.ingredients).filter(([id, count]) => state.ingredients[id] < count).map(([id, count]) => `${count - state.ingredients[id]} ${INGREDIENTS[id].name}`).join(" and ");
+    return tutorialQuest({ id: `${purpose}-ingredients`, step, status: "insufficient-ingredients", title: `Gather for ${recipe.name}`, detail: `Still needed: ${missing}. Use a charged harvest.`, view: "workshop", targetSelector: "#gatherButton", buttonLabel: "Show Gather" });
+  }
+
+  function beginnerQuest(state, now = Date.now()) {
+    if (state.discovery.delivered.clarity) return null;
+    if (state.stats.orders < 1) {
+      const quest = recipeTutorialState(state, "tonic", 1, "first-tonic", now);
+      return quest.status === "needs-delivery" ? { ...quest, step: 2, label: `First steps · 2 of ${BEGINNER_QUESTS.steps}` } : quest;
+    }
+    const upgradesBought = Object.values(state.upgrades).reduce((sum, level) => sum + level, 0);
+    if (!upgradesBought) {
+      const affordable = UPGRADES.filter(upgrade => upgradeCost(state, upgrade) <= state.coins).sort((a, b) => upgradeCost(state, a) - upgradeCost(state, b))[0];
+      if (affordable) return tutorialQuest({ id: "first-upgrade-affordable", step: 4, status: "affordable-upgrade", title: `Buy ${affordable.name}`, detail: "You have enough coins. Use this upgrade's purchase button.", view: "upgrades", targetSelector: `[data-upgrade="${affordable.id}"]`, buttonLabel: "Show Upgrade" });
+      const earnCoins = recipeTutorialState(state, "tonic", 3, "fund-upgrade", now);
+      const cheapest = Math.min(...UPGRADES.map(upgrade => upgradeCost(state, upgrade)));
+      return { ...earnCoins, blockedBy: "insufficient-coins", detail: `Need ${Math.max(0, cheapest - state.coins)} more coins for an upgrade. ${earnCoins.detail}` };
+    }
+    if (state.level < 2) return recipeTutorialState(state, "tonic", 4, "reach-level-two", now);
+    if (state.ingredients.crystal < 1 && !state.brew && !state.potions.clarity) return tutorialQuest({ id: "gather-starshard", step: 5, status: "gather-new-ingredient", title: "Gather your first Starshard", detail: "Starshard just unlocked. Use a charged harvest, then watch its pantry card.", view: "workshop", targetSelector: "#gatherButton", targetKind: "gather-and-pantry", buttonLabel: "Show Gather" });
+    return recipeTutorialState(state, "clarity", 6, "clarity", now);
+  }
+
+  function tutorialTransitionPrompt(before, after, currentView) {
+    if (!before || !after || before.id === after.id || after.view === currentView) return null;
+    return { key: `${before.id}->${after.id}`, title: after.title, detail: after.detail, view: after.view, targetSelector: after.targetSelector, targetKind: after.targetKind };
+  }
+  function unlocksAtLevel(level) {
+    return {
+      ingredients: Object.values(INGREDIENTS).filter(item => item.unlock === level),
+      recipes: RECIPES.filter(recipe => recipe.unlock === level),
+    };
+  }
   function xpNeeded(level) { return Math.round(38 * Math.pow(Math.max(1, int(level, 1, 1)), 1.28)); }
-  function storageCap(state) { return 60 + int(state.upgrades?.shelves, 0, 0, 6) * 25; }
-  function gatherRate(state) { return .28 * (1 + int(state.upgrades?.garden, 0, 0, 8) * .3); }
-  function manualGatherAmount(state) { return 2 + int(state.upgrades?.basket, 0, 0, 6); }
+  function storageCap(state) { return 60 + Math.max(0, state.level - 1) * 10 + int(state.upgrades?.shelves, 0, 0, 6) * 25; }
+  function gatherRate(state) { return .18 * (1 + int(state.upgrades?.garden, 0, 0, 8) * .25); }
+  function manualGatherAmount(state) { return GATHER_CONFIG.amountPerCharge + int(state.upgrades?.basket, 0, 0, 6); }
   function coinMultiplier(state, now = Date.now()) { return (1 + state.stardust * .1) * (now < state.boostUntil ? 2 : 1); }
-  function orderMultiplier(state, now = Date.now()) { return coinMultiplier(state, now) * (1 + state.upgrades.ledger * .15); }
-  function brewSpeedMultiplier(state) { return 1 + state.upgrades.cauldron * .12; }
+  function orderMultiplier(state, now = Date.now()) { return coinMultiplier(state, now) * (1 + state.upgrades.ledger * .12); }
+  function brewSpeedMultiplier(state) { return 1 + state.upgrades.cauldron * .1; }
   function unlockedIngredients(state) { return Object.entries(INGREDIENTS).filter(([, item]) => item.unlock <= state.level).map(([id]) => id); }
   function totalIngredients(state) { return Object.values(state.ingredients).reduce((sum, count) => sum + count, 0); }
 
@@ -110,6 +178,21 @@
       date: typeof sourceDaily.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sourceDaily.date) ? sourceDaily.date : todayKey(now),
       orders: int(sourceDaily.orders), claimed: sourceDaily.claimed === true,
     };
+    const sourceGather = isRecord(input.gather) ? input.gather : {};
+    state.gather = {
+      charges: int(sourceGather.charges, GATHER_CONFIG.maxCharges, 0, GATHER_CONFIG.maxCharges),
+      lastRechargeAt: clamp(finite(sourceGather.lastRechargeAt, now), 0, now),
+    };
+    const sourceDiscovery = isRecord(input.discovery) ? input.discovery : {};
+    state.discovery = {
+      brewed: isRecord(sourceDiscovery.brewed) ? { ...sourceDiscovery.brewed } : {},
+      delivered: isRecord(sourceDiscovery.delivered) ? { ...sourceDiscovery.delivered } : {},
+    };
+    if (!isRecord(input.discovery)) {
+      if (state.stats.brewed > 0) state.discovery.brewed.tonic = 1;
+      if (state.stats.orders > 0) state.discovery.delivered.tonic = 1;
+      if (state.level >= 3) { state.discovery.brewed.clarity = 1; state.discovery.delivered.clarity = 1; }
+    }
     const sourceBrew = isRecord(input.brew) ? input.brew : null;
     if (sourceBrew && recipeById(sourceBrew.recipeId)) {
       const startedAt = clamp(finite(sourceBrew.startedAt, now), 0, now);
@@ -172,7 +255,7 @@
     while (state.xp >= xpNeeded(state.level)) {
       state.xp -= xpNeeded(state.level);
       state.level += 1;
-      state.coins += 20 * state.level;
+      state.coins += 10 * state.level;
       levels.push(state.level);
     }
     return levels;
@@ -184,20 +267,24 @@
     if (!recipe) { state.brew = null; return null; }
     state.potions[recipe.id] += 1;
     state.stats.brewed += 1;
+    state.discovery.brewed[recipe.id] = int(state.discovery.brewed[recipe.id]) + 1;
     state.brew = null;
     return { recipe, levels: addXp(state, 5 + recipe.unlock * 2) };
   }
 
   function generateOrder(state, random = Math.random) {
     const availableRecipes = RECIPES.filter(recipe => recipe.unlock <= state.level);
-    const recipe = availableRecipes[Math.floor(clamp(random(), 0, .999999) * availableRecipes.length)];
+    const newestRecipes = availableRecipes.filter(recipe => recipe.unlock === state.level);
+    const boardHasNewest = state.orders.some(order => recipeById(order.recipeId)?.unlock === state.level);
+    const pool = newestRecipes.length && state.level > 1 && (!boardHasNewest || random() < .55) ? newestRecipes : availableRecipes;
+    const recipe = pool[Math.floor(clamp(random(), 0, .999999) * pool.length)];
     const quantity = state.level >= 4 && random() > .68 ? 2 : 1;
     const customer = CUSTOMERS[Math.floor(clamp(random(), 0, .999999) * CUSTOMERS.length)];
     return {
       id: state.nextOrderId++, customer: customer[0], avatar: customer[1], note: customer[2], avatarColor: customer[3],
       recipeId: recipe.id, quantity,
       reward: Math.round(recipe.sell * quantity * (1.45 + random() * .25)),
-      xp: Math.round(12 + recipe.unlock * 5 + quantity * 4),
+      xp: Math.round(8 + recipe.unlock * 3 + quantity * 3),
     };
   }
 
@@ -211,13 +298,14 @@
     state.potions[order.recipeId] -= order.quantity;
     const reward = Math.round(order.reward * orderMultiplier(state, now));
     state.coins += reward; state.stats.coinsEarned += reward; state.stats.orders += 1; state.daily.orders += 1;
+    state.discovery.delivered[order.recipeId] = int(state.discovery.delivered[order.recipeId]) + order.quantity;
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
     state.orders.push(generateOrder(state, random));
     return { reward, levels };
   }
 
-  function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.72, state.upgrades[upgrade.id])); }
+  function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.9, state.upgrades[upgrade.id])); }
   function buyUpgrade(state, id) {
     const upgrade = upgradeById(id);
     if (!upgrade || state.upgrades[id] >= upgrade.max) return false;
@@ -265,10 +353,36 @@
     const available = unlockedIngredients(state), cap = storageCap(state);
     let added = 0;
     for (let i = 0; i < int(amount) && totalIngredients(state) < cap; i += 1) {
-      const id = available[Math.floor(clamp(random(), 0, .999999) * available.length)];
+      const fallbackRecipe = state.level >= 2 && !state.discovery.delivered.clarity ? recipeById("clarity") : RECIPES.find(recipe => recipe.unlock <= state.level);
+      const missing = fallbackRecipe ? Object.entries(fallbackRecipe.ingredients).flatMap(([id, count]) => Array(Math.max(0, count - state.ingredients[id])).fill(id)) : [];
+      const slotsLeft = cap - totalIngredients(state);
+      const pool = missing.length && slotsLeft <= missing.length ? missing : available;
+      const id = pool[Math.floor(clamp(random(), 0, .999999) * pool.length)];
       state.ingredients[id] += 1; added += 1;
     }
     return added;
+  }
+
+  function rechargeGather(state, now = Date.now()) {
+    if (state.gather.charges >= GATHER_CONFIG.maxCharges) { state.gather.lastRechargeAt = now; return 0; }
+    const elapsed = Math.max(0, now - state.gather.lastRechargeAt);
+    const restored = Math.min(GATHER_CONFIG.maxCharges - state.gather.charges, Math.floor(elapsed / (GATHER_CONFIG.rechargeSeconds * 1000)));
+    if (restored > 0) {
+      state.gather.charges += restored;
+      state.gather.lastRechargeAt += restored * GATHER_CONFIG.rechargeSeconds * 1000;
+    }
+    return restored;
+  }
+
+  function chargedGather(state, now = Date.now(), random = Math.random) {
+    rechargeGather(state, now);
+    if (state.gather.charges < 1) {
+      const waitMs = Math.max(0, GATHER_CONFIG.rechargeSeconds * 1000 - (now - state.gather.lastRechargeAt));
+      return { added: 0, charges: 0, waitMs };
+    }
+    state.gather.charges -= 1;
+    if (state.gather.charges === GATHER_CONFIG.maxCharges - 1) state.gather.lastRechargeAt = now;
+    return { added: addRandomIngredients(state, manualGatherAmount(state), random), charges: state.gather.charges, waitMs: GATHER_CONFIG.rechargeSeconds * 1000 };
   }
 
   function offlineElapsedSeconds(state, now = Date.now()) { return clamp((now - finite(state.lastSeen, now)) / 1000, 0, OFFLINE_CAP_SECONDS); }
@@ -277,11 +391,11 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS,
-    clamp, todayKey, defaultState, normalizeState, parseSave, recipeById, upgradeById, xpNeeded,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
+    clamp, todayKey, defaultState, normalizeState, parseSave, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
-    resetDailyIfNeeded, addRandomIngredients, offlineElapsedSeconds, activeElapsedSeconds,
+    resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, offlineElapsedSeconds, activeElapsedSeconds,
   });
 });
