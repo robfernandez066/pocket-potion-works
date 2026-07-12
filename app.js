@@ -2,7 +2,17 @@
 
 const SAVE_KEY = "pocket-potion-works-v1";
 const Logic = window.PPWLogic;
+const Platform = window.PPWPlatform;
 const { SAVE_VERSION, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
+const platformStore = new Platform.PlatformStateStore(localStorage);
+const consent = new Platform.ConsentManager(platformStore);
+const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
+const fakeRewardedAds = new Platform.FakeRewardedAdAdapter();
+const rewardedAds = new Platform.RewardedAdService(fakeRewardedAds);
+const entitlementLedger = new Platform.EntitlementLedger(platformStore);
+const fakePurchases = new Platform.FakeIapAdapter();
+const purchases = new Platform.PurchaseService(fakePurchases, entitlementLedger);
+const lifecycleAdapter = new Platform.FakeLifecycleAdapter();
 function formatNumber(value) { return Math.floor(value).toLocaleString("en-US"); }
 function xpNeeded(level = state.level) { return Logic.xpNeeded(level); }
 function storageCap() { return Logic.storageCap(state); }
@@ -33,6 +43,23 @@ function saveState() {
   catch (error) { console.warn("Save failed.", error); }
 }
 
+const commerceFulfillment = new Platform.CommerceFulfillmentCoordinator(entitlementLedger, {
+  handlers: {
+    apprentice_bundle: () => {
+      if (state.starterClaimed) return false;
+      state.starterClaimed = true;
+      state.coins += 100;
+      addRandomIngredients(10);
+      return true;
+    },
+  },
+  persistGameplay: () => {
+    state.lastSeen = Date.now();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  },
+});
+commerceFulfillment.reconcile();
+
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveState, 250);
@@ -50,6 +77,10 @@ function addRandomIngredients(amount, announce = false) {
 
 function reconcileOfflineProgress() {
   const elapsed = window.PPWLogic.offlineElapsedSeconds(state);
+  grantOfflineProgress(elapsed);
+}
+
+function grantOfflineProgress(elapsed) {
   if (elapsed < 20) return;
   const ingredients = Math.floor(elapsed * gatherRate() * .65);
   const before = totalIngredients();
@@ -63,6 +94,11 @@ function reconcileOfflineProgress() {
     }), 350);
   }
 }
+
+const lifecycle = new Platform.LifecycleCoordinator({
+  awardOffline: (from, to) => grantOfflineProgress(clamp((to - from) / 1000, 0, Logic.OFFLINE_CAP_SECONDS)),
+});
+lifecycleAdapter.subscribe(event => lifecycle.handle(event));
 
 function ensureOrders() {
   window.PPWLogic.ensureOrders(state);
@@ -436,22 +472,56 @@ function showMarket() {
     <p>Monetization placements are simulated in this prototype. No ad network or billing system is connected.</p>
     <div class="market-offer"><span>▶</span><div><strong>Prosperity charm</strong><small>${boostActive ? "Active now" : "Simulated rewarded ad · 2× order coins for 5 minutes"}</small></div></div>
     <div class="market-offer"><span>⚡</span><div><strong>Finish current brew</strong><small>Simulated rewarded ad · available while brewing</small></div></div>
-    <div class="market-offer"><span>🎁</span><div><strong>Apprentice bundle</strong><small>Demo claim · 100 coins and 10 ingredients</small></div></div>`, actions: [
+    <div class="market-offer"><span>🎁</span><div><strong>Apprentice bundle</strong><small>One-time simulated purchase · 100 coins and 10 ingredients</small></div></div>`, actions: [
       { label: boostActive ? "Prosperity charm active" : "Simulate ad: 2× coins", primary: true, onClick: boostActive ? closeModal : activateBoost },
       ...(brewRemaining >= 30000 ? [{ label: "Simulate ad: finish brew", onClick: finishBrewAd }] : []),
-      ...(!state.starterClaimed ? [{ label: "Claim demo apprentice bundle", onClick: claimStarter }] : []),
+      ...(!state.starterClaimed ? [{ label: "Simulate one-time bundle", onClick: claimStarter }] : []),
     ] });
 }
 
-function activateBoost() { state.boostUntil = Date.now() + 5 * 60 * 1000; closeModal(); toast("Prosperity charm active for 5 minutes!"); renderAll(); }
-function finishBrewAd() { if (state.brew) state.brew.endsAt = Date.now(); closeModal(); toast("The cauldron gives a delighted little ping."); renderAll(); }
-function claimStarter() { state.starterClaimed = true; state.coins += 100; addRandomIngredients(10); closeModal(); toast("Apprentice bundle claimed for this prototype."); renderAll(); }
+async function runSimulatedReward(placementId, grantReward, successMessage) {
+  closeModal();
+  analytics.track("reward_attempt", { placementId });
+  fakeRewardedAds.queueScenario("success");
+  toast("Simulated rewarded ad started. Reward is waiting for confirmation.");
+  const result = await rewardedAds.requestReward({ placementId, grantReward });
+  analytics.track("reward_result", { placementId, status: result.status });
+  toast(result.status === "success" ? successMessage : `Simulated ad ended: ${result.status}. No reward granted.`);
+  renderAll();
+}
+
+function activateBoost() {
+  return runSimulatedReward("prosperity_charm", () => { state.boostUntil = Date.now() + 5 * 60 * 1000; }, "Prosperity charm active for 5 minutes!");
+}
+function finishBrewAd() {
+  return runSimulatedReward("finish_brew", () => { if (state.brew) state.brew.endsAt = Date.now(); }, "The confirmed simulation finished the brew.");
+}
+async function claimStarter() {
+  closeModal();
+  fakePurchases.queueScenario("success");
+  toast("Starting a simulated purchase. No billing system is connected.");
+  const result = await purchases.purchase("apprentice_bundle");
+  const fulfillment = commerceFulfillment.reconcile();
+  if (result.status === "success" && fulfillment.granted === 1) {
+    toast("Simulated apprentice bundle granted. No money was charged.");
+  } else toast(`Simulated purchase ended: ${result.status}. No new bundle granted.`);
+  analytics.track("purchase_result", { productId: "apprentice_bundle", status: result.status });
+  renderAll();
+}
 
 function showSettings() {
   openModal({ icon: "⚙", kicker: "SETTINGS & INFORMATION", title: "Workshop settings", body: `
     <p><strong>Autosave:</strong> On<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1 vertical slice</p>
-    <p>This prototype contains no real advertisements, purchases, analytics, accounts, or network requests. Progress is stored only in this browser.</p>`,
-    actions: [{ label: "Save now", primary: true, onClick: () => { saveState(); closeModal(); toast("Workshop saved."); } }],
+    <p><strong>Optional local analytics:</strong> ${consent.analyticsAllowed() ? "Allowed" : "Off"}. Events stay in memory, are schema-limited, and are never transmitted.</p>
+    <p>This prototype contains no real advertisements, purchases, analytics services, accounts, or network requests. Progress is stored only in this browser.</p>`,
+    actions: [
+      { label: "Save now", primary: true, onClick: () => { saveState(); closeModal(); toast("Workshop saved."); } },
+      { label: consent.analyticsAllowed() ? "Turn local analytics off" : "Allow local analytics", onClick: () => {
+        consent.setAnalytics(!consent.analyticsAllowed());
+        analytics.track("consent_changed", { analytics: consent.analyticsAllowed() ? "allowed" : "denied" });
+        closeModal(); toast(`Optional local analytics ${consent.analyticsAllowed() ? "allowed" : "turned off"}.`);
+      } },
+    ],
   });
 }
 
@@ -495,7 +565,7 @@ function manualGather(event) {
 
 function tick() {
   const now = Date.now();
-  const elapsedSeconds = Logic.activeElapsedSeconds(lastTickAt, now, document.hidden);
+  const elapsedSeconds = lifecycle.activeElapsed(lastTickAt, now);
   lastTickAt = now;
   if (document.hidden) return;
   passiveBank += gatherRate() * elapsedSeconds;
@@ -537,9 +607,14 @@ document.addEventListener("keydown", event => {
 });
 window.addEventListener("pagehide", saveState);
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) saveState();
+  if (document.hidden) {
+    saveState();
+    lifecycleAdapter.emit("background", Date.now());
+    analytics.track("lifecycle", { phase: "background" });
+  }
   else {
-    reconcileOfflineProgress();
+    lifecycleAdapter.emit("resume", Date.now());
+    analytics.track("lifecycle", { phase: "resume" });
     lastTickAt = Date.now();
     renderAll();
   }
@@ -560,4 +635,6 @@ window.PPW = Object.freeze({
     upgradesValid: UPGRADES.every(upgrade => upgrade.max > 0 && upgrade.baseCost > 0),
     saveVersion: state.version,
   }),
+  getPlatformSnapshot: () => platformStore.snapshot(),
+  getLocalAnalytics: () => analytics.snapshot(),
 });

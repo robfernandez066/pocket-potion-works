@@ -5,7 +5,7 @@
   "description": "A mobile-first cozy idle alchemy game prototype.",
   "scripts": {
     "start": "node serve.cjs",
-    "check": "node --check game-logic.js && node --check app.js && node --check serve.cjs && node --check service-worker.js && node --check handoff.cjs && node --check economy-simulation.cjs && node verify.cjs && node game-logic.test.cjs && node economy-simulation.cjs",
+    "check": "node --check game-logic.js && node --check platform-adapters.js && node --check app.js && node --check serve.cjs && node --check service-worker.js && node --check handoff.cjs && node --check economy-simulation.cjs && node verify.cjs && node game-logic.test.cjs && node platform-adapters.test.cjs && node economy-simulation.cjs",
     "handoff": "node handoff.cjs"
   }
 }

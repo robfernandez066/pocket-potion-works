@@ -25,7 +25,7 @@
   },
   {
     "id": 3,
-    "status": "next",
+    "status": "complete",
     "title": "Platform and monetization adapters",
     "model": "GPT-5.6 Sol, high reasoning",
     "freshChat": true,
@@ -34,7 +34,7 @@
   },
   {
     "id": 4,
-    "status": "pending",
+    "status": "next",
     "title": "Art sound and accessibility polish",
     "model": "GPT-5.6 Terra, medium reasoning",
     "freshChat": true,
