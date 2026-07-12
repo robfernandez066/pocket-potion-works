@@ -32,6 +32,16 @@
         <div class="resource"><span>★</span><strong id="stardustCount">0</strong><small>stardust</small></div>
       </section>
 
+      <aside class="tutorial-banner" id="tutorialBanner" role="status" aria-live="polite" hidden>
+        <div><strong id="tutorialBannerTitle">Your next step is ready</strong><small id="tutorialBannerDetail"></small></div>
+        <button id="tutorialBannerButton">Go now</button>
+      </aside>
+
+      <article class="beginner-quest" id="beginnerQuestCard">
+        <div><p class="eyebrow" id="beginnerQuestLabel">FIRST STEPS</p><strong id="beginnerQuestTitle">Brew a Meadow Tonic</strong><small id="beginnerQuestDetail">You already have the ingredients.</small></div>
+        <button id="beginnerQuestButton">Show me</button>
+      </article>
+
       <main>
         <section class="view is-active" id="workshopView" data-view="workshop">
           <div class="welcome-row">
@@ -56,6 +66,7 @@
 
           <div class="section-heading"><div><p class="eyebrow">CAULDRON</p><h2>Brew a potion</h2></div><span id="brewQueueLabel">Ready</span></div>
           <div class="brew-slot" id="brewSlot"></div>
+          <div class="potion-shelf" id="potionShelf" aria-label="Bottled potions and requested recipes"></div>
           <div class="recipe-list" id="recipeList"></div>
         </section>
 

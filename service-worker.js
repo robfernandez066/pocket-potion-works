@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "ppw-shell-";
-const CACHE = `${CACHE_PREFIX}v2`;
+const CACHE = `${CACHE_PREFIX}v8`;
 const SHELL = ["./", "./index.html", "./style.css", "./game-logic.js", "./app.js", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", event => {

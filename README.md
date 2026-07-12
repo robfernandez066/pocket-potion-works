@@ -16,8 +16,9 @@ Open `http://127.0.0.1:4173`.
 npm.cmd run check
 ```
 
-This runs syntax and asset checks plus deterministic gameplay tests for brewing,
-orders, progression, storage, daily rewards, offline time, and save recovery.
+This runs syntax and asset checks, deterministic gameplay tests, and six seeded
+10-minute economy simulations covering milestone timing, stalls, impossible
+orders, storage deadlocks, and runaway rewards.
 
 ## Continue with a coder agent
 
@@ -29,9 +30,10 @@ This validates the current workspace and prints the next bounded coder prompt, r
 
 ## Current prototype
 
-- Manual and passive ingredient gathering
-- Five unlockable recipes and timed brewing
-- Customer orders, XP, levels, daily goals, and achievements
+- Three-charge manual gathering with gentle recharge, plus passive gathering
+- Six ingredients, eight unlockable recipes, and timed brewing
+- Twelve customer variants, XP, levels, daily goals, and eight achievements
+- Action-aware First Steps guidance with exact control targeting and cross-view prompts
 - Five upgrade tracks and a prestige loop
 - Versioned local saves and capped offline progress
 - Simulated rewarded-ad and starter-bundle placements
