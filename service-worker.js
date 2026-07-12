@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "ppw-shell-";
-const CACHE = `${CACHE_PREFIX}v28`;
+const CACHE = `${CACHE_PREFIX}v29`;
 const SHELL = ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg"];
 
 self.addEventListener("install", event => {

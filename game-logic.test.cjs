@@ -123,16 +123,71 @@ test("recurring customers gain trust and grant a deterministic non-blocking favo
   assert.deepEqual(state.customers["customer-0"], { deliveries: 3, hearts: 1 });
 });
 
+test("all villagers have three distinct trust stories and deterministic request variety", () => {
+  assert.equal(game.CUSTOMERS.length, 12);
+  assert.equal(game.CUSTOMER_CONTENT.length, game.CUSTOMERS.length);
+  for (let index = 0; index < game.CUSTOMERS.length; index += 1) {
+    const content = game.CUSTOMER_CONTENT[index];
+    assert.equal(content.stories.length, 3);
+    assert.equal(new Set(content.stories).size, 3);
+    assert.equal(content.orderLines.length, 3);
+    assert.equal(new Set(content.orderLines).size, 3);
+    const customerId = `customer-${index}`;
+    const firstPass = [1, 2, 3].map(id => game.customerOrderLine(customerId, id, "tonic", 1));
+    const secondPass = [1, 2, 3].map(id => game.customerOrderLine(customerId, id, "tonic", 1));
+    assert.deepEqual(firstPass, secondPass);
+    assert.equal(new Set(firstPass).size, 3);
+  }
+});
+
+test("journal stories unlock from trust and safely record read state", () => {
+  const state = game.defaultState(NOW);
+  state.customers["customer-0"] = { deliveries: 6, hearts: 2 };
+  assert.equal(game.customerStoryStatus(state, "customer-0", 0).unlocked, true);
+  assert.equal(game.customerStoryStatus(state, "customer-0", 1).unlocked, true);
+  assert.equal(game.customerStoryStatus(state, "customer-0", 2).unlocked, false);
+  assert.equal(game.markJournalRead(state, "story", "customer-0:3"), false);
+  assert.equal(game.markJournalRead(state, "story", "customer-0:2"), true);
+  assert.equal(game.customerStoryStatus(state, "customer-0", 1).read, true);
+  assert.equal(game.markJournalRead(state, "story", "not-a-story"), false);
+});
+
+test("all recipe lore unlocks from existing discovery without changing gameplay", () => {
+  assert.equal(Object.keys(game.RECIPE_LORE).length, game.RECIPES.length);
+  const state = game.defaultState(NOW);
+  const before = { coins: state.coins, xp: state.xp, ingredients: structuredClone(state.ingredients), potions: structuredClone(state.potions) };
+  for (const recipe of game.RECIPES) {
+    assert.ok(game.RECIPE_LORE[recipe.id]);
+    assert.equal(game.recipeLoreStatus(state, recipe.id).unlocked, false);
+    state.discovery.delivered[recipe.id] = 1;
+    assert.equal(game.recipeLoreStatus(state, recipe.id).unlocked, true);
+    assert.equal(game.markJournalRead(state, "recipe", recipe.id), true);
+    assert.equal(game.recipeLoreStatus(state, recipe.id).read, true);
+  }
+  assert.deepEqual({ coins: state.coins, xp: state.xp, ingredients: state.ingredients, potions: state.potions }, before);
+});
+
+test("malformed journal state normalizes to known unique content ids", () => {
+  const state = game.defaultState(NOW);
+  state.journal = { readStories: ["customer-0:1", "customer-0:1", "customer-99:3", null], readRecipes: ["tonic", "tonic", "unknown", {}] };
+  const loaded = game.normalizeState(state, NOW);
+  assert.deepEqual(loaded.journal, { readStories: ["customer-0:1"], readRecipes: ["tonic"] });
+  const recovered = game.normalizeState({ ...state, journal: "broken" }, NOW);
+  assert.deepEqual(recovered.journal, { readStories: [], readRecipes: [] });
+});
+
 test("prestige opens with the final recipe and preserves durable goals plus the daily boundary", () => {
   const state = game.defaultState(NOW);
   state.level = game.PRESTIGE_CONFIG.unlockLevel;
   state.stardust = 2; state.daily = { date: game.todayKey(NOW), orders: 5, claimed: true };
   state.mastery.tonic = 8; state.customers["customer-0"] = { deliveries: 4, hearts: 1 };
+  state.journal = { readStories: ["customer-0:1"], readRecipes: ["tonic"] };
   assert.ok(game.unlocksAtLevel(state.level).recipes.length > 0, "prestige level must also unlock content");
   assert.equal(game.prestigeReward(state), 3);
   const next = game.performPrestige(state, undefined, NOW + 1000);
   assert.equal(next.level, 1); assert.equal(next.stardust, 5);
   assert.equal(next.mastery.tonic, 8); assert.deepEqual(next.customers["customer-0"], { deliveries: 4, hearts: 1 });
+  assert.deepEqual(next.journal, state.journal);
   assert.deepEqual(next.daily, state.daily); assert.equal(game.claimDaily(next), false, "rebirth cannot reclaim today's reward");
   assert.equal(next.stats.prestiges, 1); assert.equal(game.cosmeticUnlocked(next, "starglass"), true);
   assert.deepEqual(next.weekly, state.weekly); assert.deepEqual(next.customization, state.customization);
@@ -216,7 +271,8 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   assert.deepEqual(visualStates.starglass, { selected: "starglass", keepsake: true, ribbon: false });
   assert.deepEqual(visualStates.guild, { selected: "guild", keepsake: false, ribbon: true });
   assert.equal(new Set(Object.values(visualStates).map(visual => JSON.stringify(visual))).size, game.COSMETICS.length, "each advertised selection yields a distinct reversible visual state");
-  game.selectCosmetic(state, "midnight");
+  assert.equal(game.selectCosmetic(state, "midnight"), true);
+  assert.equal(game.selectCosmetic(state, "midnight"), false, "selecting the current look is a no-op");
   const reloaded = game.normalizeState(state, NOW);
   assert.equal(reloaded.customization.selected, "midnight");
   assert.ok(game.COSMETICS.length <= 5);

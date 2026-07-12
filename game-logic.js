@@ -73,6 +73,32 @@
     ["Bee Keeper Bea", "✿", "The hives have been unusually dramatic.", "#f0e0b8"],
   ];
 
+  const CUSTOMER_CONTENT = Object.freeze([
+    Object.freeze({ orderLines: Object.freeze(["The ovens wake before I do.", "A warm loaf deserves a steady baker.", "Could you bottle a calmer morning?"]), stories: Object.freeze(["Mira leaves the first bun of every batch on the village well for whoever starts work earliest.", "She learned to bake from a flour-smudged notebook whose final page is still blank.", "Mira decides the blank page should hold a recipe the whole village helps invent."]) }),
+    Object.freeze({ orderLines: Object.freeze(["The moss has been whispering again.", "A hedgerow sent me with this request.", "The old oaks think this one is important."]), stories: Object.freeze(["Old Moss knows which footpaths appear only after rain.", "He once planted a walking stick; it grew into the crooked willow by the pond.", "He admits the forest does not actually talk loudly. He has simply become very good at listening."]) }),
+    Object.freeze({ orderLines: Object.freeze(["My encore could use a little courage.", "This melody needs one brighter note.", "A sip before the curtain, please."]), stories: Object.freeze(["Juniper practices behind the mill because the turning wheel keeps perfect time.", "Her favorite song began as a tune for a nervous moonmoth.", "She finally plays that song in the square and names it after the alchemist who listened first."]) }),
+    Object.freeze({ orderLines: Object.freeze(["Special delivery, gently hurried!", "The west route is especially uphill today.", "Rain or shine, the post must sparkle."]), stories: Object.freeze(["Pip sorts letters by destination, urgency, and how much hope seems tucked inside.", "His fastest route crosses three gardens and includes a mandatory biscuit stop.", "Pip starts a tiny free post service for letters people are not brave enough to send alone."]) }),
+    Object.freeze({ orderLines: Object.freeze(["Something refined, but not terribly sensible.", "The conservatory requires a flourish.", "Surprise me within impeccable limits."]), stories: Object.freeze(["Lady Bramble secretly trims the palace hedges into animals after sunset.", "Her grandest hat was rescued from a bramble bush and still attracts robins.", "She opens the conservatory for village picnics and insists the muddy footprints improve the marble."]) }),
+    Object.freeze({ orderLines: Object.freeze(["For a perfectly controlled experiment.", "The forge needs one less explosion today.", "I have goggles, tongs, and a theory."]), stories: Object.freeze(["Tink labels every invention, including the kettle and one unusually dependable spoon.", "The small brass bird on the forge roof was his first machine that chose where to fly.", "He stops calling mistakes scrap and builds them into a wind chime for the workshop door."]) }),
+    Object.freeze({ orderLines: Object.freeze(["The seedlings asked very politely.", "My nasturtiums need encouragement.", "A little help for the greenhouse, please."]), stories: Object.freeze(["Fern can identify every garden in the village by the smell of its soil.", "She keeps a stubborn seed in a blue pot and greets it every morning.", "The stubborn seed finally blooms; Fern names the new flower Patience."]) }),
+    Object.freeze({ orderLines: Object.freeze(["Steady hands make kind journeys.", "The road is long, but the weather is fair.", "One bottle for the trail ahead."]), stories: Object.freeze(["Captain Wren maps good resting spots as carefully as distant roads.", "Her compass points toward the place she is most needed, which is rarely north.", "She adds Pocket Potion Works to the map as the village's official safe harbor."]) }),
+    Object.freeze({ orderLines: Object.freeze(["The millstones and I are on the late shift.", "A little shine for a floury night.", "Could you brighten the next sackful?"]), stories: Object.freeze(["Nell knows the mill's nighttime creaks well enough to hum their harmony.", "She grinds a special flour for the moonfair, though it dusts everything silver.", "Nell invites the village to paint the mill sails, then keeps every cheerful handprint."]) }),
+    Object.freeze({ orderLines: Object.freeze(["This hem refuses to see reason.", "I need a brighter stitch of inspiration.", "Something elegant for a tangled afternoon."]), stories: Object.freeze(["Rowan saves every ribbon end because even the shortest piece can mend something.", "He sews tiny silver pockets inside winter coats for lucky stones and secret notes.", "His patchwork festival banner uses a scrap from every household in the village."]) }),
+    Object.freeze({ orderLines: Object.freeze(["This footnote is resisting cataloging.", "The archives require a clearer afternoon.", "I have found a mystery between paragraphs."]), stories: Object.freeze(["Sol can tell who borrowed a book by the crumbs left between its pages.", "A missing catalogue card leads him to a shelf of villagers' unfinished stories.", "He leaves several pages blank so new village tales always have somewhere to belong."]) }),
+    Object.freeze({ orderLines: Object.freeze(["The hives are rehearsing a tiny opera.", "A calmer buzz would be lovely.", "The bees voted for this request."]), stories: Object.freeze(["Bea names each hive after a different kind of weather.", "The bees build one honeycomb shaped exactly like the village clock.", "Bea bottles the season's last honey for a feast where everyone brings something sweet."]) }),
+  ]);
+
+  const RECIPE_LORE = Object.freeze({
+    tonic: "A meadow remedy first brewed for gardeners who forgot to stop for lunch.",
+    clarity: "Its square shimmer is said to put wandering thoughts back on the same path.",
+    moon: "Moonmilk keeps a silver glow borrowed from the quietest hour of night.",
+    bloom: "Cloudbloom Tea carries the fresh scent of rain that has not fallen yet.",
+    sun: "Each bottle holds the golden instant when dawn reaches the village roofs.",
+    heart: "Kindheart Cordial warms most when poured for someone else.",
+    dream: "This draught gathers gentle dreams and leaves troublesome ones at the door.",
+    starlight: "The final philter reflects constellations that only patient alchemists can see.",
+  });
+
   const ACHIEVEMENTS = [
     { id: "firstBrew", icon: "⚗", name: "It Didn't Explode!", description: "Collect your first potion", test: s => s.stats.brewed >= 1 },
     { id: "orderFive", icon: "▤", name: "Village Favorite", description: "Complete 5 customer orders", test: s => s.stats.orders >= 5 },
@@ -108,6 +134,7 @@
       discovery: { brewed: {}, delivered: {} },
       mastery: Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0])),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
+      journal: { readStories: [], readRecipes: [] },
       weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
       customization: { selected: "midnight" },
       boostUntil: 0, starterClaimed: false, tutorialSeen: false,
@@ -123,6 +150,48 @@
     if (typeof order?.customerId === "string" && /^customer-(?:[0-9]|1[01])$/.test(order.customerId)) return order.customerId;
     const index = CUSTOMERS.findIndex(customer => customer[0] === order?.customer);
     return `customer-${Math.max(0, index)}`;
+  }
+  function customerIndexFromId(customerId) {
+    return typeof customerId === "string" && /^customer-(?:[0-9]|1[01])$/.test(customerId) ? Number(customerId.slice(9)) : 0;
+  }
+  function customerOrderLine(customerId, orderId, recipeId, quantity = 1) {
+    const customerIndex = customerIndexFromId(customerId);
+    const recipeIndex = Math.max(0, RECIPES.findIndex(recipe => recipe.id === recipeId));
+    const lines = CUSTOMER_CONTENT[customerIndex].orderLines;
+    return lines[(int(orderId, 1, 1) + recipeIndex + int(quantity, 1, 1, 2) - 2) % lines.length];
+  }
+  function customerStoryStatus(state, customerId, storyIndex) {
+    const customerIndex = customerIndexFromId(customerId);
+    const beat = int(storyIndex, 0, 0, CUSTOMER_CONFIG.maxHearts - 1);
+    const normalizedCustomerId = `customer-${customerIndex}`;
+    const id = `${normalizedCustomerId}:${beat + 1}`;
+    const hearts = int(state?.customers?.[normalizedCustomerId]?.hearts, 0, 0, CUSTOMER_CONFIG.maxHearts);
+    const unlocked = hearts >= beat + 1;
+    return { id, unlocked, read: unlocked && state?.journal?.readStories?.includes(id) === true, requiredHearts: beat + 1, text: CUSTOMER_CONTENT[customerIndex].stories[beat] };
+  }
+  function recipeLoreStatus(state, recipeId) {
+    const recipe = recipeById(recipeId) || RECIPES[0];
+    const unlocked = int(state?.discovery?.brewed?.[recipe.id]) > 0 || int(state?.discovery?.delivered?.[recipe.id]) > 0 || int(state?.mastery?.[recipe.id]) > 0;
+    return { id: recipe.id, unlocked, read: unlocked && state?.journal?.readRecipes?.includes(recipe.id) === true, text: RECIPE_LORE[recipe.id] };
+  }
+  function markJournalRead(state, kind, id) {
+    if (!state?.journal) return false;
+    if (kind === "story") {
+      const match = typeof id === "string" ? /^customer-(?:[0-9]|1[01]):([1-3])$/.exec(id) : null;
+      if (!match) return false;
+      const status = customerStoryStatus(state, id.split(":")[0], Number(match[1]) - 1);
+      if (!status.unlocked) return false;
+      if (!state.journal.readStories.includes(id)) state.journal.readStories.push(id);
+      return true;
+    }
+    if (kind === "recipe") {
+      if (!recipeById(id)) return false;
+      const status = recipeLoreStatus(state, id);
+      if (!status.unlocked) return false;
+      if (!state.journal.readRecipes.includes(id)) state.journal.readRecipes.push(id);
+      return true;
+    }
+    return false;
   }
   function tutorialQuest({ id, step, status, title, detail, view, targetSelector, targetKind = "control", buttonLabel = "Show me" }) {
     return { id, step, status, label: `First steps · ${step} of ${BEGINNER_QUESTS.steps}`, title, detail, view, targetSelector, targetKind, buttonLabel };
@@ -246,6 +315,13 @@
     }
     const sourceMastery = isRecord(input.mastery) ? input.mastery : {};
     state.mastery = Object.fromEntries(RECIPES.map(recipe => [recipe.id, int(sourceMastery[recipe.id], state.discovery.brewed[recipe.id])]));
+    const sourceJournal = isRecord(input.journal) ? input.journal : {};
+    const validStoryIds = new Set(CUSTOMERS.flatMap((_, index) => [1, 2, 3].map(beat => `customer-${index}:${beat}`)));
+    const validRecipeIds = new Set(RECIPES.map(recipe => recipe.id));
+    state.journal = {
+      readStories: [...new Set(Array.isArray(sourceJournal.readStories) ? sourceJournal.readStories.filter(id => validStoryIds.has(id)) : [])],
+      readRecipes: [...new Set(Array.isArray(sourceJournal.readRecipes) ? sourceJournal.readRecipes.filter(id => validRecipeIds.has(id)) : [])],
+    };
     const sourceWeekly = isRecord(input.weekly) ? input.weekly : {};
     let cycle = int(sourceWeekly.cycle, 0, 0, WEEKLY_CHAINS.length);
     let chain = WEEKLY_CHAINS[cycle];
@@ -288,12 +364,15 @@
     if (!recipe || recipe.unlock > state.level) return null;
     const id = int(order.id, 0, 1);
     if (!id) return null;
+    const customerId = customerIdFromOrder(order);
+    const customerIndex = customerIndexFromId(customerId);
+    const quantity = int(order.quantity, 1, 1, 2);
     return {
-      id, customerId: customerIdFromOrder(order), customer: typeof order.customer === "string" ? order.customer.slice(0, 80) : CUSTOMERS[0][0],
+      id, customerId, customer: CUSTOMERS[customerIndex][0],
       avatar: typeof order.avatar === "string" ? order.avatar.slice(0, 8) : CUSTOMERS[0][1],
-      note: typeof order.note === "string" ? order.note.slice(0, 160) : CUSTOMERS[0][2],
+      note: customerOrderLine(customerId, id, recipe.id, quantity),
       avatarColor: typeof order.avatarColor === "string" ? order.avatarColor.slice(0, 30) : CUSTOMERS[0][3],
-      recipeId: recipe.id, quantity: int(order.quantity, 1, 1, 2),
+      recipeId: recipe.id, quantity,
       reward: int(order.reward, recipe.sell, 1), xp: int(order.xp, 12, 1),
     };
   }
@@ -379,8 +458,9 @@
     const quantity = state.level >= 4 && random() > .68 ? 2 : 1;
     const customerIndex = Math.floor(clamp(random(), 0, .999999) * CUSTOMERS.length);
     const customer = CUSTOMERS[customerIndex];
+    const orderId = state.nextOrderId++;
     return {
-      id: state.nextOrderId++, customerId: `customer-${customerIndex}`, customer: customer[0], avatar: customer[1], note: customer[2], avatarColor: customer[3],
+      id: orderId, customerId: `customer-${customerIndex}`, customer: customer[0], avatar: customer[1], note: customerOrderLine(`customer-${customerIndex}`, orderId, recipe.id, quantity), avatarColor: customer[3],
       recipeId: recipe.id, quantity,
       reward: Math.round(recipe.sell * quantity * (1.45 + random() * .25)),
       xp: Math.round(8 + recipe.unlock * 3 + quantity * 3),
@@ -454,6 +534,7 @@
 
   function selectCosmetic(state, cosmeticId) {
     if (!COSMETICS.some(item => item.id === cosmeticId) || !cosmeticUnlocked(state, cosmeticId)) return false;
+    if (state.customization.selected === cosmeticId) return false;
     state.customization.selected = cosmeticId;
     return true;
   }
@@ -505,6 +586,7 @@
     next.stats = { ...state.stats, prestiges: state.stats.prestiges + 1 };
     next.mastery = { ...state.mastery };
     next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
+    next.journal = { readStories: [...state.journal.readStories], readRecipes: [...state.journal.readRecipes] };
     next.weekly = { ...state.weekly };
     next.customization = { ...state.customization };
     next.daily = { ...state.daily };
@@ -593,8 +675,8 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
-    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,

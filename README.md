@@ -30,7 +30,7 @@ The checks cover syntax, deterministic gameplay and economy behavior, scripted m
 ## Current game
 
 - Use Smart mix or target an unlocked ingredient with three charged harvests, then brew timed potions, collect bottles, fulfill customer orders, buy upgrades, and prestige.
-- Six ingredients, eight recipes with durable three-rank mastery, twelve recurring customers with trust favors, five upgrades across three paths, non-streak daily goals, three bounded rolling request chains, and eight achievements.
+- Six ingredients, eight recipes with durable three-rank mastery and discovery lore, twelve recurring customers with trust favors and 36 unlockable story beats, five upgrades across three paths, non-streak daily goals, three bounded rolling request chains, and eight achievements.
 - State-aware First Steps guidance with exact targets and cross-view prompts.
 - Compact remembered Pantry/Recipe sections, inline Workshop delivery, and a contextual brew shortcut reduce tab and scroll movement.
 - Gameplay save schema v3 with v1/v2 migration and downlevel overwrite protection, plus four-hour offline progress that begins after the first delivery and preserves targeted-harvest space.
