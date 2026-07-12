@@ -46,7 +46,7 @@ The optional brew-start timing interaction was not added; mastery supplies the i
 
 Exit gate: players have at least two meaningful goals beyond player level, and prestige offers a credible long-term choice without invalidating daily play.
 
-## Now - offline-friendly retention and identity
+## Completed - offline-friendly retention and identity
 
 - Five compact code-native workshop looks are available: the original, two collection-goal looks, one first-prestige Starglass Keepsake, and one rolling-request ribbon. None changes economy or required progression.
 - Three deterministic request chains progress only on validated deliveries. Progress and claims never expire, local dates are ignored, and total prototype rewards are capped at 105 coins. This claim-when-ready policy avoids both missed-week punishment and false trust in a device clock.
@@ -59,9 +59,21 @@ The second brew slot remains deferred. Current evidence validates one cauldron p
 
 Exit gate: owner playtests whether the rolling-chain cadence and small visual choices feel motivating without turning them into obligations.
 
+## Completed - village stories and order variety
+
+Owner direction is to add more playable content before monetization or broader release work. The next bounded expansion deepens the twelve existing villagers and eight existing potions instead of extending timers, currencies, or the level curve.
+
+- Give every recurring customer three short story beats revealed by their existing trust hearts.
+- Add deterministic variety to each customer's order-request copy while preserving recipe requirements and rewards.
+- Add one compact lore entry for every existing recipe, revealed by existing discovery progress.
+- Present locked, newly available, and read story content clearly in the Journal without streaks, urgency, or required rewards.
+- Derive unlocks from existing trust and discovery state where possible so current saves remain compatible and the economy is unchanged.
+
+Exit gate: the village feels more authored and worth revisiting, while the core loop, level-7 rebirth timing, and economy remain unchanged.
+
 ## Later
 
-- Additional recipes, customers, achievements, stories, prestige goals, or cosmetics only when playtests justify them.
+- Additional recipes, ingredients, customers, achievements, prestige goals, or cosmetics only when playtests justify them.
 - Playtest the implemented effects/music sliders and three-track fades before adding more mix controls or music.
 
 ## Simulated monetization rules

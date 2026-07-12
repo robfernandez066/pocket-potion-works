@@ -3,6 +3,8 @@
     "id": 6,
     "status": "pending",
     "releaseGate": true,
+    "onHold": true,
+    "holdReason": "Implementation shipped; remaining manual public-release evidence is deferred.",
     "title": "Interaction blockers and prototype economy integrity",
     "model": "Use the current efficient coding model with medium-high reasoning",
     "freshChat": true,
@@ -70,6 +72,8 @@
   {
     "id": 10,
     "status": "pending",
+    "onHold": true,
+    "holdReason": "Owner requested more game content before monetization or release-stage work.",
     "title": "Public beta and monetization decision",
     "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
@@ -80,6 +84,23 @@
       "Current screenshots and disclosures match the approved build",
       "Install, update, offline relaunch, and rollback are tested in real target environments",
       "Production integrations and broader publishing remain explicit owner actions"
+    ]
+  },
+  {
+    "id": 11,
+    "status": "complete",
+    "title": "Village stories and order variety",
+    "model": "Use the current efficient coding model with medium reasoning",
+    "freshChat": true,
+    "prompt": "Add a bounded content expansion using the existing recipes, recurring customers, trust hearts, discoveries, and Journal. Give every customer three short trust-unlocked story beats and varied order-request lines that fit their established personality. Add a compact recipe lore entry for each existing potion, revealed through existing discovery progress. Make the Journal clearly show locked, newly available, and read content without adding notification pressure or required rewards. Use deterministic data selection, derive unlocks from existing save state wherever possible, preserve the current economy and level-7 rebirth timing, and keep all content offline and accessible. Do not add currencies, ingredients, recipes, production services, monetization, release work, or a second brew slot in this task.",
+    "acceptance": [
+      "All twelve customers have three distinct story beats unlocked by their existing trust hearts",
+      "Customer order text has meaningful deterministic variety without changing order rewards or requirements",
+      "All eight recipes have concise lore revealed through existing brew or delivery discovery",
+      "The Journal makes story and recipe unlock conditions understandable and remains readable at both target phone sizes",
+      "New content does not change economy, prestige timing, timers, inventory, or required progression",
+      "Existing saves remain compatible and malformed content-related state cannot crash the game",
+      "npm.cmd run check passes and 390x844 plus 360x740 browser QA has no overflow or console errors"
     ]
   }
 ]

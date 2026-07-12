@@ -5,7 +5,7 @@ const UI_PREFS_KEY = "pocket-potion-works-ui-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
-const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
+const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
 const platformStore = new Platform.PlatformStateStore(localStorage);
 const consent = new Platform.ConsentManager(platformStore);
 const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
@@ -503,6 +503,26 @@ function renderJournal() {
     ["Lifetime coins", state.stats.coinsEarned], ["Harvest taps", state.stats.taps],
   ];
   document.querySelector("#statsGrid").innerHTML = stats.map(([label, value]) => `<div class="stat-card"><span>${label}</span><strong>${formatNumber(value)}</strong></div>`).join("");
+  document.querySelector("#villageStoryList").innerHTML = CUSTOMERS.map((customer, customerIndex) => {
+    const customerId = `customer-${customerIndex}`;
+    const hearts = state.customers[customerId]?.hearts || 0;
+    const statuses = [0, 1, 2].map(storyIndex => Logic.customerStoryStatus(state, customerId, storyIndex));
+    const unlockedCount = statuses.filter(status => status.unlocked).length;
+    const newCount = statuses.filter(status => status.unlocked && !status.read).length;
+    const beats = statuses.map((status, storyIndex) => {
+      if (!status.unlocked) return `<div class="journal-entry is-locked"><div><strong>Story ${storyIndex + 1}</strong><small>Unlocks at ${status.requiredHearts} trust heart${status.requiredHearts === 1 ? "" : "s"}</small></div><span>Locked</span></div>`;
+      if (!status.read) return `<button class="journal-entry is-new" data-journal-story="${status.id}"><div><strong>Story ${storyIndex + 1} is ready</strong><small>Unlocked by ${status.requiredHearts} trust heart${status.requiredHearts === 1 ? "" : "s"}</small></div><span>New · Read</span></button>`;
+      return `<div class="journal-entry is-read"><div><strong>Story ${storyIndex + 1}</strong><small>${status.text}</small></div><span>Read</span></div>`;
+    }).join("");
+    const progress = `${unlockedCount}/${CUSTOMER_CONFIG.maxHearts} stories${newCount ? ` · ${newCount} new` : ""}`;
+    return `<details class="villager-journal-card" data-journal-customer="${customerId}"><summary><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
+  }).join("");
+  document.querySelector("#recipeLoreList").innerHTML = RECIPES.map(recipe => {
+    const status = Logic.recipeLoreStatus(state, recipe.id);
+    if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
+    if (!status.read) return `<button class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>New bottle note available</small></div><b>New · Read</b></button>`;
+    return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
+  }).join("");
   document.querySelector("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
     const earned = Boolean(state.achievements[achievement.id]);
     return `<article class="achievement-card ${earned ? "" : "is-locked"}"><span class="achievement-icon">${earned ? achievement.icon : "?"}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">${earned ? "Earned" : "Locked"}</span></article>`;
@@ -518,7 +538,18 @@ function renderJournal() {
     const selected = state.customization.selected === cosmetic.id;
     return `<button class="cosmetic-button" data-cosmetic="${cosmetic.id}" aria-pressed="${selected}" ${unlocked ? "" : "disabled"}><div><strong>${cosmetic.name}</strong><small>${cosmetic.description}</small></div><span>${selected ? "In use" : unlocked ? "Use" : "Locked"}</span></button>`;
   }).join("");
-  document.querySelectorAll("[data-cosmetic]").forEach(button => button.addEventListener("click", () => selectCosmetic(button.dataset.cosmetic)));
+  document.querySelectorAll("#cosmeticList button[data-cosmetic]").forEach(button => button.addEventListener("click", () => selectCosmetic(button.dataset.cosmetic)));
+  document.querySelectorAll("[data-journal-story]").forEach(button => button.addEventListener("click", () => readJournalEntry("story", button.dataset.journalStory)));
+  document.querySelectorAll("[data-journal-recipe]").forEach(button => button.addEventListener("click", () => readJournalEntry("recipe", button.dataset.journalRecipe)));
+}
+
+function readJournalEntry(kind, id) {
+  if (!Logic.markJournalRead(state, kind, id)) return;
+  const customerId = kind === "story" ? id.split(":")[0] : null;
+  sound.play("tap");
+  renderJournal();
+  if (customerId) document.querySelector(`[data-journal-customer="${customerId}"]`)?.setAttribute("open", "");
+  scheduleSave();
 }
 
 function selectCosmetic(cosmeticId) {
@@ -708,10 +739,13 @@ function closeModal() {
 }
 
 function toast(message, tone = "info") {
+  const region = document.querySelector("#toastRegion");
+  const duplicate = [...region.querySelectorAll(".toast:not(.is-leaving)")].find(item => item.textContent === message);
+  if (duplicate) return;
   const node = document.createElement("div");
   node.className = `toast toast-${tone}`;
   node.textContent = message;
-  document.querySelector("#toastRegion").appendChild(node);
+  region.appendChild(node);
   setTimeout(() => node.classList.add("is-leaving"), 2600);
   setTimeout(() => node.remove(), 2900);
 }

@@ -10,9 +10,10 @@ if (check.status !== 0) {
 }
 
 const tasks = JSON.parse(fs.readFileSync("coder-tasks.json", "utf8"));
-const task = tasks.find(item => item.status === "next") || tasks.find(item => item.status === "pending");
+const task = tasks.find(item => item.status === "next" && item.onHold !== true) || tasks.find(item => item.status === "pending" && item.onHold !== true);
 if (!task) {
-  console.log("\nAll coder roadmap tasks are marked complete.");
+  const held = tasks.filter(item => item.onHold === true && item.status !== "complete");
+  console.log(held.length ? `\nNo coder task is currently queued. ${held.length} pending task${held.length === 1 ? " is" : "s are"} explicitly on hold.` : "\nAll coder roadmap tasks are marked complete.");
   process.exit(0);
 }
 

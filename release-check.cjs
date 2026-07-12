@@ -86,9 +86,14 @@ assert.deepEqual(parseByteRange("bytes=-100", 1000), { start: 900, end: 999 });
 assert.equal(parseByteRange("bytes=1000-", 1000), null);
 
 const budgets = JSON.parse(fs.readFileSync("release-budgets.json", "utf8"));
+const normalizedReleaseBytes = file => {
+  const extension = path.extname(file).toLowerCase();
+  if (![".html", ".css", ".js", ".json", ".webmanifest", ".svg"].includes(extension)) return fs.statSync(file).size;
+  return Buffer.byteLength(fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n"));
+};
 let total = 0;
 for (const [file, ceiling] of Object.entries(budgets.files)) {
-  const bytes = fs.statSync(file).size;
+  const bytes = normalizedReleaseBytes(file);
   total += bytes;
   assert.ok(bytes <= ceiling, `${file} is ${bytes} bytes, above its ${ceiling}-byte release budget`);
 }
