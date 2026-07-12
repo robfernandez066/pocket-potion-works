@@ -53,7 +53,7 @@
   },
   {
     "id": 9,
-    "status": "next",
+    "status": "complete",
     "title": "Offline-friendly retention and customization",
     "model": "Use the current efficient coding model with medium reasoning",
     "freshChat": true,

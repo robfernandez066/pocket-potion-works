@@ -20,6 +20,6 @@ No final public or store screenshots are approved. All new captures must show th
 
 ## Capture gate
 
-Capture only after the owner approves the current visuals and audio and the active browser evidence passes. Use a synthetic local save with no personal data. Confirm exact viewport, no overflow, readable dark-theme contrast, no console errors, correct safe areas, no focus/debug artifacts, and no account names, paths, notifications, or other applications.
+Capture only after the owner approves the current visuals and audio and the active browser evidence passes. Use a synthetic local save with no personal data. Confirm exact viewport, no overflow, readable dark-theme contrast, no console errors, correct safe areas, no focus/debug artifacts, and no account names, paths, notifications, or other applications. Critical screenshot chrome (brand, settings, market, resources, and bottom navigation) must remain on the audited inline-SVG/CSS geometry path; do not replace it with platform-font glyphs.
 
 Record commit/tag, package version, cache version, viewport/device scale, browser/OS, scene state, and date. Keep sound muted during capture. Owner/design must approve every selected image before upload.

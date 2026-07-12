@@ -30,11 +30,12 @@ The checks cover syntax, deterministic gameplay and economy behavior, scripted m
 ## Current game
 
 - Use Smart mix or target an unlocked ingredient with three charged harvests, then brew timed potions, collect bottles, fulfill customer orders, buy upgrades, and prestige.
-- Six ingredients, eight recipes with durable three-rank mastery, twelve recurring customers with trust favors, five upgrades across three paths, daily goals, and eight achievements.
+- Six ingredients, eight recipes with durable three-rank mastery, twelve recurring customers with trust favors, five upgrades across three paths, non-streak daily goals, three bounded rolling request chains, and eight achievements.
 - State-aware First Steps guidance with exact targets and cross-view prompts.
 - Compact remembered Pantry/Recipe sections, inline Workshop delivery, and a contextual brew shortcut reduce tab and scroll movement.
-- Gameplay save schema v2 with v1 migration and downlevel overwrite protection, plus four-hour offline progress that begins after the first delivery and preserves targeted-harvest space.
+- Gameplay save schema v3 with v1/v2 migration and downlevel overwrite protection, plus four-hour offline progress that begins after the first delivery and preserves targeted-harvest space.
 - Level-7 starry rebirth grants at least 3 stardust while preserving mastery, customer trust, achievements, and the current daily boundary.
+- Five code-native workshop looks are earned through collection goals, the first prestige keepsake, and one rolling request chain. They never alter economy or progression.
 - Charcoal-black and purple mobile interface with safe areas, reduced motion, keyboard support, and 44px touch targets.
 - Local sound effects plus a three-track Pixabay-licensed background playlist credited to Trycja via Pixabay. Sound starts On; effects and music each default to 50% and persist independently.
 - Coin rewards use capped sound tiers rather than one sound per coin.

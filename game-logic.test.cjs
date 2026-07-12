@@ -134,6 +134,92 @@ test("prestige opens with the final recipe and preserves durable goals plus the 
   assert.equal(next.level, 1); assert.equal(next.stardust, 5);
   assert.equal(next.mastery.tonic, 8); assert.deepEqual(next.customers["customer-0"], { deliveries: 4, hearts: 1 });
   assert.deepEqual(next.daily, state.daily); assert.equal(game.claimDaily(next), false, "rebirth cannot reclaim today's reward");
+  assert.equal(next.stats.prestiges, 1); assert.equal(game.cosmeticUnlocked(next, "starglass"), true);
+  assert.deepEqual(next.weekly, state.weekly); assert.deepEqual(next.customization, state.customization);
+});
+
+test("daily reset uses a monotonic saved date across alternating clock changes", () => {
+  const state = game.defaultState(NOW);
+  state.daily.orders = 5;
+  assert.equal(game.claimDaily(state), true);
+  const firstDate = state.daily.date;
+  game.resetDailyIfNeeded(state, NOW - 86400000);
+  assert.deepEqual(state.daily, { date: firstDate, orders: 5, claimed: true }, "clock rollback cannot reopen the saved date");
+
+  game.resetDailyIfNeeded(state, NOW + 86400000);
+  const laterDate = game.todayKey(NOW + 86400000);
+  assert.deepEqual(state.daily, { date: laterDate, orders: 0, claimed: false }, "a genuinely later local date opens one fresh goal");
+  state.daily.orders = 5;
+  assert.equal(game.claimDaily(state), true);
+  game.resetDailyIfNeeded(state, NOW - 86400000);
+  game.resetDailyIfNeeded(state, NOW + 86400000);
+  assert.deepEqual(state.daily, { date: laterDate, orders: 5, claimed: true }, "alternating backward and forward to the saved high-water date cannot reissue rewards");
+  assert.equal(state.coins, 130);
+  assert.equal(state.stardust, 2);
+});
+
+test("rolling weekly chains ignore calendar time, never expire progress, and cap rewards", () => {
+  const state = game.defaultState(NOW);
+  const deliverAt = now => {
+    state.orders = [{ id: state.nextOrderId++, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+    state.potions.tonic = 1;
+    assert.ok(game.fulfillOrder(state, state.orders[0].id, now, () => 0));
+  };
+  deliverAt(NOW + 365 * 86400000);
+  deliverAt(NOW - 365 * 86400000);
+  assert.equal(game.weeklyChainStatus(state).progress, 2, "forward and rollback clocks only record validated deliveries");
+  assert.equal(game.weeklyChainStatus(state).ready, true);
+  const before = state.coins;
+  assert.deepEqual(game.claimWeeklyStep(state), { reward: 10, chainCompleted: false, cycle: 0 });
+  assert.equal(state.coins, before + 10);
+  assert.equal(game.claimWeeklyStep(state), null, "a parcel cannot be claimed twice");
+
+  while (!game.weeklyChainStatus(state).complete) {
+    const status = game.weeklyChainStatus(state);
+    while (!game.weeklyChainStatus(state).ready) deliverAt(NOW);
+    game.claimWeeklyStep(state);
+    assert.ok(state.weekly.cycle > status.cycle || state.weekly.claimedSteps > status.claimedSteps);
+  }
+  assert.equal(state.weekly.cycle, game.WEEKLY_CHAINS.length);
+  assert.equal(game.recordWeeklyDelivery(state), false);
+  assert.equal(game.claimWeeklyStep(state), null);
+});
+
+test("malformed fully claimed weekly state advances to a reachable next chain", () => {
+  const state = game.defaultState(NOW);
+  state.weekly = { cycle: 0, progress: 6, claimedSteps: 3 };
+  const normalized = game.normalizeState(state, NOW);
+  assert.deepEqual(normalized.weekly, { cycle: 1, progress: 0, claimedSteps: 0 });
+  game.recordWeeklyDelivery(normalized);
+  game.recordWeeklyDelivery(normalized);
+  assert.equal(game.weeklyChainStatus(normalized).ready, true);
+  assert.deepEqual(game.claimWeeklyStep(normalized), { reward: 10, chainCompleted: false, cycle: 1 });
+});
+
+test("collection cosmetics are few, durable, and have no economy effects", () => {
+  const state = game.defaultState(NOW);
+  const baseline = { order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) };
+  state.stats.brewed = 10;
+  assert.equal(game.cosmeticUnlocked(state, "fern"), true);
+  assert.equal(game.selectCosmetic(state, "fern"), true);
+  assert.equal(game.selectCosmetic(state, "mooncloth"), false);
+  assert.deepEqual({ order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) }, baseline);
+  Object.keys(state.mastery).forEach(id => { state.mastery[id] = 1; });
+  state.stats.prestiges = 1;
+  state.weekly.cycle = 1;
+  const visualStates = {};
+  for (const cosmetic of game.COSMETICS) {
+    assert.equal(game.selectCosmetic(state, cosmetic.id), true);
+    visualStates[cosmetic.id] = game.workshopDecorationState(state);
+  }
+  assert.deepEqual(visualStates.midnight, { selected: "midnight", keepsake: false, ribbon: false });
+  assert.deepEqual(visualStates.starglass, { selected: "starglass", keepsake: true, ribbon: false });
+  assert.deepEqual(visualStates.guild, { selected: "guild", keepsake: false, ribbon: true });
+  assert.equal(new Set(Object.values(visualStates).map(visual => JSON.stringify(visual))).size, game.COSMETICS.length, "each advertised selection yields a distinct reversible visual state");
+  game.selectCosmetic(state, "midnight");
+  const reloaded = game.normalizeState(state, NOW);
+  assert.equal(reloaded.customization.selected, "midnight");
+  assert.ok(game.COSMETICS.length <= 5);
 });
 
 test("upgrade previews expose exact current and next effects across three paths", () => {

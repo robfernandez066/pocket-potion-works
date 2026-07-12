@@ -20,18 +20,18 @@
 
     <div class="game-shell">
       <header class="topbar">
-        <button class="icon-button" id="settingsButton" aria-label="Open settings">⚙</button>
+        <button class="icon-button" id="settingsButton" aria-label="Open settings"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19 13.5v-3l-2.2-.7-.6-1.4 1.1-2.1-2.1-2.1-2.1 1.1-1.4-.6L10.5 2h-3l-.7 2.2-1.4.6-2.1-1.1-2.1 2.1 1.1 2.1-.6 1.4L0 10.5v3l2.2.7.6 1.4-1.1 2.1 2.1 2.1 2.1-1.1 1.4.6.7 2.2h3l.7-2.2 1.4-.6 2.1 1.1 2.1-2.1-1.1-2.1.6-1.4 2.2-.7Z" transform="translate(2 -0.1) scale(.83)"/></svg></button>
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true">⚗</span>
+          <span class="brand-mark" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 2h6M10 2v6l-5 9a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 17l-5-9V2M7.5 15h9"/></svg></span>
           <div><small>POCKET</small><strong>Potion Works</strong></div>
         </div>
-        <button class="icon-button" id="marketButton" aria-label="Open Moonlight Market">✦</button>
+        <button class="icon-button" id="marketButton" aria-label="Open Moonlight Market"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7L12 2Z"/><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/></svg></button>
       </header>
 
       <section class="resource-bar" aria-label="Your resources">
-        <div class="resource resource-coins" id="coinResource"><span>●</span><strong id="coinCount">0</strong><small id="coinStatus">coins</small></div>
-        <div class="resource"><span>✧</span><strong id="xpCount">0/50</strong><small>level <b id="levelCount">1</b></small></div>
-        <div class="resource"><span>★</span><strong id="stardustCount">0</strong><small>stardust</small></div>
+        <div class="resource resource-coins" id="coinResource"><span class="shape-icon shape-coin" aria-hidden="true"></span><strong id="coinCount">0</strong><small id="coinStatus">coins</small></div>
+        <div class="resource"><span class="shape-icon shape-diamond" aria-hidden="true"></span><strong id="xpCount">0/50</strong><small>level <b id="levelCount">1</b></small></div>
+        <div class="resource"><span class="shape-icon shape-star" aria-hidden="true"></span><strong id="stardustCount">0</strong><small>stardust</small></div>
       </section>
 
       <aside class="tutorial-banner" id="tutorialBanner" role="status" aria-live="polite" hidden>
@@ -58,6 +58,8 @@
               <span class="shelf shelf-two" aria-hidden="true"><i></i><i></i></span>
               <div class="cauldron" aria-hidden="true"><span class="bubble b1"></span><span class="bubble b2"></span><span class="bubble b3"></span><div class="brew-liquid"></div></div>
               <div class="cat" aria-hidden="true">◕‿◕</div>
+              <span class="prestige-keepsake" aria-hidden="true"></span>
+              <span class="guild-ribbon" aria-hidden="true"></span>
               <div class="scene-copy"><span id="workshopStatus">The kettle is warm</span><small id="incomeRate">Gathering 1.0 ingredient/sec</small></div>
             </div>
             <button class="gather-button" id="gatherButton"><span>☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>
@@ -87,6 +89,12 @@
             <div class="daily-reward"><span>Reward</span><strong>50 coins + 1 stardust</strong></div>
             <button class="daily-claim-button" id="claimDailyButton" hidden>Claim daily reward</button>
           </div>
+          <article class="weekly-card" id="weeklyCard">
+            <div><p class="eyebrow">ROLLING REQUEST CHAIN</p><h2 id="weeklyTitle">Neighborly Notes</h2><p id="weeklyPolicy">Complete 3 parcels at your pace to unlock the Guild Ribbon look. Nothing expires.</p></div>
+            <div class="weekly-track"><span id="weeklyBar"></span></div>
+            <div class="weekly-status"><span id="weeklyProgress">0 of 2 deliveries</span><strong id="weeklyReward">Parcel 1: 10 coins</strong></div>
+            <button class="primary-button" id="claimWeeklyButton" hidden>Claim request parcel</button>
+          </article>
           <div class="order-list" id="orderList"></div>
           <button class="secondary-button" id="refreshOrdersButton">↻ Refresh top order · 15 coins</button>
         </section>
@@ -106,6 +114,10 @@
         <section class="view" id="journalView" data-view="journal" hidden>
           <div class="page-heading"><p class="eyebrow">ALCHEMIST'S JOURNAL</p><h1>Your curious <em>collection</em></h1><p>Every bottle tells the story of a slightly messy experiment.</p></div>
           <div class="stats-grid" id="statsGrid"></div>
+          <div class="section-heading"><div><p class="eyebrow">COLLECTION GOALS</p><h2>Cozy curiosities</h2></div></div>
+          <div class="collection-list" id="collectionList"></div>
+          <div class="section-heading"><div><p class="eyebrow">WORKSHOP LOOK</p><h2>Code-made decorations</h2></div></div>
+          <div class="cosmetic-list" id="cosmeticList"></div>
           <div class="section-heading"><div><p class="eyebrow">ACHIEVEMENTS</p><h2>Milestones</h2></div></div>
           <div class="achievement-list" id="achievementList"></div>
           <button class="danger-text-button" id="resetSaveButton">Reset game data</button>
@@ -113,10 +125,10 @@
       </main>
 
       <nav class="bottom-nav" aria-label="Game sections">
-        <button class="nav-button is-active" data-nav="workshop" aria-current="page"><span>⚗</span><small>Workshop</small></button>
-        <button class="nav-button" data-nav="orders"><span>▤</span><small>Orders</small><b class="notification-dot" id="orderDot"></b></button>
-        <button class="nav-button" data-nav="upgrades"><span>⌂</span><small>Upgrades</small></button>
-        <button class="nav-button" data-nav="journal"><span>♧</span><small>Journal</small></button>
+        <button class="nav-button is-active" data-nav="workshop" aria-current="page"><span class="nav-shape nav-flask" aria-hidden="true"></span><small>Workshop</small></button>
+        <button class="nav-button" data-nav="orders"><span class="nav-shape nav-list" aria-hidden="true"></span><small>Orders</small><b class="notification-dot" id="orderDot"></b></button>
+        <button class="nav-button" data-nav="upgrades"><span class="nav-shape nav-home" aria-hidden="true"></span><small>Upgrades</small></button>
+        <button class="nav-button" data-nav="journal"><span class="nav-shape nav-book" aria-hidden="true"></span><small>Journal</small></button>
       </nav>
       <button class="brew-shortcut" id="brewShortcut" hidden>Return to cauldron</button>
     </div>
