@@ -7,7 +7,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
   const SAVE_VERSION = 1;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
-  const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 3, amountPerCharge: 2 });
+  const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 30, amountPerCharge: 3 });
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
 
   const INGREDIENTS = {
@@ -84,7 +84,7 @@
       upgrades: Object.fromEntries(UPGRADES.map(upgrade => [upgrade.id, 0])),
       brew: null, orders: [], nextOrderId: 1,
       daily: { date: todayKey(now), orders: 0, claimed: false },
-      gather: { charges: GATHER_CONFIG.maxCharges, lastRechargeAt: now },
+      gather: { charges: GATHER_CONFIG.maxCharges, lastRechargeAt: now, targetId: null },
       discovery: { brewed: {}, delivered: {} },
       boostUntil: 0, starterClaimed: false, tutorialSeen: false,
       achievements: {},
@@ -108,7 +108,7 @@
     }
     if (state.potions[recipeId] > 0) {
       const order = state.orders.find(item => item.recipeId === recipeId && state.potions[recipeId] >= item.quantity);
-      if (order) return tutorialQuest({ id: `${purpose}-deliver`, step: purpose === "clarity" ? 7 : step, status: "needs-delivery", title: `Deliver ${recipe.name}`, detail: "The matching order is ready. Use its Deliver button.", view: "orders", targetSelector: `[data-order="${order.id}"]`, buttonLabel: "Show Deliver" });
+      if (order) return tutorialQuest({ id: `${purpose}-deliver`, step: purpose === "clarity" ? 7 : step, status: "needs-delivery", title: `Deliver ${recipe.name}`, detail: "The matching order is ready in your Workshop. Deliver it without changing tabs.", view: "workshop", targetSelector: `[data-quick-deliver="${order.id}"]`, buttonLabel: "Show Deliver" });
     }
     if (canAffordRecipe(state, recipe)) return tutorialQuest({ id: `${purpose}-start`, step, status: "available-to-start", title: `Brew ${recipe.name}`, detail: "Every required ingredient is ready. Use this recipe's Brew button.", view: "workshop", targetSelector: `[data-brew="${recipeId}"]`, buttonLabel: "Show Brew" });
     const missing = Object.entries(recipe.ingredients).filter(([id, count]) => state.ingredients[id] < count).map(([id, count]) => `${count - state.ingredients[id]} ${INGREDIENTS[id].name}`).join(" and ");
@@ -130,7 +130,10 @@
       return { ...earnCoins, blockedBy: "insufficient-coins", detail: `Need ${Math.max(0, cheapest - state.coins)} more coins for an upgrade. ${earnCoins.detail}` };
     }
     if (state.level < 2) return recipeTutorialState(state, "tonic", 4, "reach-level-two", now);
-    if (state.ingredients.crystal < 1 && !state.brew && !state.potions.clarity) return tutorialQuest({ id: "gather-starshard", step: 5, status: "gather-new-ingredient", title: "Gather your first Starshard", detail: "Starshard just unlocked. Use a charged harvest, then watch its pantry card.", view: "workshop", targetSelector: "#gatherButton", targetKind: "gather-and-pantry", buttonLabel: "Show Gather" });
+    if (state.ingredients.crystal < 1 && !state.brew && !state.potions.clarity) {
+      if (state.gather.targetId !== "crystal") return tutorialQuest({ id: "focus-starshard", step: 5, status: "choose-gather-target", title: "Focus on Starshard", detail: "Open the Pantry and choose Starshard so your next charged harvest finds exactly what you need.", view: "workshop", targetSelector: '[data-gather-target="crystal"]', buttonLabel: "Show Starshard" });
+      return tutorialQuest({ id: "gather-starshard", step: 5, status: "gather-new-ingredient", title: "Gather your first Starshard", detail: "Starshard is selected. Use one charged harvest.", view: "workshop", targetSelector: "#gatherButton", targetKind: "gather-and-pantry", buttonLabel: "Show Gather" });
+    }
     return recipeTutorialState(state, "clarity", 6, "clarity", now);
   }
 
@@ -183,6 +186,7 @@
     state.gather = {
       charges: int(sourceGather.charges, GATHER_CONFIG.maxCharges, 0, GATHER_CONFIG.maxCharges),
       lastRechargeAt: clamp(finite(sourceGather.lastRechargeAt, now), 0, now),
+      targetId: typeof sourceGather.targetId === "string" && INGREDIENTS[sourceGather.targetId]?.unlock <= state.level ? sourceGather.targetId : null,
     };
     const sourceDiscovery = isRecord(input.discovery) ? input.discovery : {};
     state.discovery = {
@@ -412,10 +416,30 @@
     }
     state.gather.charges -= 1;
     if (state.gather.charges === GATHER_CONFIG.maxCharges - 1) state.gather.lastRechargeAt = now;
-    return { added: addRandomIngredients(state, manualGatherAmount(state), random), charges: state.gather.charges, waitMs: GATHER_CONFIG.rechargeSeconds * 1000 };
+    const targetId = state.gather.targetId;
+    const amount = manualGatherAmount(state);
+    let added = 0;
+    if (targetId && INGREDIENTS[targetId]?.unlock <= state.level) {
+      added = Math.min(amount, Math.max(0, storageCap(state) - totalIngredients(state)));
+      state.ingredients[targetId] += added;
+    } else added = addRandomIngredients(state, amount, random);
+    return { added, targetId: targetId || null, charges: state.gather.charges, waitMs: GATHER_CONFIG.rechargeSeconds * 1000 };
+  }
+
+  function setGatherTarget(state, targetId) {
+    if (targetId !== null && (!INGREDIENTS[targetId] || INGREDIENTS[targetId].unlock > state.level)) return false;
+    state.gather.targetId = targetId;
+    return true;
   }
 
   function offlineElapsedSeconds(state, now = Date.now()) { return clamp((now - finite(state.lastSeen, now)) / 1000, 0, OFFLINE_CAP_SECONDS); }
+  function grantOfflineIngredients(state, elapsedSeconds, random = Math.random) {
+    if (state.stats.orders < 1) return 0;
+    const softCap = Math.floor(storageCap(state) * .75);
+    const availableSpace = Math.max(0, softCap - totalIngredients(state));
+    const requested = Math.min(availableSpace, Math.floor(clamp(finite(elapsedSeconds), 0, OFFLINE_CAP_SECONDS) * gatherRate(state) * .65));
+    return addRandomIngredients(state, requested, random);
+  }
   function activeElapsedSeconds(lastTickAt, now = Date.now(), hidden = false) {
     return hidden ? 0 : clamp((now - finite(lastTickAt, now)) / 1000, 0, 5);
   }
@@ -426,6 +450,6 @@
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
-    resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, offlineElapsedSeconds, activeElapsedSeconds,
+    resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, setGatherTarget, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

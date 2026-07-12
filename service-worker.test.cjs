@@ -33,17 +33,17 @@ const self = {
   addEventListener: (name, listener) => { listeners[name] = listener; },
 };
 let network = async request => response(`network:${request.url}`);
-vm.runInNewContext(fs.readFileSync("service-worker.js", "utf8"), { self, caches: cacheApi, URL, fetch: request => network(request), Promise });
+vm.runInNewContext(fs.readFileSync("service-worker.js", "utf8"), { self, caches: cacheApi, URL, Response, fetch: request => network(request), Promise });
 
 function lifecycleEvent() {
   let completion;
   return { waitUntil(value) { completion = Promise.resolve(value); }, done: () => completion };
 }
-function fetchEvent(url) {
+function fetchEvent(url, mode = "same-origin") {
   let result;
   const waits = [];
   return {
-    request: { method: "GET", url },
+    request: { method: "GET", url, mode, headers: { has: () => false } },
     respondWith(value) { result = Promise.resolve(value); },
     waitUntil(value) { waits.push(Promise.resolve(value)); },
     result: () => result,
@@ -70,8 +70,11 @@ function fetchEvent(url) {
   const cachedRequest = fetchEvent("https://local.test/style.css");
   listeners.fetch(cachedRequest);
   assert.equal((await cachedRequest.result()).body, "cached:./style.css");
-  const navigation = fetchEvent("https://local.test/unseen-route");
+  const navigation = fetchEvent("https://local.test/unseen-route", "navigate");
   listeners.fetch(navigation);
   assert.equal((await navigation.result()).body, "cached:./index.html", "uncached same-origin navigation must fall back to the offline shell");
-  console.log("Service worker install, cache rotation, cached response, and offline shell fallback tests passed.");
+  const missingMusic = fetchEvent("https://local.test/assets/audio/music1.mp3", "audio");
+  listeners.fetch(missingMusic);
+  assert.equal((await missingMusic.result()).status, 503, "offline media must fail as media instead of receiving the HTML shell");
+  console.log("Service worker install, cache rotation, cached response, navigation fallback, and offline-media failure tests passed.");
 })().catch(error => { console.error(error); process.exitCode = 1; });

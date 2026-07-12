@@ -25,7 +25,7 @@ test("historical pre-release v1 fixture preserves durable progress, brew, and or
   assert.equal(result.state.nextOrderId, 9);
   assert.equal(result.state.ingredients.mist, 0);
   assert.equal(result.state.ingredients.lavender, 0);
-  assert.deepEqual(result.state.gather, { charges: game.GATHER_CONFIG.maxCharges, lastRechargeAt: NOW });
+  assert.deepEqual(result.state.gather, { charges: game.GATHER_CONFIG.maxCharges, lastRechargeAt: NOW, targetId: null });
   assert.equal(result.state.discovery.brewed.tonic, 1);
   assert.equal(result.state.discovery.delivered.tonic, 1);
   assert.equal(result.state.discovery.brewed.clarity, 1);

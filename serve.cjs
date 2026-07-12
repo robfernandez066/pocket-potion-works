@@ -24,7 +24,19 @@ const mime = {
   ".webp": "image/webp",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
+  ".mp3": "audio/mpeg",
+  ".ogg": "audio/ogg",
 };
+
+function parseByteRange(header, size) {
+  const match = typeof header === "string" ? header.match(/^bytes=(\d*)-(\d*)$/) : null;
+  if (!match || (!match[1] && !match[2]) || !Number.isFinite(size) || size < 1) return null;
+  let start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+  let end = match[2] && match[1] ? Number(match[2]) : size - 1;
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start >= size || end < start) return null;
+  end = Math.min(end, size - 1);
+  return { start, end };
+}
 
 function resolveRequestPath(rawUrl, rootDirectory = root) {
   let pathname;
@@ -56,9 +68,21 @@ function createServer(rootDirectory = root) {
       }
       const headers = {
         "Content-Type": mime[path.extname(filePath).toLowerCase()] || "application/octet-stream",
+        "Accept-Ranges": "bytes",
         ...securityHeaders,
       };
-      response.writeHead(200, headers);
+      const requestedRange = request.headers.range;
+      const range = requestedRange ? parseByteRange(requestedRange, stats.size) : null;
+      if (requestedRange && !range) {
+        response.writeHead(416, { ...headers, "Content-Range": `bytes */${stats.size}` });
+        return response.end();
+      }
+      if (range) {
+        response.writeHead(206, { ...headers, "Content-Range": `bytes ${range.start}-${range.end}/${stats.size}`, "Content-Length": range.end - range.start + 1 });
+        if (request.method === "HEAD") return response.end();
+        return fs.createReadStream(filePath, range).pipe(response);
+      }
+      response.writeHead(200, { ...headers, "Content-Length": stats.size });
       if (request.method === "HEAD") return response.end();
       fs.createReadStream(filePath).pipe(response);
     });
@@ -71,4 +95,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createServer, resolveRequestPath, securityHeaders };
+module.exports = { createServer, resolveRequestPath, securityHeaders, mime, parseByteRange };

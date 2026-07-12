@@ -63,14 +63,20 @@
             <button class="gather-button" id="gatherButton"><span>☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>
           </article>
 
-          <div class="section-heading"><div><p class="eyebrow">PANTRY</p><h2>Fresh ingredients</h2></div><span id="pantryTotal">0 items</span></div>
-          <div class="ingredient-grid" id="ingredientGrid"></div>
+          <section class="ready-deliver-strip" id="readyDeliverStrip" aria-label="Orders ready to deliver" hidden></section>
+
+          <div class="section-heading"><div><p class="eyebrow">PANTRY</p><h2>Fresh ingredients</h2></div><button class="disclosure-toggle" id="pantryDisclosure" aria-label="Toggle Pantry" aria-expanded="false" aria-controls="pantryContent"><span><b id="pantryTotal">0 items</b> <i aria-hidden="true">⌄</i></span></button></div>
+          <div id="pantryContent" hidden>
+            <div class="gather-focus"><span>Harvest focus</span><button id="smartGatherTarget" aria-pressed="true">Smart mix</button></div>
+            <div class="ingredient-grid" id="ingredientGrid"></div>
+          </div>
 
           <div class="section-heading"><div><p class="eyebrow">CAULDRON</p><h2>Brew a potion</h2></div><span id="brewQueueLabel">Ready</span></div>
           <div class="sr-only" id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="brew-slot" id="brewSlot"></div>
           <div class="potion-shelf" id="potionShelf" aria-label="Bottled potions and requested recipes"></div>
-          <div class="recipe-list" id="recipeList"></div>
+          <button class="compact-disclosure disclosure-toggle" id="recipeDisclosure" aria-expanded="false" aria-controls="recipeContent"><span><b>Recipe book</b><small id="recipeSummary">Choose what to brew</small></span><i aria-hidden="true">⌄</i></button>
+          <div id="recipeContent" hidden><div class="recipe-list" id="recipeList"></div></div>
         </section>
 
         <section class="view" id="ordersView" data-view="orders" hidden>
@@ -112,6 +118,7 @@
         <button class="nav-button" data-nav="upgrades"><span>⌂</span><small>Upgrades</small></button>
         <button class="nav-button" data-nav="journal"><span>♧</span><small>Journal</small></button>
       </nav>
+      <button class="brew-shortcut" id="brewShortcut" hidden>Return to cauldron</button>
     </div>
 
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>

@@ -13,11 +13,11 @@ Audit date: 2026-07-12. Candidate version: `0.1.0`. This is an evidence report, 
 
 ## Current automated evidence
 
-- `npm.cmd run check` covers deterministic gameplay, economy and scripted monetization simulations, save compatibility, fake-platform boundaries, audio mappings and tiers, service-worker behavior, security checks, and release budgets. Monetization magnitudes are exact for the checked-in scripted profile but directional for human play.
+- `npm.cmd run check` covers deterministic gameplay, economy and scripted monetization simulations, save compatibility, fake-platform boundaries, sound/music mappings and persistence, service-worker behavior, security checks, and release budgets. Monetization magnitudes are exact for the checked-in scripted profile but directional for human play.
 - `npm.cmd run release:check` remains blocked while any required manual gate is pending or failed.
-- Runtime ceiling: 380,000 uncompressed bytes. The latest measured runtime is approximately 330 KB; `release-budgets.json` is authoritative and fails on material growth.
-- Service-worker cache generation is `ppw-shell-v18`, containing the complete local offline shell and seven wired audio files plus the application icon and code assets.
-- Gameplay, platform, and sound preferences remain in separate versioned local namespaces.
+- Runtime ceiling: 24,000,000 bytes including streamed music. The latest measured runtime is approximately 22.9 MB; `release-budgets.json` is authoritative and fails on material growth.
+- Service-worker cache generation is `ppw-shell-v25`. The install shell contains all code and eight sound effects; the three large music tracks stream from the same origin on demand so they do not block installation.
+- Gameplay, platform, sound, and compact Workshop UI preferences remain in separate versioned local namespaces.
 - Historical and future-save fixtures verify migration and future-version overwrite protection.
 - No production SDK, remote font, third-party runtime asset, account, billing endpoint, analytics endpoint, or cloud endpoint is present.
 

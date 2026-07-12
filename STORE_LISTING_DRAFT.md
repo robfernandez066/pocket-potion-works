@@ -15,8 +15,8 @@ Features:
 - Gather, brew, collect, deliver, and upgrade in short mobile-friendly sessions.
 - Eight recipes, six ingredients, twelve customer variants, daily goals, and achievements.
 - Local versioned progress with safe recovery and capped offline gathering.
-- Reduced-motion support, keyboard-accessible essential controls, mobile safe areas, and optional sound that starts Off.
-- Local sound effects and a dependency-free offline web shell with no remote fonts, third-party runtime assets, or production service connections.
+- Reduced-motion support, keyboard-accessible essential controls, mobile safe areas, and optional sound that starts On with separate music/effects volume controls.
+- Local sound effects, Pixabay-licensed music credited to Trycja via Pixabay, and a dependency-free offline web shell with no remote fonts, third-party runtime assets, or production service connections.
 
 Current prototype wording: **No real-money purchases, advertisements, accounts, analytics transmission, or cloud saves are connected.** The Moonlight Market contains clearly labeled simulations only and is not production advertising.
 

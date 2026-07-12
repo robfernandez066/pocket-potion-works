@@ -12,8 +12,11 @@
 | `confirm.mp3` | Successful order delivery |
 | `levelup.ogg` | Level-up celebration |
 | `tap.ogg` | Buttons and menus that do not play a more specific action sound, including successful workshop upgrade purchases; volume 0.4 at 4.0x playback speed with pitch preservation disabled so the pitch rises |
+| `music1.mp3`, `music2.mp3`, `music3.mp3` | Pixabay-licensed background playlist credited to Trycja via Pixabay; begins from a random track after the first player interaction, then follows numbered order with fades. Exact titles, source URLs, certificate hashes, and restrictions are maintained in `ASSET_PROVENANCE.md`. |
 
 The game's synthesized cues remain as safe fallbacks if a sample cannot play.
+Music and sound-effect volume default to 50% and persist independently under the master Sound setting.
+The project owner confirms that all listed local samples came from Pixabay pages marked free for use under the Pixabay Content License. Music has track-specific certificate evidence; sound-effect evidence is owner-attested because exact source URLs were not retained. See `ASSET_PROVENANCE.md`.
 
 ## Parked for a future use
 

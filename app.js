@@ -1,6 +1,7 @@
 "use strict";
 
 const SAVE_KEY = "pocket-potion-works-v1";
+const UI_PREFS_KEY = "pocket-potion-works-ui-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
@@ -16,6 +17,7 @@ const purchases = new Platform.PurchaseService(fakePurchases, entitlementLedger)
 const lifecycleAdapter = new Platform.FakeLifecycleAdapter();
 const audioPreferenceStore = new AudioFeedback.AudioPreferenceStore(localStorage);
 const sound = new AudioFeedback.SoundEngine(audioPreferenceStore);
+const music = new AudioFeedback.MusicEngine(audioPreferenceStore);
 function formatNumber(value) { return Math.floor(value).toLocaleString("en-US"); }
 function xpNeeded(level = state.level) { return Logic.xpNeeded(level); }
 function storageCap() { return Logic.storageCap(state); }
@@ -24,6 +26,19 @@ function manualGatherAmount() { return Logic.manualGatherAmount(state); }
 function orderMultiplier() { return Logic.orderMultiplier(state); }
 function brewSpeedMultiplier() { return Logic.brewSpeedMultiplier(state); }
 function totalIngredients() { return Logic.totalIngredients(state); }
+
+function loadUiPrefs() {
+  try {
+    const input = JSON.parse(localStorage.getItem(UI_PREFS_KEY));
+    if (input?.version === 1) return { version: 1, pantryOpen: input.pantryOpen === true, recipesOpen: input.recipesOpen === true };
+  } catch (_) { /* Use compact defaults for missing or malformed preferences. */ }
+  return { version: 1, pantryOpen: false, recipesOpen: false };
+}
+
+function saveUiPrefs() {
+  try { localStorage.setItem(UI_PREFS_KEY, JSON.stringify(uiPrefs)); }
+  catch (_) { /* UI preferences never block gameplay. */ }
+}
 
 function pulseFeedback(selector, tone) {
   const node = document.querySelector(selector);
@@ -63,6 +78,7 @@ function loadState() {
 }
 
 let state = loadState();
+let uiPrefs = loadUiPrefs();
 let passiveBank = 0;
 let saveTimer = null;
 let lastFocus = null;
@@ -122,10 +138,7 @@ function reconcileOfflineProgress() {
 
 function grantOfflineProgress(elapsed) {
   if (elapsed < 20) return;
-  const ingredients = Math.floor(elapsed * gatherRate() * .65);
-  const before = totalIngredients();
-  addRandomIngredients(ingredients);
-  const gained = totalIngredients() - before;
+  const gained = Logic.grantOfflineIngredients(state, elapsed);
   if (gained > 0) {
     setTimeout(() => openModal({
       icon: "☾", kicker: "WELCOME BACK", title: "The garden kept growing.",
@@ -176,12 +189,15 @@ function renderAll() {
   renderGatherButton();
   renderBeginnerQuest();
   renderIngredients();
+  renderReadyDeliverStrip();
   renderBrew();
   renderPotionShelf();
   renderRecipes();
   renderOrders();
   renderUpgrades();
   renderJournal();
+  renderDisclosures();
+  updateBrewShortcut();
   scheduleSave();
 }
 
@@ -198,9 +214,10 @@ function renderGatherButton() {
   Logic.rechargeGather(state);
   const button = document.querySelector("#gatherButton");
   const charges = state.gather.charges;
+  const target = state.gather.targetId ? INGREDIENTS[state.gather.targetId] : null;
   button.disabled = charges < 1 || totalIngredients() >= storageCap();
-  button.querySelector("strong").textContent = charges > 0 ? `Gather ingredients · ${charges}/${Logic.GATHER_CONFIG.maxCharges}` : "Garden recharging";
-  button.querySelector("small").textContent = charges > 0 ? `Charged harvest · +${manualGatherAmount()} items` : `One charge every ${Logic.GATHER_CONFIG.rechargeSeconds} seconds`;
+  button.querySelector("strong").textContent = charges > 0 ? `${target ? `Gather ${target.name}` : "Gather smart mix"} · ${charges}/${Logic.GATHER_CONFIG.maxCharges}` : "Garden recharging";
+  button.querySelector("small").textContent = charges > 0 ? `Charged harvest · +${manualGatherAmount()} ${target ? target.name : "needed items"}` : `One charge every ${Logic.GATHER_CONFIG.rechargeSeconds} seconds`;
 }
 
 function renderBeginnerQuest() {
@@ -222,6 +239,8 @@ function motionBehavior() { return window.matchMedia("(prefers-reduced-motion: r
 function goToTutorialTarget(quest) {
   if (!quest) return;
   hideTutorialBanner();
+  if (quest.targetSelector?.includes("data-brew")) setDisclosure("recipes", true);
+  if (quest.targetSelector?.includes("data-gather-target")) setDisclosure("pantry", true);
   switchView(quest.view);
   requestAnimationFrame(() => {
     const target = document.querySelector(quest.targetSelector);
@@ -261,12 +280,57 @@ function showTutorialTransition(before, viewBeforeAction) {
 function renderIngredients() {
   document.querySelector("#ingredientGrid").innerHTML = Object.entries(INGREDIENTS).map(([id, item]) => {
     const locked = item.unlock > state.level;
-    return `<div class="ingredient-card" style="--ingredient-bg:${item.color}">
+    const selected = state.gather.targetId === id;
+    return `<button class="ingredient-card ${selected ? "is-selected" : ""}" type="button" style="--ingredient-bg:${item.color}" ${locked ? "disabled" : `data-gather-target="${id}" aria-pressed="${selected}"`}>
       <span class="ingredient-icon">${locked ? "?" : item.icon}</span>
       <strong>${locked ? `Level ${item.unlock}` : formatNumber(state.ingredients[id])}</strong>
       <small>${locked ? "Locked" : item.name}</small>
-    </div>`;
+    </button>`;
   }).join("");
+  document.querySelectorAll("[data-gather-target]").forEach(button => button.addEventListener("click", () => selectGatherTarget(button.dataset.gatherTarget)));
+  document.querySelector("#smartGatherTarget").setAttribute("aria-pressed", String(state.gather.targetId === null));
+}
+
+function selectGatherTarget(targetId) {
+  if (!Logic.setGatherTarget(state, targetId)) return;
+  renderAll();
+  const item = targetId ? INGREDIENTS[targetId] : null;
+  toast(item ? `${item.name} selected for charged harvests.` : "Smart mix will prioritize useful ingredients.");
+}
+
+function renderReadyDeliverStrip() {
+  const available = { ...state.potions };
+  const ready = [];
+  for (const order of state.orders) {
+    if (available[order.recipeId] >= order.quantity) {
+      available[order.recipeId] -= order.quantity;
+      ready.push(order);
+    }
+  }
+  const strip = document.querySelector("#readyDeliverStrip");
+  strip.hidden = ready.length === 0;
+  strip.innerHTML = ready.length ? `<div><span class="eyebrow">READY TO DELIVER</span><strong>${ready.length} order${ready.length === 1 ? "" : "s"} waiting</strong></div><div class="ready-deliver-actions">${ready.slice(0, 2).map(order => {
+    const recipe = recipeById(order.recipeId);
+    return `<button data-quick-deliver="${order.id}">${recipe.icon} Deliver ${recipe.name} · +${Math.round(order.reward * orderMultiplier())}</button>`;
+  }).join("")}</div>` : "";
+  strip.querySelectorAll("[data-quick-deliver]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.quickDeliver))));
+}
+
+function setDisclosure(kind, open) {
+  if (kind === "pantry") uiPrefs.pantryOpen = open;
+  if (kind === "recipes") uiPrefs.recipesOpen = open;
+  saveUiPrefs();
+  renderDisclosures();
+}
+
+function renderDisclosures() {
+  for (const [kind, buttonId, contentId] of [["pantry", "pantryDisclosure", "pantryContent"], ["recipes", "recipeDisclosure", "recipeContent"]]) {
+    const open = kind === "pantry" ? uiPrefs.pantryOpen : uiPrefs.recipesOpen;
+    const button = document.querySelector(`#${buttonId}`);
+    button.setAttribute("aria-expanded", String(open));
+    button.querySelector("i").textContent = open ? "⌃" : "⌄";
+    document.querySelector(`#${contentId}`).hidden = !open;
+  }
 }
 
 function renderBrew() {
@@ -347,6 +411,8 @@ function renderRecipes() {
     </article>`;
   }).join("") + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
   document.querySelectorAll("[data-brew]").forEach(button => button.addEventListener("click", () => startBrew(button.dataset.brew)));
+  const requested = RECIPES.filter(recipe => state.orders.some(order => order.recipeId === recipe.id)).length;
+  document.querySelector("#recipeSummary").textContent = `${RECIPES.filter(recipe => recipe.unlock <= state.level).length} known · ${requested} requested`;
 }
 
 function renderOrders() {
@@ -516,10 +582,33 @@ function switchView(view) {
   window.scrollTo({ top: 0, behavior: motionBehavior() });
   if (view === "orders") document.querySelector("#orderDot").hidden = true;
   if (pendingTutorialTarget?.view === view) hideTutorialBanner();
+  requestAnimationFrame(() => updateBrewShortcut());
+}
+
+function updateBrewShortcut(now = Date.now()) {
+  const shortcut = document.querySelector("#brewShortcut");
+  if (!state.brew) {
+    shortcut.hidden = true;
+    document.body.classList.remove("brew-shortcut-visible");
+    return;
+  }
+  const slot = document.querySelector("#brewSlot");
+  const rect = slot.getBoundingClientRect();
+  const slotVisible = activeView() === "workshop" && rect.bottom > 0 && rect.top < innerHeight;
+  const remaining = Math.max(0, state.brew.endsAt - now);
+  const recipe = recipeById(state.brew.recipeId);
+  shortcut.hidden = slotVisible;
+  shortcut.textContent = remaining <= 0 ? `${recipe.icon} ${recipe.name} ready · Collect` : `${recipe.icon} ${recipe.name} · ${Math.ceil(remaining / 1000)}s`;
+  document.body.classList.toggle("brew-shortcut-visible", !slotVisible);
+}
+
+function goToBrewSlot() {
+  switchView("workshop");
+  requestAnimationFrame(() => document.querySelector("#brewSlot").scrollIntoView({ behavior: motionBehavior(), block: "center" }));
 }
 
 function openModal({ icon = "✦", kicker = "POCKET POTION WORKS", title, body, actions = [] }) {
-  lastFocus = document.activeElement;
+  if (document.querySelector("#modalBackdrop").hidden) lastFocus = document.activeElement;
   document.querySelector("#modalIcon").textContent = icon;
   document.querySelector("#modalKicker").textContent = kicker;
   document.querySelector("#modalTitle").textContent = title;
@@ -614,19 +703,25 @@ async function claimStarter() {
 }
 
 function showSettings() {
-  const soundLine = `<p><strong>Sound:</strong> ${sound.enabled() ? "On" : "Off"} (starts off by default)</p>`;
+  const effectsPercent = Math.round(audioPreferenceStore.effectsVolume() * 100);
+  const musicPercent = Math.round(audioPreferenceStore.musicVolume() * 100);
+  const soundLine = `<p><strong>Sound:</strong> ${sound.enabled() ? "On" : "Off"} (starts on by default)</p>`;
   openModal({ icon: "⚙", kicker: "SETTINGS & INFORMATION", title: "Workshop settings", body: `
     ${soundLine}
+    <div class="volume-control"><label for="effectsVolume"><strong>Sound effects</strong><output data-volume-output="effects">${effectsPercent}%</output></label><input id="effectsVolume" data-volume-slider="effects" type="range" min="0" max="100" step="5" value="${effectsPercent}" /></div>
+    <div class="volume-control"><label for="musicVolume"><strong>Music</strong><output data-volume-output="music">${musicPercent}%</output></label><input id="musicVolume" data-volume-slider="music" type="range" min="0" max="100" step="5" value="${musicPercent}" /></div>
     <p><strong>Autosave:</strong> ${gameplaySaveWritesBlocked ? "Blocked to protect a newer save" : "On"}<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1 vertical slice</p>
     <p><strong>Optional local analytics:</strong> ${consent.analyticsAllowed() ? "Allowed" : "Off"}. Events stay in memory, are schema-limited, and are never transmitted.</p>
     <p>This prototype contains no real advertisements, purchases, analytics services, accounts, or gameplay-data transmission. The web host serves the app files on first load; progress stays in this browser.</p>`,
     actions: [
       { label: `Sound: ${sound.enabled() ? "On - turn off" : "Off - turn on"}`, ariaPressed: sound.enabled(), onClick: () => {
         const enabled = sound.setEnabled(!sound.enabled());
-        if (enabled) { sound.activate(); sound.play("tap"); }
+        music.syncEnabled();
+        if (enabled) { sound.activate(); music.activate(); sound.play("tap"); }
         closeModal();
         toast(`Workshop sound turned ${enabled ? "on" : "off"}.`);
       } },
+      { label: "Credits", onClick: showCredits },
       { label: "Save now", primary: true, onClick: () => { const saved = saveState(); closeModal(); toast(saved ? "Workshop saved." : "Newer save remains protected; this build did not write progress."); } },
       { label: consent.analyticsAllowed() ? "Turn local analytics off" : "Allow local analytics", onClick: () => {
         consent.setAnalytics(!consent.analyticsAllowed());
@@ -635,19 +730,69 @@ function showSettings() {
       } },
     ],
   });
+  const effectsSlider = document.querySelector('[data-volume-slider="effects"]');
+  const musicSlider = document.querySelector('[data-volume-slider="music"]');
+  const makePointerReliable = slider => {
+    let dragging = false;
+    const updateFromPointer = event => {
+      const bounds = slider.getBoundingClientRect();
+      if (!bounds.width) return;
+      const min = Number(slider.min) || 0;
+      const max = Number(slider.max) || 100;
+      const step = Number(slider.step) || 1;
+      const ratio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+      const value = Math.max(min, Math.min(max, min + Math.round(((min + ratio * (max - min)) - min) / step) * step));
+      if (Number(slider.value) === value) return;
+      slider.value = String(value);
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    slider.addEventListener("pointerdown", event => {
+      if (event.button !== 0) return;
+      dragging = true;
+      slider.focus();
+      slider.setPointerCapture?.(event.pointerId);
+      updateFromPointer(event);
+    });
+    slider.addEventListener("pointermove", event => { if (dragging) updateFromPointer(event); });
+    slider.addEventListener("pointerup", event => {
+      if (!dragging) return;
+      updateFromPointer(event);
+      dragging = false;
+      slider.releasePointerCapture?.(event.pointerId);
+      slider.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    slider.addEventListener("pointercancel", () => { dragging = false; });
+  };
+  makePointerReliable(effectsSlider);
+  makePointerReliable(musicSlider);
+  effectsSlider.addEventListener("input", () => {
+    const value = Number(effectsSlider.value);
+    document.querySelector('[data-volume-output="effects"]').textContent = `${value}%`;
+    audioPreferenceStore.setEffectsVolume(value / 100);
+  });
+  effectsSlider.addEventListener("change", () => sound.play("tap", { bypassCooldown: true }));
+  musicSlider.addEventListener("input", () => {
+    const value = Number(musicSlider.value);
+    document.querySelector('[data-volume-output="music"]').textContent = `${value}%`;
+    music.setMusicVolume(value / 100);
+  });
+}
+
+function showCredits() {
+  openModal({ icon: "♪", kicker: "CREDITS", title: "Made with a little magic", body: `<p><strong>Music:</strong> Trycja via Pixabay</p><p>Dreamscape · Violin Alchemy · Emerald Echoes Cries</p><p><strong>Sound effects:</strong> Pixabay contributors</p><p>Used under the Pixabay Content License.</p>`, actions: [{ label: "Back to settings", primary: true, onClick: showSettings }] });
 }
 
 function confirmReset() {
   openModal({ icon: "!", kicker: "RESET WORKSHOP", title: "Erase all progress?", body: "<p>This permanently clears your local save and restarts the tutorial. This cannot be undone.</p>", actions: [
     { label: "Keep my workshop" },
-    { label: "Erase and restart", primary: true, onClick: () => { localStorage.removeItem(SAVE_KEY); gameplaySaveWritesBlocked = false; unsupportedSaveVersion = null; state = defaultState(); closeModal(); switchView("workshop"); renderAll(); showTutorial(); } },
+    { label: "Erase and restart", primary: true, onClick: () => { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(UI_PREFS_KEY); gameplaySaveWritesBlocked = false; unsupportedSaveVersion = null; state = defaultState(); uiPrefs = { version: 1, pantryOpen: false, recipesOpen: false }; closeModal(); switchView("workshop"); renderAll(); showTutorial(); } },
   ] });
 }
 
 function showTutorial() {
   if (state.tutorialSeen) return;
   state.tutorialSeen = true;
-  openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your pantry already holds everything for a <strong>Meadow Tonic</strong>. Follow the First Steps card to brew, collect, deliver, and improve your workshop.</p><p>Charged harvests refill gently over time, and the garden grows slowly while you are away.</p>`, actions: [{ label: "Show my first step", primary: true }] });
+  openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your pantry already holds everything for a <strong>Meadow Tonic</strong>. Follow the First Steps card to brew, collect, deliver, and improve your workshop.</p><p>Charged harvests refill over time. After your first delivery, the garden also gathers while you are away without filling the entire pantry.</p>`, actions: [{ label: "Show my first step", primary: true }] });
   scheduleSave();
 }
 
@@ -669,7 +814,8 @@ function manualGather(event) {
     renderAll();
     return;
   }
-  feedback(`Gathered ${added} fresh ingredient${added === 1 ? "" : "s"}.`, { tone: "gather", soundName: "gather", target: ".workshop-card" });
+  const gatheredName = result.targetId ? INGREDIENTS[result.targetId].name : "fresh ingredient";
+  feedback(`Gathered ${added} ${gatheredName}${added === 1 || result.targetId ? "" : "s"}.`, { tone: "gather", soundName: "gather", target: ".workshop-card" });
   state.stats.taps += 1;
   if (added > 0 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     const particle = document.querySelector("#particleTemplate").content.firstElementChild.cloneNode(true);
@@ -699,13 +845,18 @@ function tick() {
   renderBoostStatus(now);
   renderGatherButton();
   renderBeginnerQuest();
+  updateBrewShortcut(now);
   if (Date.now() > state.boostUntil && state.boostUntil !== 0) { state.boostUntil = 0; renderAll(); }
 }
 
-document.addEventListener("pointerdown", () => sound.activate(), { passive: true });
-document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") sound.activate(); });
+document.addEventListener("pointerdown", () => { sound.activate(); music.activate(); }, { passive: true });
+document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { sound.activate(); music.activate(); } });
 document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => { sound.play("tap"); switchView(button.dataset.nav); }));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
+document.querySelector("#smartGatherTarget").addEventListener("click", () => selectGatherTarget(null));
+document.querySelector("#pantryDisclosure").addEventListener("click", () => setDisclosure("pantry", !uiPrefs.pantryOpen));
+document.querySelector("#recipeDisclosure").addEventListener("click", () => setDisclosure("recipes", !uiPrefs.recipesOpen));
+document.querySelector("#brewShortcut").addEventListener("click", goToBrewSlot);
 document.querySelector("#beginnerQuestButton").addEventListener("click", () => {
   goToTutorialTarget(Logic.beginnerQuest(state));
 });
@@ -723,10 +874,12 @@ document.addEventListener("click", event => {
   const button = event.target.closest?.("button");
   if (button && !button.disabled) sound.play("tap");
 });
+window.addEventListener("scroll", () => updateBrewShortcut(), { passive: true });
+document.addEventListener("visibilitychange", () => music.setPaused(document.hidden));
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && !document.querySelector("#modalBackdrop").hidden) closeModal();
   if (event.key === "Tab" && !document.querySelector("#modalBackdrop").hidden) {
-    const focusable = [...document.querySelector("#modalBackdrop").querySelectorAll("button:not([disabled])")];
+    const focusable = [...document.querySelector("#modalBackdrop").querySelectorAll("button:not([disabled]), input:not([disabled])")];
     if (!focusable.length) return;
     const first = focusable[0], last = focusable.at(-1);
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
