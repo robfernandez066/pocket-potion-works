@@ -40,8 +40,17 @@ function feedback(message, { tone = "success", soundName, target } = {}) {
   toast(message, tone);
 }
 
+let gameplaySaveWritesBlocked = false;
+let unsupportedSaveVersion = null;
+
 function loadState() {
   const result = window.PPWLogic.parseSave(localStorage.getItem(SAVE_KEY));
+  if (window.PPWLogic.shouldBlockSaveWrite(result)) {
+    gameplaySaveWritesBlocked = true;
+    unsupportedSaveVersion = result.sourceVersion;
+    console.error(`Gameplay save version ${result.sourceVersion} is newer than this build. The stored save is protected from overwrite.`);
+    return defaultState();
+  }
   if (result.recovered) console.warn("Save could not be loaded; starting fresh.");
   return result.state;
 }
@@ -57,9 +66,11 @@ let lastTutorialPromptKey = null;
 let announcedReadyBrew = null;
 
 function saveState() {
+  if (gameplaySaveWritesBlocked) return false;
   state.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
   catch (error) { console.warn("Save failed.", error); }
+  return true;
 }
 
 const commerceFulfillment = new Platform.CommerceFulfillmentCoordinator(entitlementLedger, {
@@ -73,13 +84,15 @@ const commerceFulfillment = new Platform.CommerceFulfillmentCoordinator(entitlem
     },
   },
   persistGameplay: () => {
+    if (gameplaySaveWritesBlocked) throw new Error("Unsupported future gameplay save is write-protected.");
     state.lastSeen = Date.now();
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   },
 });
-commerceFulfillment.reconcile();
+if (!gameplaySaveWritesBlocked) commerceFulfillment.reconcile();
 
 function scheduleSave() {
+  if (gameplaySaveWritesBlocked) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveState, 250);
 }
@@ -552,9 +565,9 @@ function showSettings() {
   const soundLine = `<p><strong>Sound:</strong> ${sound.enabled() ? "On" : "Off"} (starts off by default)</p>`;
   openModal({ icon: "⚙", kicker: "SETTINGS & INFORMATION", title: "Workshop settings", body: `
     ${soundLine}
-    <p><strong>Autosave:</strong> On<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1 vertical slice</p>
+    <p><strong>Autosave:</strong> ${gameplaySaveWritesBlocked ? "Blocked to protect a newer save" : "On"}<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1 vertical slice</p>
     <p><strong>Optional local analytics:</strong> ${consent.analyticsAllowed() ? "Allowed" : "Off"}. Events stay in memory, are schema-limited, and are never transmitted.</p>
-    <p>This prototype contains no real advertisements, purchases, analytics services, accounts, or network requests. Progress is stored only in this browser.</p>`,
+    <p>This prototype contains no real advertisements, purchases, analytics services, accounts, or gameplay-data transmission. The web host serves the app files on first load; progress stays in this browser.</p>`,
     actions: [
       { label: `Sound: ${sound.enabled() ? "On - turn off" : "Off - turn on"}`, ariaPressed: sound.enabled(), onClick: () => {
         const enabled = sound.setEnabled(!sound.enabled());
@@ -562,7 +575,7 @@ function showSettings() {
         closeModal();
         toast(`Workshop sound turned ${enabled ? "on" : "off"}.`);
       } },
-      { label: "Save now", primary: true, onClick: () => { saveState(); closeModal(); toast("Workshop saved."); } },
+      { label: "Save now", primary: true, onClick: () => { const saved = saveState(); closeModal(); toast(saved ? "Workshop saved." : "Newer save remains protected; this build did not write progress."); } },
       { label: consent.analyticsAllowed() ? "Turn local analytics off" : "Allow local analytics", onClick: () => {
         consent.setAnalytics(!consent.analyticsAllowed());
         analytics.track("consent_changed", { analytics: consent.analyticsAllowed() ? "allowed" : "denied" });
@@ -575,7 +588,7 @@ function showSettings() {
 function confirmReset() {
   openModal({ icon: "!", kicker: "RESET WORKSHOP", title: "Erase all progress?", body: "<p>This permanently clears your local save and restarts the tutorial. This cannot be undone.</p>", actions: [
     { label: "Keep my workshop" },
-    { label: "Erase and restart", primary: true, onClick: () => { localStorage.removeItem(SAVE_KEY); state = defaultState(); closeModal(); switchView("workshop"); renderAll(); showTutorial(); } },
+    { label: "Erase and restart", primary: true, onClick: () => { localStorage.removeItem(SAVE_KEY); gameplaySaveWritesBlocked = false; unsupportedSaveVersion = null; state = defaultState(); closeModal(); switchView("workshop"); renderAll(); showTutorial(); } },
   ] });
 }
 
@@ -584,6 +597,14 @@ function showTutorial() {
   state.tutorialSeen = true;
   openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your pantry already holds everything for a <strong>Meadow Tonic</strong>. Follow the First Steps card to brew, collect, deliver, and improve your workshop.</p><p>Charged harvests refill gently over time, and the garden grows slowly while you are away.</p>`, actions: [{ label: "Show my first step", primary: true }] });
   scheduleSave();
+}
+
+function showFutureSaveGuard() {
+  openModal({
+    icon: "!", kicker: "NEWER SAVE DETECTED", title: "This workshop is protected",
+    body: `<p>This browser contains gameplay save version <strong>${unsupportedSaveVersion}</strong>, but this build supports version <strong>${SAVE_VERSION}</strong>.</p><p>The newer save has not been loaded, changed, or overwritten. Return to the newer build, or use Reset game data only if you intentionally want to erase it.</p>`,
+    actions: [{ label: "Keep the newer save protected", primary: true }],
+  });
 }
 
 function manualGather(event) {
@@ -675,7 +696,7 @@ reconcileOfflineProgress();
 renderAll();
 checkAchievements();
 setInterval(tick, 1000);
-setTimeout(showTutorial, 500);
+setTimeout(() => gameplaySaveWritesBlocked ? showFutureSaveGuard() : showTutorial(), 500);
 
 window.PPW = Object.freeze({
   getSnapshot: () => JSON.parse(JSON.stringify(state)),
@@ -683,6 +704,7 @@ window.PPW = Object.freeze({
     recipesValid: RECIPES.every(recipe => Object.keys(recipe.ingredients).every(id => INGREDIENTS[id]) && recipe.seconds > 0 && recipe.sell > 0),
     upgradesValid: UPGRADES.every(upgrade => upgrade.max > 0 && upgrade.baseCost > 0),
     saveVersion: state.version,
+    saveWriteBlocked: gameplaySaveWritesBlocked,
   }),
   getPlatformSnapshot: () => platformStore.snapshot(),
   getLocalAnalytics: () => analytics.snapshot(),

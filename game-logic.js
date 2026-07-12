@@ -232,8 +232,19 @@
 
   function parseSave(raw, now = Date.now()) {
     if (typeof raw !== "string" || !raw.trim()) return { state: defaultState(now), recovered: false };
-    try { return { state: normalizeState(JSON.parse(raw), now), recovered: false }; }
+    try {
+      const input = JSON.parse(raw);
+      const sourceVersion = isRecord(input) && Number.isFinite(Number(input.version)) ? Number(input.version) : null;
+      if (sourceVersion !== null && sourceVersion > SAVE_VERSION) {
+        return { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion };
+      }
+      return { state: normalizeState(input, now), recovered: false, blocked: false, sourceVersion };
+    }
     catch (_) { return { state: defaultState(now), recovered: true }; }
+  }
+
+  function shouldBlockSaveWrite(loadResult) {
+    return loadResult?.blocked === true && loadResult.reason === "unsupported-future-version";
   }
 
   function canAffordRecipe(state, recipe) {
@@ -392,7 +403,7 @@
 
   return Object.freeze({
     SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
-    clamp, todayKey, defaultState, normalizeState, parseSave, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
+    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
