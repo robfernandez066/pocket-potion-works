@@ -1,6 +1,6 @@
 const CACHE_PREFIX = "ppw-shell-";
-const CACHE = `${CACHE_PREFIX}v9`;
-const SHELL = ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./app.js", "./manifest.webmanifest", "./icon.svg"];
+const CACHE = `${CACHE_PREFIX}v10`;
+const SHELL = ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));

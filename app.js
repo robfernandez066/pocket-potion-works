@@ -3,6 +3,7 @@
 const SAVE_KEY = "pocket-potion-works-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
+const AudioFeedback = window.PPWAudio;
 const { SAVE_VERSION, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
 const platformStore = new Platform.PlatformStateStore(localStorage);
 const consent = new Platform.ConsentManager(platformStore);
@@ -13,6 +14,8 @@ const entitlementLedger = new Platform.EntitlementLedger(platformStore);
 const fakePurchases = new Platform.FakeIapAdapter();
 const purchases = new Platform.PurchaseService(fakePurchases, entitlementLedger);
 const lifecycleAdapter = new Platform.FakeLifecycleAdapter();
+const audioPreferenceStore = new AudioFeedback.AudioPreferenceStore(localStorage);
+const sound = new AudioFeedback.SoundEngine(audioPreferenceStore);
 function formatNumber(value) { return Math.floor(value).toLocaleString("en-US"); }
 function xpNeeded(level = state.level) { return Logic.xpNeeded(level); }
 function storageCap() { return Logic.storageCap(state); }
@@ -21,6 +24,21 @@ function manualGatherAmount() { return Logic.manualGatherAmount(state); }
 function orderMultiplier() { return Logic.orderMultiplier(state); }
 function brewSpeedMultiplier() { return Logic.brewSpeedMultiplier(state); }
 function totalIngredients() { return Logic.totalIngredients(state); }
+
+function pulseFeedback(selector, tone) {
+  const node = document.querySelector(selector);
+  if (!node) return;
+  const className = `feedback-${tone}`;
+  node.classList.remove(className);
+  requestAnimationFrame(() => node.classList.add(className));
+  setTimeout(() => node.classList.remove(className), 700);
+}
+
+function feedback(message, { tone = "success", soundName, target } = {}) {
+  if (soundName) sound.play(soundName);
+  if (target) pulseFeedback(target, tone);
+  toast(message, tone);
+}
 
 function loadState() {
   const result = window.PPWLogic.parseSave(localStorage.getItem(SAVE_KEY));
@@ -36,6 +54,7 @@ let lastTickAt = Date.now();
 let tutorialBannerTimer = null;
 let pendingTutorialTarget = null;
 let lastTutorialPromptKey = null;
+let announcedReadyBrew = null;
 
 function saveState() {
   state.lastSeen = Date.now();
@@ -220,6 +239,8 @@ function renderIngredients() {
 function renderBrew() {
   const slot = document.querySelector("#brewSlot");
   if (!state.brew) {
+    announcedReadyBrew = null;
+    slot.classList.remove("is-ready");
     slot.innerHTML = `<div class="brew-empty"><span>♨</span><div><strong>Your cauldron is ready</strong><small>Choose a recipe below to start brewing.</small></div></div>`;
     document.querySelector("#brewQueueLabel").textContent = "Ready";
     return;
@@ -229,11 +250,19 @@ function renderBrew() {
   const duration = state.brew.durationMs;
   const percent = clamp(100 - remaining / duration * 100, 0, 100);
   const ready = remaining <= 0;
+  const readyKey = `${state.brew.recipeId}:${state.brew.endsAt}`;
+  if (ready && announcedReadyBrew !== readyKey) {
+    announcedReadyBrew = readyKey;
+    document.querySelector("#brewStatusAnnouncement").textContent = `${recipe.name} is ready to collect.`;
+    sound.play("brewReady");
+    pulseFeedback("#brewSlot", "ready");
+  }
+  slot.classList.toggle("is-ready", ready);
   document.querySelector("#brewQueueLabel").textContent = ready ? "Complete!" : `${Math.ceil(remaining / 1000)}s left`;
   slot.innerHTML = `<div class="active-brew">
     <span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span>
-    <div><strong>${recipe.name}</strong><small>${ready ? "Bottle it while it's sparkling." : `${Math.ceil(remaining / 1000)} seconds remaining`}</small><div class="brew-progress"><span style="width:${percent}%"></span></div></div>
-    <button class="collect-button" id="collectBrewButton" ${ready ? "" : "disabled"}>${ready ? "Collect" : "Brewing"}</button>
+    <div><strong>${recipe.name}</strong><small>${ready ? "Bottle it while it's sparkling." : `${Math.ceil(remaining / 1000)} seconds remaining`}</small><div class="brew-progress" role="progressbar" aria-label="${recipe.name} brewing progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(percent)}"><span style="width:${percent}%"></span></div></div>
+    <button class="collect-button" id="collectBrewButton" aria-label="${ready ? `Collect ${recipe.name}` : `${recipe.name} is brewing`}" ${ready ? "" : "disabled"}>${ready ? "Collect" : "Brewing"}</button>
   </div>`;
   document.querySelector("#collectBrewButton").addEventListener("click", collectBrew);
 }
@@ -260,7 +289,7 @@ function renderRecipes() {
     return `<article class="recipe-card ${locked ? "is-locked" : ""} ${requested ? "is-requested" : ""}">
       <span class="potion-bottle" style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
       <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small><div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div></div>
-      <button class="brew-button" data-brew="${recipe.id}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
+      <button class="brew-button" data-brew="${recipe.id}" aria-label="${buttonLabel} ${locked ? "locked recipe" : recipe.name}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
     </article>`;
   }).join("") + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
   document.querySelectorAll("[data-brew]").forEach(button => button.addEventListener("click", () => startBrew(button.dataset.brew)));
@@ -320,7 +349,9 @@ function startBrew(recipeId) {
   const viewBeforeAction = activeView();
   const recipe = recipeById(recipeId);
   if (!window.PPWLogic.startBrew(state, recipeId)) return;
-  toast(`${recipe.name} is bubbling away.`);
+  announcedReadyBrew = null;
+  document.querySelector("#brewStatusAnnouncement").textContent = `${recipe.name} started brewing.`;
+  feedback(`${recipe.name} is bubbling away.`, { tone: "brew", soundName: "brewStart", target: "#brewSlot" });
   renderAll();
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
@@ -332,7 +363,7 @@ function collectBrew() {
   if (!result) return;
   announceLevels(result.levels);
   checkAchievements();
-  toast(`${result.recipe.name} added to your shelf!`);
+  feedback(`${result.recipe.name} added to your shelf!`, { tone: "collect", soundName: "collect", target: "#potionShelf" });
   renderAll();
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
@@ -344,7 +375,7 @@ function fulfillOrder(orderId) {
   if (!result) return;
   announceLevels(result.levels);
   checkAchievements();
-  toast(`Order delivered! +${result.reward} coins`);
+  feedback(`Order delivered! +${result.reward} coins`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
   renderAll();
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
@@ -354,10 +385,14 @@ function addXp(amount) {
 }
 
 function announceLevels(levels) {
+  if (levels.length) {
+    sound.play("levelUp");
+    pulseFeedback(".level-seal", "level");
+  }
   levels.forEach(level => {
     const unlocks = Logic.unlocksAtLevel(level);
     const names = [...unlocks.ingredients, ...unlocks.recipes].map(item => item.name);
-    toast(`Level ${level}! ${names.length ? `${names.join(" and ")} unlocked.` : "Your workshop is growing."}`);
+    toast(`Level ${level}! ${names.length ? `${names.join(" and ")} unlocked.` : "Your workshop is growing."}`, "level");
   });
 }
 
@@ -366,8 +401,8 @@ function buyUpgrade(id) {
   const viewBeforeAction = activeView();
   const upgrade = upgradeById(id);
   if (!window.PPWLogic.buyUpgrade(state, id)) return;
-  toast(`${upgrade.name} improved to level ${state.upgrades[id]}.`);
   renderAll();
+  feedback(`${upgrade.name} improved to level ${state.upgrades[id]}.`, { tone: "upgrade", soundName: "upgrade", target: `[data-upgrade="${id}"]` });
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
@@ -439,6 +474,7 @@ function openModal({ icon = "✦", kicker = "POCKET POTION WORKS", title, body, 
     const button = document.createElement("button");
     button.className = action.primary ? "primary-button" : "secondary-button";
     button.textContent = action.label;
+    if (typeof action.ariaPressed === "boolean") button.setAttribute("aria-pressed", String(action.ariaPressed));
     button.addEventListener("click", action.onClick || closeModal);
     actionsNode.appendChild(button);
   });
@@ -455,9 +491,9 @@ function closeModal() {
   if (lastFocus?.focus) lastFocus.focus();
 }
 
-function toast(message) {
+function toast(message, tone = "info") {
   const node = document.createElement("div");
-  node.className = "toast";
+  node.className = `toast toast-${tone}`;
   node.textContent = message;
   document.querySelector("#toastRegion").appendChild(node);
   setTimeout(() => node.classList.add("is-leaving"), 2600);
@@ -481,12 +517,14 @@ function showMarket() {
 
 async function runSimulatedReward(placementId, grantReward, successMessage) {
   closeModal();
+  sound.play("tap");
   analytics.track("reward_attempt", { placementId });
   fakeRewardedAds.queueScenario("success");
   toast("Simulated rewarded ad started. Reward is waiting for confirmation.");
   const result = await rewardedAds.requestReward({ placementId, grantReward });
   analytics.track("reward_result", { placementId, status: result.status });
-  toast(result.status === "success" ? successMessage : `Simulated ad ended: ${result.status}. No reward granted.`);
+  if (result.status === "success") feedback(successMessage, { tone: "reward", soundName: "reward", target: ".resource-bar" });
+  else toast(`Simulated ad ended: ${result.status}. No reward granted.`);
   renderAll();
 }
 
@@ -498,23 +536,32 @@ function finishBrewAd() {
 }
 async function claimStarter() {
   closeModal();
+  sound.play("tap");
   fakePurchases.queueScenario("success");
   toast("Starting a simulated purchase. No billing system is connected.");
   const result = await purchases.purchase("apprentice_bundle");
   const fulfillment = commerceFulfillment.reconcile();
   if (result.status === "success" && fulfillment.granted === 1) {
-    toast("Simulated apprentice bundle granted. No money was charged.");
+    feedback("Simulated apprentice bundle granted. No money was charged.", { tone: "reward", soundName: "reward", target: ".resource-bar" });
   } else toast(`Simulated purchase ended: ${result.status}. No new bundle granted.`);
   analytics.track("purchase_result", { productId: "apprentice_bundle", status: result.status });
   renderAll();
 }
 
 function showSettings() {
+  const soundLine = `<p><strong>Sound:</strong> ${sound.enabled() ? "On" : "Off"} (starts off by default)</p>`;
   openModal({ icon: "⚙", kicker: "SETTINGS & INFORMATION", title: "Workshop settings", body: `
+    ${soundLine}
     <p><strong>Autosave:</strong> On<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1 vertical slice</p>
     <p><strong>Optional local analytics:</strong> ${consent.analyticsAllowed() ? "Allowed" : "Off"}. Events stay in memory, are schema-limited, and are never transmitted.</p>
     <p>This prototype contains no real advertisements, purchases, analytics services, accounts, or network requests. Progress is stored only in this browser.</p>`,
     actions: [
+      { label: `Sound: ${sound.enabled() ? "On - turn off" : "Off - turn on"}`, ariaPressed: sound.enabled(), onClick: () => {
+        const enabled = sound.setEnabled(!sound.enabled());
+        if (enabled) { sound.activate(); sound.play("tap"); }
+        closeModal();
+        toast(`Workshop sound turned ${enabled ? "on" : "off"}.`);
+      } },
       { label: "Save now", primary: true, onClick: () => { saveState(); closeModal(); toast("Workshop saved."); } },
       { label: consent.analyticsAllowed() ? "Turn local analytics off" : "Allow local analytics", onClick: () => {
         consent.setAnalytics(!consent.analyticsAllowed());
@@ -549,9 +596,9 @@ function manualGather(event) {
     renderAll();
     return;
   }
-  toast(`Gathered ${added} fresh ingredient${added === 1 ? "" : "s"}.`);
+  feedback(`Gathered ${added} fresh ingredient${added === 1 ? "" : "s"}.`, { tone: "gather", soundName: "gather", target: ".workshop-card" });
   state.stats.taps += 1;
-  if (added > 0) {
+  if (added > 0 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     const particle = document.querySelector("#particleTemplate").content.firstElementChild.cloneNode(true);
     particle.textContent = `+${added}`;
     particle.style.left = `${event.clientX || innerWidth / 2}px`;
@@ -581,7 +628,9 @@ function tick() {
   if (Date.now() > state.boostUntil && state.boostUntil !== 0) { state.boostUntil = 0; renderAll(); }
 }
 
-document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => switchView(button.dataset.nav)));
+document.addEventListener("pointerdown", () => sound.activate(), { passive: true });
+document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") sound.activate(); });
+document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => { sound.play("tap"); switchView(button.dataset.nav); }));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
 document.querySelector("#beginnerQuestButton").addEventListener("click", () => {
   goToTutorialTarget(Logic.beginnerQuest(state));
