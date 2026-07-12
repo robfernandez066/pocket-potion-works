@@ -71,6 +71,7 @@ let tutorialBannerTimer = null;
 let pendingTutorialTarget = null;
 let lastTutorialPromptKey = null;
 let announcedReadyBrew = null;
+let renderedBrewKey = null;
 
 function saveState() {
   if (gameplaySaveWritesBlocked) return false;
@@ -163,13 +164,14 @@ function renderAll() {
   document.querySelector("#levelCount").textContent = state.level;
   document.querySelector("#levelSeal").textContent = state.level;
   document.querySelector("#stardustCount").textContent = state.stardust;
-  document.querySelector("#incomeRate").textContent = `Gathering ${gatherRate().toFixed(2)} ingredient/sec · ${storageCap()} capacity`;
+  document.querySelector("#incomeRate").textContent = `Garden grows ~${Math.round(gatherRate() * 60)} ingredients/min · ${storageCap()} capacity`;
   document.querySelector("#pantryTotal").textContent = `${formatNumber(totalIngredients())} / ${storageCap()} items`;
   const hour = new Date().getHours();
   document.querySelector("#dayGreeting").textContent = `${hour < 12 ? "GOOD MORNING" : hour < 18 ? "GOOD AFTERNOON" : "GOOD EVENING"}, ALCHEMIST`;
   document.querySelector("#workshopStatus").textContent = state.brew ? `${recipeById(state.brew.recipeId).name} is brewing` : "The kettle is warm";
-  document.querySelector("#marketButton").disabled = state.stats.orders < 1;
+  document.querySelector("#marketButton").disabled = false;
   document.querySelector("#marketButton").title = state.stats.orders < 1 ? "Complete your first order to unlock the market" : "Open Moonlight Market";
+  renderBoostStatus();
   document.querySelector("#orderDot").hidden = !state.orders.some(order => state.potions[order.recipeId] >= order.quantity);
   renderGatherButton();
   renderBeginnerQuest();
@@ -181,6 +183,15 @@ function renderAll() {
   renderUpgrades();
   renderJournal();
   scheduleSave();
+}
+
+function renderBoostStatus(now = Date.now()) {
+  const remaining = Math.max(0, state.boostUntil - now);
+  const active = remaining > 0;
+  const minutes = Math.floor(remaining / 60000);
+  const seconds = Math.floor(remaining % 60000 / 1000);
+  document.querySelector("#coinResource").classList.toggle("is-boosted", active);
+  document.querySelector("#coinStatus").textContent = active ? `2× charm ${minutes}:${String(seconds).padStart(2, "0")}` : "coins";
 }
 
 function renderGatherButton() {
@@ -242,7 +253,9 @@ function showTutorialTransition(before, viewBeforeAction) {
   document.querySelector("#tutorialBannerDetail").textContent = prompt.detail;
   document.querySelector("#tutorialBanner").hidden = false;
   document.body.classList.add("tutorial-prompt-visible");
+  document.querySelector("#toastRegion").replaceChildren();
   clearTimeout(tutorialBannerTimer);
+  tutorialBannerTimer = setTimeout(hideTutorialBanner, 6500);
 }
 
 function renderIngredients() {
@@ -258,10 +271,15 @@ function renderIngredients() {
 
 function renderBrew() {
   const slot = document.querySelector("#brewSlot");
+  const scene = document.querySelector(".workshop-scene");
   if (!state.brew) {
     announcedReadyBrew = null;
+    scene.classList.remove("is-brewing", "is-ready");
+    scene.classList.add("is-idle");
+    scene.style.removeProperty("--brew-color");
     slot.classList.remove("is-ready");
-    slot.innerHTML = `<div class="brew-empty"><span>♨</span><div><strong>Your cauldron is ready</strong><small>Choose a recipe below to start brewing.</small></div></div>`;
+    if (renderedBrewKey !== "idle") slot.innerHTML = `<div class="brew-empty"><span>♨</span><div><strong>Your cauldron is ready</strong><small>Choose a recipe below to start brewing.</small></div></div>`;
+    renderedBrewKey = "idle";
     document.querySelector("#brewQueueLabel").textContent = "Ready";
     return;
   }
@@ -271,6 +289,10 @@ function renderBrew() {
   const percent = clamp(100 - remaining / duration * 100, 0, 100);
   const ready = remaining <= 0;
   const readyKey = `${state.brew.recipeId}:${state.brew.endsAt}`;
+  scene.classList.remove("is-idle", "is-brewing", "is-ready");
+  scene.classList.add(ready ? "is-ready" : "is-brewing");
+  scene.style.setProperty("--brew-color", recipe.color);
+  document.querySelector("#workshopStatus").textContent = ready ? `${recipe.name} is ready` : `${recipe.name} is brewing`;
   if (ready && announcedReadyBrew !== readyKey) {
     announcedReadyBrew = readyKey;
     document.querySelector("#brewStatusAnnouncement").textContent = `${recipe.name} is ready to collect.`;
@@ -279,12 +301,24 @@ function renderBrew() {
   }
   slot.classList.toggle("is-ready", ready);
   document.querySelector("#brewQueueLabel").textContent = ready ? "Complete!" : `${Math.ceil(remaining / 1000)}s left`;
-  slot.innerHTML = `<div class="active-brew">
-    <span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span>
-    <div><strong>${recipe.name}</strong><small>${ready ? "Bottle it while it's sparkling." : `${Math.ceil(remaining / 1000)} seconds remaining`}</small><div class="brew-progress" role="progressbar" aria-label="${recipe.name} brewing progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(percent)}"><span style="width:${percent}%"></span></div></div>
-    <button class="collect-button" id="collectBrewButton" aria-label="${ready ? `Collect ${recipe.name}` : `${recipe.name} is brewing`}" ${ready ? "" : "disabled"}>${ready ? "Collect" : "Brewing"}</button>
-  </div>`;
-  document.querySelector("#collectBrewButton").addEventListener("click", collectBrew);
+  const brewKey = `${state.brew.recipeId}:${state.brew.startedAt}`;
+  if (renderedBrewKey !== brewKey) {
+    slot.innerHTML = `<div class="active-brew">
+      <span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span>
+      <div><strong>${recipe.name}</strong><small data-brew-remaining></small><div class="brew-progress" role="progressbar" aria-label="${recipe.name} brewing progress" aria-valuemin="0" aria-valuemax="100"><span></span></div></div>
+      <button class="collect-button" id="collectBrewButton" disabled>Brewing</button>
+    </div>`;
+    document.querySelector("#collectBrewButton").addEventListener("click", collectBrew);
+    renderedBrewKey = brewKey;
+  }
+  slot.querySelector("[data-brew-remaining]").textContent = ready ? "Bottle it while it's sparkling." : `${Math.ceil(remaining / 1000)} seconds remaining`;
+  const progress = slot.querySelector(".brew-progress");
+  progress.setAttribute("aria-valuenow", String(Math.round(percent)));
+  progress.querySelector("span").style.width = `${percent}%`;
+  const collectButton = document.querySelector("#collectBrewButton");
+  collectButton.disabled = !ready;
+  collectButton.textContent = ready ? "Collect" : "Brewing";
+  collectButton.setAttribute("aria-label", ready ? `Collect ${recipe.name}` : `${recipe.name} is brewing`);
 }
 
 function renderPotionShelf() {
@@ -523,16 +557,24 @@ function toast(message, tone = "info") {
 }
 
 function showMarket() {
-  if (state.stats.orders < 1) { toast("Complete your first order to unlock the Moonlight Market."); return; }
+  if (state.stats.orders < 1) {
+    openModal({ icon: "✦", kicker: "MOONLIGHT MARKET · LOCKED", title: "Complete one village order", body: "<p>The market opens after your first successful delivery. Follow First Steps to brew a Meadow Tonic, collect it, and deliver it from Orders.</p><p>No real ads or purchases are connected.</p>", actions: [{ label: "Got it", primary: true }] });
+    return;
+  }
   const boostActive = Date.now() < state.boostUntil;
-  const brewRemaining = state.brew ? state.brew.endsAt - Date.now() : 0;
+  const finishStatus = Logic.finishBrewAssistStatus(state);
+  const finishCopy = finishStatus.available
+    ? "Simulated rewarded ad · removes 40% of remaining time · once per brew"
+    : finishStatus.reason === "already-used" ? "Already used for this brew"
+      : finishStatus.reason === "too-close-to-ready" ? `Available with at least ${Logic.FINISH_BREW_CONFIG.minRemainingSeconds}s remaining`
+        : finishStatus.reason === "brew-ready" ? "This brew is ready to collect" : "Start a longer brew to use this charm";
   openModal({ icon: "✦", kicker: "MOONLIGHT MARKET · PROTOTYPE", title: "Helpful little extras", body: `
     <p>Monetization placements are simulated in this prototype. No ad network or billing system is connected.</p>
-    <div class="market-offer"><span>▶</span><div><strong>Prosperity charm</strong><small>${boostActive ? "Active now" : "Simulated rewarded ad · 2× order coins for 5 minutes"}</small></div></div>
-    <div class="market-offer"><span>⚡</span><div><strong>Finish current brew</strong><small>Simulated rewarded ad · available while brewing</small></div></div>
+    <div class="market-offer"><span>▶</span><div><strong>Prosperity charm</strong><small>${boostActive ? `Active · ${document.querySelector("#coinStatus").textContent}` : "Simulated rewarded ad · 2× order coins for 5 minutes"}</small></div></div>
+    <div class="market-offer"><span>⚡</span><div><strong>Quick-brew charm</strong><small>${finishCopy}</small></div></div>
     <div class="market-offer"><span>🎁</span><div><strong>Apprentice bundle</strong><small>One-time simulated purchase · 100 coins and 10 ingredients</small></div></div>`, actions: [
       { label: boostActive ? "Prosperity charm active" : "Simulate ad: 2× coins", primary: true, onClick: boostActive ? closeModal : activateBoost },
-      ...(brewRemaining >= 30000 ? [{ label: "Simulate ad: finish brew", onClick: finishBrewAd }] : []),
+      ...(finishStatus.available ? [{ label: "Simulate ad: shorten brew", onClick: finishBrewAd }] : []),
       ...(!state.starterClaimed ? [{ label: "Simulate one-time bundle", onClick: claimStarter }] : []),
     ] });
 }
@@ -554,7 +596,7 @@ function activateBoost() {
   return runSimulatedReward("prosperity_charm", () => { state.boostUntil = Date.now() + 5 * 60 * 1000; }, "Prosperity charm active for 5 minutes!");
 }
 function finishBrewAd() {
-  return runSimulatedReward("finish_brew", () => { if (state.brew) state.brew.endsAt = Date.now(); }, "The confirmed simulation finished the brew.");
+  return runSimulatedReward("finish_brew", () => Logic.applyFinishBrewAssist(state, Date.now()), "Quick-brew charm applied once. Remaining brew time was reduced by 40%.");
 }
 async function claimStarter() {
   closeModal();
@@ -654,6 +696,7 @@ function tick() {
     if (added > 0) { renderIngredients(); document.querySelector("#pantryTotal").textContent = `${formatNumber(totalIngredients())} / ${storageCap()} items`; }
   }
   if (state.brew) renderBrew();
+  renderBoostStatus(now);
   renderGatherButton();
   renderBeginnerQuest();
   if (Date.now() > state.boostUntil && state.boostUntil !== 0) { state.boostUntil = 0; renderAll(); }
@@ -667,6 +710,7 @@ document.querySelector("#beginnerQuestButton").addEventListener("click", () => {
   goToTutorialTarget(Logic.beginnerQuest(state));
 });
 document.querySelector("#tutorialBannerButton").addEventListener("click", () => goToTutorialTarget(pendingTutorialTarget));
+document.querySelector("#tutorialBannerClose").addEventListener("click", hideTutorialBanner);
 document.querySelector("#refreshOrdersButton").addEventListener("click", refreshOrder);
 document.querySelector("#claimDailyButton").addEventListener("click", claimDaily);
 document.querySelector("#prestigeButton").addEventListener("click", confirmPrestige);

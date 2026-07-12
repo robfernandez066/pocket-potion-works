@@ -29,14 +29,14 @@
       </header>
 
       <section class="resource-bar" aria-label="Your resources">
-        <div class="resource resource-coins"><span>●</span><strong id="coinCount">0</strong><small>coins</small></div>
+        <div class="resource resource-coins" id="coinResource"><span>●</span><strong id="coinCount">0</strong><small id="coinStatus">coins</small></div>
         <div class="resource"><span>✧</span><strong id="xpCount">0/50</strong><small>level <b id="levelCount">1</b></small></div>
         <div class="resource"><span>★</span><strong id="stardustCount">0</strong><small>stardust</small></div>
       </section>
 
       <aside class="tutorial-banner" id="tutorialBanner" role="status" aria-live="polite" hidden>
         <div><strong id="tutorialBannerTitle">Your next step is ready</strong><small id="tutorialBannerDetail"></small></div>
-        <button id="tutorialBannerButton">Go now</button>
+        <div class="tutorial-banner-actions"><button id="tutorialBannerButton">Go now</button><button class="tutorial-banner-close" id="tutorialBannerClose" aria-label="Dismiss tutorial prompt">×</button></div>
       </aside>
 
       <article class="beginner-quest" id="beginnerQuestCard">
@@ -52,7 +52,7 @@
           </div>
 
           <article class="workshop-card">
-            <div class="workshop-scene" aria-label="A cozy alchemy workbench">
+            <div class="workshop-scene is-idle" aria-label="A cozy alchemy workbench">
               <span class="hanging-herbs" aria-hidden="true">⌇⌇⌇</span>
               <span class="shelf shelf-one" aria-hidden="true"><i></i><i></i><i></i></span>
               <span class="shelf shelf-two" aria-hidden="true"><i></i><i></i></span>

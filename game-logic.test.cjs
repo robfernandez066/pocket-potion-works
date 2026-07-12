@@ -33,6 +33,41 @@ test("a completed brew can only be collected once", () => {
   assert.equal(state.stats.brewed, 1);
 });
 
+test("quick-brew assist removes forty percent once without finishing the brew", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  state.ingredients.herb = 3;
+  state.ingredients.crystal = 1;
+  assert.equal(game.startBrew(state, "clarity", NOW), true);
+  const status = game.finishBrewAssistStatus(state, NOW + 6000);
+  assert.equal(status.available, true);
+  assert.equal(status.remainingMs, 60000);
+  const result = game.applyFinishBrewAssist(state, NOW + 6000);
+  assert.equal(result.applied, true);
+  assert.equal(result.remainingMs, 36000);
+  assert.equal(state.brew.endsAt, NOW + 42000);
+  assert.equal(game.collectBrew(state, NOW + 6000), null);
+  assert.equal(game.finishBrewAssistStatus(state, NOW + 6000).reason, "already-used");
+  assert.equal(game.applyFinishBrewAssist(state, NOW + 6000).applied, false);
+  assert.equal(state.brew.endsAt, NOW + 42000);
+});
+
+test("quick-brew assist rejects missing, ready, and nearly complete brews", () => {
+  const state = game.defaultState(NOW);
+  assert.equal(game.finishBrewAssistStatus(state, NOW).reason, "no-active-brew");
+  game.startBrew(state, "tonic", NOW);
+  assert.equal(game.finishBrewAssistStatus(state, NOW).reason, "too-close-to-ready");
+  assert.equal(game.finishBrewAssistStatus(state, NOW + 30000).reason, "brew-ready");
+});
+
+test("quick-brew usage survives save normalization", () => {
+  const state = game.defaultState(NOW);
+  game.startBrew(state, "tonic", NOW);
+  state.brew.assistUses = 99;
+  const loaded = game.normalizeState(state, NOW);
+  assert.equal(loaded.brew.assistUses, game.FINISH_BREW_CONFIG.maxUsesPerBrew);
+});
+
 test("an order can only be delivered once", () => {
   const state = game.defaultState(NOW);
   state.orders = [{ id: 1, recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];

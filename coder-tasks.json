@@ -1,47 +1,54 @@
 [
   {
     "id": 6,
-    "status": "next",
+    "status": "pending",
     "releaseGate": true,
-    "title": "Current-build playtest closure",
-    "model": "Use the current efficient coding model with medium reasoning",
-    "freshChat": false,
-    "prompt": "Work only on issues found during the owner's current Pocket Potion Works playtest. Read AGENTS.md, README.md, GAMEPLAY_ROADMAP.md, and the active release/audio documentation. Do not read archive/. Preserve the charcoal-black and purple theme, current save compatibility, core loop, and fake-only platform boundaries. Fix only confirmed playtest issues, add focused regression coverage, run npm.cmd run check, and verify affected behavior at 390x844 and 360x740. Do not publish, add production services, or begin the next roadmap phase.",
+    "title": "Interaction blockers and prototype economy integrity",
+    "model": "Use the current efficient coding model with medium-high reasoning",
+    "freshChat": true,
+    "prompt": "Work only on the current Pocket Potion Works interaction blockers and simulated-reward integrity. Read AGENTS.md, README.md, GAMEPLAY_ROADMAP.md, RELEASE_READINESS.md, DEVICE_TEST_MATRIX.md, game-logic.js, app.js, style.css, index.html, economy-simulation.cjs, monetization-simulation.cjs, and the relevant tests. Do not read archive/. Make the tutorial transition banner dismissible, time-bounded, and unable to cover core controls; remove duplicate tutorial messaging. Keep the Market button enabled and explain its first-order lock on touch. Add a visible Prosperity charm countdown. Move finish-brew eligibility and consumption into deterministic shared logic used by both the UI and monetization simulation; replace the unlimited behavior and current abuse characterization with a bounded guardrail that preserves brew pacing, then make offer copy match availability. Stop rebuilding active brew controls every second, move ordinary toasts above bottom navigation, replace fractional gathering-rate copy with readable units, and reflect idle/active/ready brew state in the scene when safe. Add focused deterministic tests for reward abuse and state transitions. Do not redesign gathering, add puzzles, add production services, or begin later roadmap work.",
     "acceptance": [
-      "Owner-reported current-build issues are resolved without unrelated feature expansion",
-      "Gather, brew, collect, deliver, and upgrade remain completable",
-      "Audio cue assignment and mix match owner decisions",
-      "Exact-size browser QA has no horizontal overflow or console errors",
-      "Current release evidence and documentation match the tested build"
+      "Tutorial prompts never block Market, Settings, resources, or required navigation and can be dismissed",
+      "Only one tutorial message surface is prominent for a transition",
+      "Locked Market behavior is understandable on touch",
+      "Finish-brew simulation cannot be repeated to collapse timer progression and its UI matches the rule",
+      "The UI and monetization simulation use one deterministic finish-brew eligibility policy with a bounded guardrail",
+      "Active charm state and remaining time are visible outside the Market modal",
+      "Collect remains stable across timer ticks",
+      "Toasts do not cover resources or bottom navigation",
+      "npm.cmd run check passes and 390x844 plus 360x740 browser QA has no overflow or console errors"
     ]
   },
   {
     "id": 7,
-    "status": "pending",
-    "title": "Potion mastery and recipe discovery",
-    "model": "Use the current efficient coding model with medium-high reasoning",
+    "status": "next",
+    "title": "Meaningful gathering and workshop flow",
+    "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
-    "prompt": "After Task 6 and owner approval, design a small deterministic potion-mastery and recipe-discovery system. Keep it data-driven, offline, save-compatible, and understandable on mobile. Add meaningful recipe-specific progression without random dead ends, impossible orders, production services, or a large content dump. Present the design and migration plan for review before broad implementation.",
+    "prompt": "After Task 6 and owner approval, redesign charged gathering and shorten the Workshop loop. Use deterministic simulations to choose recharge and yield values; do not adopt unverified fixed numbers. Charged gathering must support intentional ingredient targeting while passive/offline gathering may remain random. Preserve a simple instant gather. Add a compact ready-to-deliver strip, sticky brew shortcut, and compact remembered Pantry/Recipe disclosures while retaining the four-tab navigation and full Orders view. Present any optional pick-3 foraging prototype separately and keep it skippable.",
     "acceptance": [
-      "Mastery adds a meaningful goal beyond player level",
-      "Existing saves migrate without losing progress",
-      "Order generation remains completable",
-      "Progression is covered by deterministic tests and economy simulation",
-      "Owner approves the scope before further content expansion"
+      "Charges create a meaningful limited decision without first-session stalls",
+      "Players can intentionally pursue a needed ingredient through charged gathering",
+      "Economy simulations cover scarcity, storage, targeting, and recharge behavior",
+      "One full loop requires materially less tab and scroll movement",
+      "Any puzzle remains optional, thumb-friendly, under ten seconds, and non-blocking",
+      "Existing saves migrate safely"
     ]
   },
   {
     "id": 8,
     "status": "pending",
-    "title": "Upgrade choices and customer relationships",
-    "model": "Use the current efficient coding model with medium-high reasoning",
+    "title": "Prestige, mastery, upgrades, and customers",
+    "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
-    "prompt": "After mastery is approved, add clearer upgrade previews and a lightweight recurring-customer relationship system. Preserve short sessions, offline play, deterministic saves, accessibility, and mobile layout. Favor a few meaningful decisions and short request chains over large amounts of text or content.",
+    "prompt": "After Task 7 is approved, deepen progression without a large content dump. Rebalance prestige against the date-resetting daily reward using reproducible simulations; resolve the level-7 content ceiling versus level-8 prestige gate. Add small per-recipe mastery, clearer upgrade previews with a limited number of meaningful paths, and lightweight recurring-customer progress or special-request chains. Keep all systems deterministic, offline, accessible, and save-compatible. Do not treat any consultant-suggested formula as approved without evidence.",
     "acceptance": [
-      "Upgrade purchases show their next-level effect before confirmation",
-      "At least two upgrade paths create a meaningful choice",
-      "Recurring customers provide visible progress without blocking the core loop",
-      "No live service, account, or generated dialogue dependency is introduced"
+      "Prestige is a credible long-term choice and daily play remains worthwhile",
+      "There is no dead progression level immediately before prestige",
+      "Mastery adds a meaningful goal beyond player level",
+      "Upgrade effects are visible before purchase and include meaningful choice",
+      "Customer progress adds texture without blocking the core loop",
+      "Save migration, economy, and rollback behavior are tested"
     ]
   },
   {
@@ -50,26 +57,29 @@
     "title": "Offline-friendly retention and customization",
     "model": "Use the current efficient coding model with medium reasoning",
     "freshChat": true,
-    "prompt": "After the progression systems are approved, prototype workshop cosmetics, weekly request chains, and collection goals that work fully offline and do not punish missed days. Keep scope small, save-compatible, and measurable through deterministic tests and short owner playtests.",
+    "prompt": "After progression depth is approved, prototype workshop cosmetics, a small prestige keepsake, weekly request chains, and collection goals that work fully offline and do not punish missed days. Add content only where playtest demand is demonstrated. Audit critical cross-platform glyphs before store-facing screenshots. A second brew slot remains an experiment and requires separate pacing evidence.",
     "acceptance": [
-      "Retention goals work without an account or server clock",
-      "Missing a day does not cause irreversible loss or punishment",
-      "Cosmetic rewards do not alter required progression balance",
-      "Save migration and rollback behavior are documented and tested"
+      "Retention goals work without an account or trusted server clock",
+      "Missing a day causes no irreversible punishment",
+      "Cosmetics do not alter required progression balance",
+      "Critical store-facing icons render consistently",
+      "Any second-slot experiment preserves timer and economy pacing",
+      "Save migration and rollback remain tested"
     ]
   },
   {
     "id": 10,
     "status": "pending",
-    "title": "Public beta decision",
+    "title": "Public beta and monetization decision",
     "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
-    "prompt": "After owner approval of the gameplay MVP, perform a fresh public-PWA beta audit. Test real install, update, offline relaunch, storage behavior, target browsers/devices, current disclosures, screenshots, support/privacy requirements, and rollback. Do not publish or connect production monetization, analytics, accounts, or cloud services without explicit owner authorization.",
+    "prompt": "After owner approval of the gameplay MVP, perform a fresh public-PWA beta audit and a reproducible simulated-monetization comparison. Test real install, update, offline relaunch, storage, target browsers/devices, disclosures, screenshots, support/privacy requirements, and rollback. Evaluate bounded charm, finish-brew, and bundle variants with checked-in deterministic scenarios. Do not connect production services, publish to stores, or adopt pricing/value assumptions without explicit owner authorization.",
     "acceptance": [
       "Public beta verdict is evidence-backed and target-specific",
+      "Monetization comparisons are reproducible from checked-in tests or simulations",
       "Current screenshots and disclosures match the approved build",
       "Install, update, offline relaunch, and rollback are tested in real target environments",
-      "Publishing remains an explicit owner action"
+      "Production integrations and broader publishing remain explicit owner actions"
     ]
   }
 ]

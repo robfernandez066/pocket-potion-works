@@ -25,7 +25,7 @@ npm.cmd run check
 npm.cmd run release:check
 ```
 
-The checks cover syntax, deterministic gameplay and economy behavior, platform-adapter safety, audio mappings, save compatibility, service-worker behavior, privacy/release boundaries, and runtime budgets. The final release check remains blocked while current manual browser evidence is pending.
+The checks cover syntax, deterministic gameplay and economy behavior, scripted monetization comparisons, platform-adapter safety, audio mappings, save compatibility, service-worker behavior, privacy/release boundaries, and runtime budgets. Monetization results are exact for the checked-in scripted profile but directional for human play. The final release check remains blocked while current manual browser evidence is pending.
 
 ## Current game
 
