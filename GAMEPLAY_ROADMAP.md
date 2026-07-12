@@ -36,7 +36,7 @@ Offline gathering begins after the first delivered order and stops at 75% of sto
 
 Exit gate: gathering creates deliberate ingredient decisions, pantry scarcity remains understandable, and one full loop can be completed with materially less tab and scroll movement.
 
-## Now - progression depth
+## Completed - progression depth
 
 Task 8 moves starry rebirth to the final recipe unlock at level 7 and grants 3 base stardust. Across seeds 7, 42, and 2026, the checked-in realistic strategy reached level 7 in 2,425-2,730 seconds with 30-33 orders, 36-39 mastery brews, and the normal 1-stardust daily claimed. A counterfactual reset retaining only that daily stardust and the chosen rebirth both recovered to level 3 in 317 seconds with four upgrades, while the chosen grant retained 69 coins versus the baseline's 26. Four reward stardust did not improve that recovery band: it averaged 323 seconds, five upgrades, and 6 unspent coins. This supports 3 as a bounded recovery cushion, not a claimed speed boost; staying at level 7 with the daily stardust remains the stronger immediate option. Rebirth preserves the current daily state so it cannot reset the same-date claim.
 
@@ -46,15 +46,23 @@ The optional brew-start timing interaction was not added; mastery supplies the i
 
 Exit gate: players have at least two meaningful goals beyond player level, and prestige offers a credible long-term choice without invalidating daily play.
 
-## Later - retention and identity
+## Now - offline-friendly retention and identity
 
-- Workshop decorations and cosmetic rewards, including a small prestige keepsake.
-- Weekly request chains and collection goals that work offline and do not punish missed days.
-- Additional recipes, customers, achievements, stories, and prestige goals only when playtests justify them.
+- Five compact code-native workshop looks are available: the original, two collection-goal looks, one first-prestige Starglass Keepsake, and one rolling-request ribbon. None changes economy or required progression.
+- Three deterministic request chains progress only on validated deliveries. Progress and claims never expire, local dates are ignored, and total prototype rewards are capped at 105 coins. This claim-when-ready policy avoids both missed-week punishment and false trust in a device clock.
+- The optional daily goal keeps a monotonic saved local-date boundary: rollback or returning to the same high-water date cannot reissue it, while a later date restores ordinary missed-day play without a streak penalty. A fully offline client cannot prevent someone from repeatedly advancing the clock to brand-new future dates.
+- Three collection goals reuse approved mastery and prestige evidence: brew 10 potions, collect each recipe, and complete one rebirth. No large content set was added.
+- Critical screenshot chrome now uses inline SVG or CSS geometry for the brand, settings, market, resources, and four-tab navigation instead of platform-dependent glyphs.
+- Save schema v3 migrates v1/v2, preserves Task 8 progression, and is protected from overwrite by a frozen v2 reader during downlevel rollback.
+
+The second brew slot remains deferred. Current evidence validates one cauldron plus bounded quick-brew; there is no separate pacing simulation showing that a second concurrent timer preserves ingredient demand, delivery cadence, or upgrade value.
+
+Exit gate: owner playtests whether the rolling-chain cadence and small visual choices feel motivating without turning them into obligations.
+
+## Later
+
+- Additional recipes, customers, achievements, stories, prestige goals, or cosmetics only when playtests justify them.
 - Playtest the implemented effects/music sliders and three-track fades before adding more mix controls or music.
-- Audit cross-platform glyph rendering and move critical store-facing icons to local inline SVG where needed.
-
-A second brew slot remains an experiment, not an approved feature. Revisit it only after gathering and timer pacing are stable.
 
 ## Simulated monetization rules
 

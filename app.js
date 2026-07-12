@@ -5,7 +5,7 @@ const UI_PREFS_KEY = "pocket-potion-works-ui-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
-const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
+const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
 const platformStore = new Platform.PlatformStateStore(localStorage);
 const consent = new Platform.ConsentManager(platformStore);
 const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
@@ -188,6 +188,7 @@ function renderAll() {
   document.querySelector("#workshopStatus").textContent = state.brew ? `${recipeById(state.brew.recipeId).name} is brewing` : "The kettle is warm";
   document.querySelector("#marketButton").disabled = false;
   document.querySelector("#marketButton").title = state.stats.orders < 1 ? "Complete your first order to unlock the market" : "Open Moonlight Market";
+  renderWorkshopLook();
   renderBoostStatus();
   document.querySelector("#orderDot").hidden = !state.orders.some(order => state.potions[order.recipeId] >= order.quantity);
   renderGatherButton();
@@ -198,11 +199,20 @@ function renderAll() {
   renderPotionShelf();
   renderRecipes();
   renderOrders();
+  renderWeekly();
   renderUpgrades();
   renderJournal();
   renderDisclosures();
   updateBrewShortcut();
   scheduleSave();
+}
+
+function renderWorkshopLook() {
+  const scene = document.querySelector(".workshop-scene");
+  const decoration = Logic.workshopDecorationState(state);
+  scene.dataset.cosmetic = decoration.selected;
+  scene.classList.toggle("has-keepsake", decoration.keepsake);
+  scene.classList.toggle("has-guild-ribbon", decoration.ribbon);
 }
 
 function renderBoostStatus(now = Date.now()) {
@@ -444,6 +454,30 @@ function renderOrders() {
   document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.order))));
 }
 
+function renderWeekly() {
+  const card = document.querySelector("#weeklyCard");
+  const status = Logic.weeklyChainStatus(state);
+  const button = document.querySelector("#claimWeeklyButton");
+  if (status.complete) {
+    card.classList.add("is-complete");
+    document.querySelector("#weeklyTitle").textContent = "All rolling requests complete";
+    document.querySelector("#weeklyPolicy").textContent = "You finished all three chains and claimed every coin parcel. There is no reset or missed-week penalty.";
+    document.querySelector("#weeklyProgress").textContent = "3 / 3 chains";
+    document.querySelector("#weeklyReward").textContent = "Guild Ribbon unlocked";
+    document.querySelector("#weeklyBar").style.width = "100%";
+    button.hidden = true;
+    return;
+  }
+  card.classList.remove("is-complete");
+  const finalTarget = status.chain.thresholds.at(-1);
+  document.querySelector("#weeklyTitle").textContent = status.chain.name;
+  document.querySelector("#weeklyPolicy").textContent = `Rolling chain ${status.cycle + 1} of ${status.totalCycles}. Complete all 3 parcels at your pace${status.cycle === 0 ? " to unlock the Guild Ribbon Workshop Look" : ""}. Nothing expires.`;
+  document.querySelector("#weeklyProgress").textContent = `${status.progress} of ${status.nextThreshold} deliveries`;
+  document.querySelector("#weeklyReward").textContent = `Parcel ${status.claimedSteps + 1}: ${status.reward} coins`;
+  document.querySelector("#weeklyBar").style.width = `${Math.min(100, status.progress / finalTarget * 100)}%`;
+  button.hidden = !status.ready;
+}
+
 function upgradeCost(upgrade) {
   return Logic.upgradeCost(state, upgrade);
 }
@@ -473,6 +507,32 @@ function renderJournal() {
     const earned = Boolean(state.achievements[achievement.id]);
     return `<article class="achievement-card ${earned ? "" : "is-locked"}"><span class="achievement-icon">${earned ? achievement.icon : "?"}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">${earned ? "Earned" : "Locked"}</span></article>`;
   }).join("");
+  document.querySelector("#collectionList").innerHTML = COLLECTION_GOALS.map(goal => {
+    const progress = Logic.collectionGoalProgress(state, goal.id);
+    const complete = progress.current >= progress.target;
+    const cosmetic = COSMETICS.find(item => item.id === goal.cosmeticId);
+    return `<article class="collection-card"><div><strong>${goal.name}</strong><small>Unlocks the ${cosmetic.name} Workshop Look</small></div><span>${complete ? "Unlocked" : `${progress.current} / ${progress.target}`}</span></article>`;
+  }).join("");
+  document.querySelector("#cosmeticList").innerHTML = COSMETICS.map(cosmetic => {
+    const unlocked = Logic.cosmeticUnlocked(state, cosmetic.id);
+    const selected = state.customization.selected === cosmetic.id;
+    return `<button class="cosmetic-button" data-cosmetic="${cosmetic.id}" aria-pressed="${selected}" ${unlocked ? "" : "disabled"}><div><strong>${cosmetic.name}</strong><small>${cosmetic.description}</small></div><span>${selected ? "In use" : unlocked ? "Use" : "Locked"}</span></button>`;
+  }).join("");
+  document.querySelectorAll("[data-cosmetic]").forEach(button => button.addEventListener("click", () => selectCosmetic(button.dataset.cosmetic)));
+}
+
+function selectCosmetic(cosmeticId) {
+  if (!Logic.selectCosmetic(state, cosmeticId)) return;
+  feedback("Workshop look updated.", { tone: "reward", soundName: "tap", target: ".workshop-card" });
+  renderAll();
+}
+
+function claimWeekly() {
+  const result = Logic.claimWeeklyStep(state);
+  if (!result) return;
+  feedback(`${result.chainCompleted ? "Request chain complete" : "Request parcel claimed"}! +${result.reward} coins`, { tone: "reward", soundName: "reward", target: "#weeklyCard" });
+  playCoinArrivals(result.reward);
+  renderAll();
 }
 
 function startBrew(recipeId) {
@@ -551,7 +611,7 @@ function prestigeReward() { return Logic.prestigeReward(state); }
 function confirmPrestige() {
   if (state.level < PRESTIGE_CONFIG.unlockLevel) return;
   const reward = prestigeReward();
-  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, and upgrades.</p><p>Mastery, friendships, today's daily state, and achievements stay. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
+  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, and upgrades.</p><p>Mastery, friendships, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth also leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
     { label: "Not yet" },
     { label: `Rebirth for ${reward} stardust`, primary: true, onClick: () => performPrestige(reward) },
   ] });
@@ -875,6 +935,7 @@ document.querySelector("#tutorialBannerButton").addEventListener("click", () => 
 document.querySelector("#tutorialBannerClose").addEventListener("click", hideTutorialBanner);
 document.querySelector("#refreshOrdersButton").addEventListener("click", refreshOrder);
 document.querySelector("#claimDailyButton").addEventListener("click", claimDaily);
+document.querySelector("#claimWeeklyButton").addEventListener("click", claimWeekly);
 document.querySelector("#prestigeButton").addEventListener("click", confirmPrestige);
 document.querySelector("#marketButton").addEventListener("click", showMarket);
 document.querySelector("#settingsButton").addEventListener("click", showSettings);

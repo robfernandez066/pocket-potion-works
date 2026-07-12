@@ -5,14 +5,25 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 2;
+  const SAVE_VERSION = 3;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 30, amountPerCharge: 3 });
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
   const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
   const CUSTOMER_CONFIG = Object.freeze({ deliveriesPerHeart: 3, maxHearts: 3, heartBonusCoins: 12 });
   const PRESTIGE_CONFIG = Object.freeze({ unlockLevel: 7, baseReward: 3, levelsPerBonus: 2 });
-
+  const WEEKLY_CHAINS = Object.freeze([
+    Object.freeze({ id: "neighbors", name: "Neighborly Notes", thresholds: Object.freeze([2, 4, 6]), rewards: Object.freeze([10, 10, 15]) }),
+    Object.freeze({ id: "moonfair", name: "Moonfair Preparations", thresholds: Object.freeze([2, 5, 7]), rewards: Object.freeze([10, 10, 15]) }),
+    Object.freeze({ id: "lanterns", name: "Lantern Night Stock", thresholds: Object.freeze([3, 6, 9]), rewards: Object.freeze([10, 10, 15]) }),
+  ]);
+  const COSMETICS = Object.freeze([
+    Object.freeze({ id: "midnight", name: "Midnight Workshop", description: "The original violet workbench." }),
+    Object.freeze({ id: "fern", name: "Fern Window", description: "Unlocked by brewing 10 potions." }),
+    Object.freeze({ id: "mooncloth", name: "Mooncloth Shelves", description: "Unlocked by collecting every recipe." }),
+    Object.freeze({ id: "starglass", name: "Starglass Keepsake", description: "Unlocked by your first starry rebirth." }),
+    Object.freeze({ id: "guild", name: "Guild Ribbon", description: "Unlocked by completing one rolling request chain." }),
+  ]);
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
     mushroom: { name: "Mooshroom", icon: "♧", color: "#f0d8d5", unlock: 1 },
@@ -32,6 +43,12 @@
     { id: "dream", name: "Dreamer's Draught", icon: "✦", color: "#c77d9b", unlock: 6, seconds: 112, sell: 118, ingredients: { mushroom: 3, crystal: 2, ember: 2 } },
     { id: "starlight", name: "Starlight Philter", icon: "☆", color: "#7569b4", unlock: 7, seconds: 125, sell: 156, ingredients: { mist: 2, ember: 2, lavender: 2 } },
   ];
+
+  const COLLECTION_GOALS = Object.freeze([
+    Object.freeze({ id: "brewer", name: "Brewkeeper", target: 10, cosmeticId: "fern" }),
+    Object.freeze({ id: "sampler", name: "Potion Sampler", target: RECIPES.length, cosmeticId: "mooncloth" }),
+    Object.freeze({ id: "keepsake", name: "First Star Keepsake", target: 1, cosmeticId: "starglass" }),
+  ]);
 
   const UPGRADES = [
     { id: "garden", path: "Harvest", name: "Moonlit Garden", icon: "☘", description: "+25% passive ingredients per level", baseCost: 70, max: 8 },
@@ -91,6 +108,8 @@
       discovery: { brewed: {}, delivered: {} },
       mastery: Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0])),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
+      weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
+      customization: { selected: "midnight" },
       boostUntil: 0, starterClaimed: false, tutorialSeen: false,
       achievements: {},
       stats: { taps: 0, brewed: 0, orders: 0, coinsEarned: 0, prestiges: 0 },
@@ -227,6 +246,21 @@
     }
     const sourceMastery = isRecord(input.mastery) ? input.mastery : {};
     state.mastery = Object.fromEntries(RECIPES.map(recipe => [recipe.id, int(sourceMastery[recipe.id], state.discovery.brewed[recipe.id])]));
+    const sourceWeekly = isRecord(input.weekly) ? input.weekly : {};
+    let cycle = int(sourceWeekly.cycle, 0, 0, WEEKLY_CHAINS.length);
+    let chain = WEEKLY_CHAINS[cycle];
+    const normalizedClaimedSteps = chain ? int(sourceWeekly.claimedSteps, 0, 0, chain.thresholds.length) : 0;
+    if (chain && normalizedClaimedSteps >= chain.thresholds.length) {
+      cycle += 1;
+      chain = WEEKLY_CHAINS[cycle];
+    }
+    state.weekly = {
+      cycle,
+      progress: chain && cycle === int(sourceWeekly.cycle, 0, 0, WEEKLY_CHAINS.length) ? int(sourceWeekly.progress, 0, 0, chain.thresholds.at(-1)) : 0,
+      claimedSteps: chain && cycle === int(sourceWeekly.cycle, 0, 0, WEEKLY_CHAINS.length) ? normalizedClaimedSteps : 0,
+    };
+    const requestedCosmetic = isRecord(input.customization) && typeof input.customization.selected === "string" ? input.customization.selected : "midnight";
+    state.customization = { selected: cosmeticUnlocked(state, requestedCosmetic) ? requestedCosmetic : "midnight" };
     const sourceBrew = isRecord(input.brew) ? input.brew : null;
     if (sourceBrew && recipeById(sourceBrew.recipeId)) {
       const startedAt = clamp(finite(sourceBrew.startedAt, now), 0, now);
@@ -371,6 +405,7 @@
     const customerBonus = progress.hearts > previousHearts ? CUSTOMER_CONFIG.heartBonusCoins : 0;
     const reward = Math.round(order.reward * orderMultiplier(state, now, order.recipeId)) + customerBonus;
     state.coins += reward; state.stats.coinsEarned += reward; state.stats.orders += 1; state.daily.orders += 1;
+    recordWeeklyDelivery(state);
     state.discovery.delivered[order.recipeId] = int(state.discovery.delivered[order.recipeId]) + order.quantity;
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
@@ -402,6 +437,65 @@
     state.daily.claimed = true; state.coins += 50; state.stardust += 1; state.stats.coinsEarned += 50; return true;
   }
 
+  function collectionGoalProgress(state, goalId) {
+    if (goalId === "brewer") return { current: Math.min(10, int(state.stats?.brewed)), target: 10 };
+    if (goalId === "sampler") return { current: RECIPES.filter(recipe => int(state.mastery?.[recipe.id]) > 0).length, target: RECIPES.length };
+    if (goalId === "keepsake") return { current: Math.min(1, int(state.stats?.prestiges)), target: 1 };
+    return null;
+  }
+
+  function cosmeticUnlocked(state, cosmeticId) {
+    if (cosmeticId === "midnight") return true;
+    if (cosmeticId === "guild") return int(state.weekly?.cycle) > 0;
+    const goal = COLLECTION_GOALS.find(item => item.cosmeticId === cosmeticId);
+    const progress = goal && collectionGoalProgress(state, goal.id);
+    return Boolean(progress && progress.current >= progress.target);
+  }
+
+  function selectCosmetic(state, cosmeticId) {
+    if (!COSMETICS.some(item => item.id === cosmeticId) || !cosmeticUnlocked(state, cosmeticId)) return false;
+    state.customization.selected = cosmeticId;
+    return true;
+  }
+
+  function workshopDecorationState(state) {
+    const selected = cosmeticUnlocked(state, state.customization?.selected) ? state.customization.selected : "midnight";
+    return { selected, keepsake: selected === "starglass", ribbon: selected === "guild" };
+  }
+
+  function weeklyChainStatus(state) {
+    const cycle = int(state.weekly?.cycle, 0, 0, WEEKLY_CHAINS.length);
+    const chain = WEEKLY_CHAINS[cycle];
+    if (!chain) return { complete: true, cycle, totalCycles: WEEKLY_CHAINS.length };
+    const claimedSteps = int(state.weekly?.claimedSteps, 0, 0, chain.thresholds.length);
+    return {
+      complete: false, cycle, totalCycles: WEEKLY_CHAINS.length, chain,
+      progress: int(state.weekly?.progress, 0, 0, chain.thresholds.at(-1)), claimedSteps,
+      nextThreshold: chain.thresholds[claimedSteps] || null,
+      reward: chain.rewards[claimedSteps] || 0,
+      ready: claimedSteps < chain.thresholds.length && int(state.weekly?.progress) >= chain.thresholds[claimedSteps],
+    };
+  }
+
+  function recordWeeklyDelivery(state) {
+    const status = weeklyChainStatus(state);
+    if (status.complete) return false;
+    state.weekly.progress = Math.min(status.chain.thresholds.at(-1), status.progress + 1);
+    return true;
+  }
+
+  function claimWeeklyStep(state) {
+    const status = weeklyChainStatus(state);
+    if (status.complete || !status.ready) return null;
+    const reward = status.reward;
+    state.coins += reward;
+    state.stats.coinsEarned += reward;
+    state.weekly.claimedSteps += 1;
+    const chainCompleted = state.weekly.claimedSteps >= status.chain.thresholds.length;
+    if (chainCompleted) state.weekly = { cycle: status.cycle + 1, progress: 0, claimedSteps: 0 };
+    return { reward, chainCompleted, cycle: status.cycle };
+  }
+
   function prestigeReward(state) { return PRESTIGE_CONFIG.baseReward + Math.floor(Math.max(0, state.level - PRESTIGE_CONFIG.unlockLevel) / PRESTIGE_CONFIG.levelsPerBonus); }
   function performPrestige(state, reward = prestigeReward(state), now = Date.now()) {
     if (state.level < PRESTIGE_CONFIG.unlockLevel) return null;
@@ -411,6 +505,8 @@
     next.stats = { ...state.stats, prestiges: state.stats.prestiges + 1 };
     next.mastery = { ...state.mastery };
     next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
+    next.weekly = { ...state.weekly };
+    next.customization = { ...state.customization };
     next.daily = { ...state.daily };
     next.tutorialSeen = true;
     next.starterClaimed = state.starterClaimed;
@@ -424,7 +520,7 @@
 
   function resetDailyIfNeeded(state, now = Date.now()) {
     const date = todayKey(now);
-    if (state.daily.date !== date) state.daily = { date, orders: 0, claimed: false };
+    if (date > state.daily.date) state.daily = { date, orders: 0, claimed: false };
   }
 
   function enforceStorageCap(state) {
@@ -497,11 +593,11 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
-    generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
+    generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, setGatherTarget, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

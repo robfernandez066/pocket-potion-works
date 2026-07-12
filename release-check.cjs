@@ -12,7 +12,7 @@ const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3",
 const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
 assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
-for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v3.json", "fixtures/rollback/game-save-reader-v1.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
+for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v4.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const text = Object.fromEntries(runtimeFiles.map(file => [file, fs.readFileSync(file, "utf8")]));
 const manifest = JSON.parse(text["manifest.webmanifest"]);
@@ -62,7 +62,7 @@ const allReleaseFiles = fs.readdirSync(".").filter(file => fs.statSync(file).isF
 const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
-assert.match(text["game-logic.js"], /const SAVE_VERSION = 2/);
+assert.match(text["game-logic.js"], /const SAVE_VERSION = 3/);
 assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
 assert.match(text["app.js"], /permanently increasing order coins/);
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");
