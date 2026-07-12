@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "coins": 287,
+  "xp": 31,
+  "level": 4,
+  "stardust": 6,
+  "ingredients": { "herb": 11, "mushroom": 7, "crystal": 4, "ember": 2 },
+  "potions": { "tonic": 3, "clarity": 2, "moon": 1, "sun": 1 },
+  "upgrades": { "garden": 2, "basket": 1, "cauldron": 1, "shelves": 1, "ledger": 0 },
+  "brew": { "recipeId": "clarity", "startedAt": 1783857540000, "endsAt": 1783857606000, "durationMs": 66000 },
+  "orders": [
+    { "id": 7, "customer": "Mira the Baker", "avatar": "M", "note": "Earlier order one", "avatarColor": "#f1d7c8", "recipeId": "tonic", "quantity": 1, "reward": 25, "xp": 14 },
+    { "id": 8, "customer": "Old Moss", "avatar": "O", "note": "Earlier order two", "avatarColor": "#d7e4d1", "recipeId": "clarity", "quantity": 1, "reward": 49, "xp": 18 }
+  ],
+  "nextOrderId": 9,
+  "daily": { "date": "2026-07-12", "orders": 3, "claimed": false },
+  "boostUntil": 1783857900000,
+  "starterClaimed": true,
+  "tutorialSeen": true,
+  "achievements": { "firstBrew": 1783800000000, "orderFive": 1783810000000 },
+  "stats": { "taps": 74, "brewed": 29, "orders": 18, "coinsEarned": 1450, "prestiges": 2 },
+  "lastSeen": 1783857500000
+}
