@@ -5,7 +5,7 @@ const UI_PREFS_KEY = "pocket-potion-works-ui-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
-const { SAVE_VERSION, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
+const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, INGREDIENTS, RECIPES, UPGRADES, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
 const platformStore = new Platform.PlatformStateStore(localStorage);
 const consent = new Platform.ConsentManager(platformStore);
 const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
@@ -23,7 +23,11 @@ function xpNeeded(level = state.level) { return Logic.xpNeeded(level); }
 function storageCap() { return Logic.storageCap(state); }
 function gatherRate() { return Logic.gatherRate(state); }
 function manualGatherAmount() { return Logic.manualGatherAmount(state); }
-function orderMultiplier() { return Logic.orderMultiplier(state); }
+function orderReward(order, now = Date.now()) {
+  const customer = state.customers[order.customerId] || { deliveries: 0, hearts: 0 };
+  const favor = customer.hearts < CUSTOMER_CONFIG.maxHearts && customer.deliveries % CUSTOMER_CONFIG.deliveriesPerHeart === CUSTOMER_CONFIG.deliveriesPerHeart - 1 ? CUSTOMER_CONFIG.heartBonusCoins : 0;
+  return Math.round(order.reward * Logic.orderMultiplier(state, now, order.recipeId)) + favor;
+}
 function brewSpeedMultiplier() { return Logic.brewSpeedMultiplier(state); }
 function totalIngredients() { return Logic.totalIngredients(state); }
 
@@ -311,7 +315,7 @@ function renderReadyDeliverStrip() {
   strip.hidden = ready.length === 0;
   strip.innerHTML = ready.length ? `<div><span class="eyebrow">READY TO DELIVER</span><strong>${ready.length} order${ready.length === 1 ? "" : "s"} waiting</strong></div><div class="ready-deliver-actions">${ready.slice(0, 2).map(order => {
     const recipe = recipeById(order.recipeId);
-    return `<button data-quick-deliver="${order.id}">${recipe.icon} Deliver ${recipe.name} · +${Math.round(order.reward * orderMultiplier())}</button>`;
+    return `<button data-quick-deliver="${order.id}">${recipe.icon} Deliver ${recipe.name} · +${orderReward(order)}</button>`;
   }).join("")}</div>` : "";
   strip.querySelectorAll("[data-quick-deliver]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.quickDeliver))));
 }
@@ -404,9 +408,12 @@ function renderRecipes() {
     else if (state.brew) buttonLabel = "Busy";
     else if (!canAffordRecipe(recipe)) buttonLabel = "Need items";
     const requested = state.orders.some(order => order.recipeId === recipe.id);
+    const mastery = Logic.recipeMasteryProgress(state, recipe.id);
+    const masteryBonus = mastery.rank * MASTERY_CONFIG.coinBonusPerRank * 100;
+    const masteryText = mastery.next ? `Mastery ${mastery.rank} · ${mastery.count}/${mastery.next} brews · +${masteryBonus}% order coins` : `Mastery ${mastery.rank} · complete · +${masteryBonus}% order coins`;
     return `<article class="recipe-card ${locked ? "is-locked" : ""} ${requested ? "is-requested" : ""}">
       <span class="potion-bottle" style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
-      <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small><div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div></div>
+      <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small><div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div>${locked ? "" : `<small class="mastery-progress">${masteryText}</small>`}</div>
       <button class="brew-button" data-brew="${recipe.id}" aria-label="${buttonLabel} ${locked ? "locked recipe" : recipe.name}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
     </article>`;
   }).join("") + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
@@ -425,9 +432,12 @@ function renderOrders() {
     const recipe = recipeById(order.recipeId);
     const owned = state.potions[recipe.id];
     const canFill = owned >= order.quantity;
-    const reward = Math.round(order.reward * orderMultiplier());
+    const customer = state.customers[order.customerId] || { deliveries: 0, hearts: 0 };
+    const towardHeart = customer.deliveries % CUSTOMER_CONFIG.deliveriesPerHeart;
+    const reward = orderReward(order);
+    const trust = customer.hearts >= CUSTOMER_CONFIG.maxHearts ? `${"♥".repeat(customer.hearts)} trusted friend` : `${"♥".repeat(customer.hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - customer.hearts)} · ${towardHeart}/${CUSTOMER_CONFIG.deliveriesPerHeart} toward next favor`;
     return `<article class="order-card">
-      <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
+      <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
       <div class="order-bottom"><div class="order-request"><span>${recipe.icon} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
     </article>`;
   }).join("");
@@ -443,13 +453,14 @@ function renderUpgrades() {
     const level = state.upgrades[upgrade.id];
     const maxed = level >= upgrade.max;
     const cost = upgradeCost(upgrade);
-    return `<article class="upgrade-card"><span class="upgrade-icon">${upgrade.icon}</span><div class="upgrade-copy"><strong>${upgrade.name}</strong><small>${upgrade.description}</small><small class="upgrade-level">Level ${level} / ${upgrade.max}</small></div><button class="upgrade-button" data-upgrade="${upgrade.id}" ${maxed || state.coins < cost ? "disabled" : ""}>${maxed ? "MAX" : `${cost} ●`}</button></article>`;
+    const preview = Logic.upgradePreview(state, upgrade);
+    return `<article class="upgrade-card"><span class="upgrade-icon">${upgrade.icon}</span><div class="upgrade-copy"><strong>${upgrade.name}</strong><small>${preview.path} path · ${upgrade.description}</small><small class="upgrade-preview">${preview.maxed ? `Current: ${preview.current}` : `${preview.current} → ${preview.next}`}</small><small class="upgrade-level">Level ${level} / ${upgrade.max}</small></div><button class="upgrade-button" data-upgrade="${upgrade.id}" ${maxed || state.coins < cost ? "disabled" : ""}>${maxed ? "MAX" : `${cost} ●`}</button></article>`;
   }).join("");
   document.querySelectorAll("[data-upgrade]").forEach(button => button.addEventListener("click", () => buyUpgrade(button.dataset.upgrade)));
-  const canPrestige = state.level >= 8;
+  const canPrestige = state.level >= PRESTIGE_CONFIG.unlockLevel;
   const prestigeButton = document.querySelector("#prestigeButton");
   prestigeButton.disabled = !canPrestige;
-  prestigeButton.textContent = canPrestige ? `Rebirth for ${prestigeReward()} stardust` : "Reach level 8 to unlock";
+  prestigeButton.textContent = canPrestige ? `Rebirth for ${prestigeReward()} stardust` : `Reach level ${PRESTIGE_CONFIG.unlockLevel} to unlock`;
 }
 
 function renderJournal() {
@@ -495,7 +506,7 @@ function fulfillOrder(orderId) {
   if (!result) return;
   announceLevels(result.levels);
   checkAchievements();
-  feedback(`Order delivered! +${result.reward} coins`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
+  feedback(`Order delivered! +${result.reward} coins${result.customerBonus ? ` · friendship favor +${result.customerBonus}` : ""}`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
   renderAll();
   playCoinArrivals(result.reward);
   showTutorialTransition(tutorialBefore, viewBeforeAction);
@@ -538,9 +549,9 @@ function claimDaily() {
 function prestigeReward() { return Logic.prestigeReward(state); }
 
 function confirmPrestige() {
-  if (state.level < 8) return;
+  if (state.level < PRESTIGE_CONFIG.unlockLevel) return;
   const reward = prestigeReward();
-  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, and upgrades.</p><p>You keep achievements and gain <strong>${reward} stardust</strong>, permanently increasing all coin earnings by ${reward * 10}%.</p>`, actions: [
+  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, and upgrades.</p><p>Mastery, friendships, today's daily state, and achievements stay. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
     { label: "Not yet" },
     { label: `Rebirth for ${reward} stardust`, primary: true, onClick: () => performPrestige(reward) },
   ] });

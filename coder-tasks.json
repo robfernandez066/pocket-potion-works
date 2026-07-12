@@ -21,7 +21,7 @@
   },
   {
     "id": 7,
-    "status": "next",
+    "status": "complete",
     "title": "Meaningful gathering and workshop flow",
     "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
@@ -37,7 +37,7 @@
   },
   {
     "id": 8,
-    "status": "pending",
+    "status": "complete",
     "title": "Prestige, mastery, upgrades, and customers",
     "model": "Use the current efficient coding model with high reasoning",
     "freshChat": true,
@@ -53,7 +53,7 @@
   },
   {
     "id": 9,
-    "status": "pending",
+    "status": "next",
     "title": "Offline-friendly retention and customization",
     "model": "Use the current efficient coding model with medium reasoning",
     "freshChat": true,

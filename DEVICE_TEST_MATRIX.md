@@ -1,6 +1,6 @@
 # Device and lifecycle test matrix
 
-Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio and service-worker cache `ppw-shell-v25`.
+Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio and service-worker cache `ppw-shell-v26`.
 
 ## Required local/browser candidate gates
 
@@ -8,8 +8,8 @@ Automated evidence and real browser/device evidence are separate. The active can
 
 | Gate | Status | Required evidence |
 | --- | --- | --- |
-| 390x844 mobile loop | Pending | Targeted gather, remembered disclosures, brew shortcut, inline delivery, upgrade, tutorial, Market, reload, overflow, contrast, and console. |
-| 360x740 mobile loop | Pending | Same complete loop and interaction checks at the narrower target. |
+| 390x844 mobile loop | Pending | Targeted gather, mastery, customer trust, upgrade preview, level-7 rebirth copy, tutorial, Market, reload, overflow, contrast, and console. |
+| 360x740 mobile loop | Pending | Same complete loop and progression checks at the narrower target. |
 | Keyboard and modal focus | Pending | Essential controls, focus trap, Escape, and focus return. |
 | Representative 200% reflow | Pending | Essential controls remain available without page overflow. |
 | Sound Off | Pending | Can be selected from the default-On state, persists, initializes nothing while Off, and never blocks gameplay. |
@@ -22,7 +22,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | --- | --- | --- |
 | Core loop and transactions | Pass | Deterministic gather -> brew -> collect -> deliver -> upgrade tests. |
 | Economy and content | Pass | Twelve seeded ten-minute simulations and unlock/order invariants. |
-| Save and rollback compatibility | Pass | Current, malformed, historical v1, and unsupported future v2 fixtures. |
+| Save and rollback compatibility | Pass | Historical v1 migration, current v2, unsupported future v3, and frozen-v1 downlevel overwrite protection. |
 | Lifecycle/offline progress | Pass | Background suppression, one resume credit, four-hour cap, and future-time zero credit. |
 | Platform boundaries | Pass | Fake ad/IAP, consent, local analytics schema, pending fulfillment, and local cloud-conflict contracts. |
 | Audio behavior | Pass | Preference safety, sample mapping, tap pitch behavior, capped coin tiers, gathering playback, fallback, and failure isolation. |
@@ -34,7 +34,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | Area | Status | Required procedure |
 | --- | --- | --- |
 | Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
-| PWA install/update | Untested | Install, standalone launch, update from the previous public candidate `ppw-shell-v18` to `ppw-shell-v25`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
+| PWA install/update | Untested | Install, standalone launch, update from the previous public candidate `ppw-shell-v18` to `ppw-shell-v26`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
 | Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
 | Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
 | Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |

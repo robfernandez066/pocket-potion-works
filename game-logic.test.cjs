@@ -102,6 +102,48 @@ test("daily reward is idempotent", () => {
   assert.equal(state.coins, 80); assert.equal(state.stardust, 1); assert.equal(state.stats.coinsEarned, 50);
 });
 
+test("recipe mastery has bounded milestones and raises only matching order value", () => {
+  const state = game.defaultState(NOW);
+  state.mastery.tonic = 3;
+  assert.deepEqual(game.recipeMasteryProgress(state, "tonic"), { count: 3, rank: 1, next: 8 });
+  assert.equal(game.orderMultiplier(state, NOW, "tonic"), 1.04);
+  assert.equal(game.orderMultiplier(state, NOW, "clarity"), 1);
+  state.mastery.tonic = 999;
+  assert.deepEqual(game.recipeMasteryProgress(state, "tonic"), { count: 999, rank: 3, next: null });
+});
+
+test("recurring customers gain trust and grant a deterministic non-blocking favor", () => {
+  const state = game.defaultState(NOW);
+  state.customers["customer-0"] = { deliveries: 2, hearts: 0 };
+  state.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+  state.nextOrderId = 2; state.potions.tonic = 1;
+  const result = game.fulfillOrder(state, 1, NOW, () => 0);
+  assert.equal(result.customerBonus, game.CUSTOMER_CONFIG.heartBonusCoins);
+  assert.equal(result.reward, 20 + game.CUSTOMER_CONFIG.heartBonusCoins);
+  assert.deepEqual(state.customers["customer-0"], { deliveries: 3, hearts: 1 });
+});
+
+test("prestige opens with the final recipe and preserves durable goals plus the daily boundary", () => {
+  const state = game.defaultState(NOW);
+  state.level = game.PRESTIGE_CONFIG.unlockLevel;
+  state.stardust = 2; state.daily = { date: game.todayKey(NOW), orders: 5, claimed: true };
+  state.mastery.tonic = 8; state.customers["customer-0"] = { deliveries: 4, hearts: 1 };
+  assert.ok(game.unlocksAtLevel(state.level).recipes.length > 0, "prestige level must also unlock content");
+  assert.equal(game.prestigeReward(state), 3);
+  const next = game.performPrestige(state, undefined, NOW + 1000);
+  assert.equal(next.level, 1); assert.equal(next.stardust, 5);
+  assert.equal(next.mastery.tonic, 8); assert.deepEqual(next.customers["customer-0"], { deliveries: 4, hearts: 1 });
+  assert.deepEqual(next.daily, state.daily); assert.equal(game.claimDaily(next), false, "rebirth cannot reclaim today's reward");
+});
+
+test("upgrade previews expose exact current and next effects across three paths", () => {
+  const state = game.defaultState(NOW);
+  assert.deepEqual(game.upgradePreview(state, game.upgradeById("basket")), { path: "Harvest", current: "3 items/harvest", next: "4 items/harvest", maxed: false });
+  assert.deepEqual(game.upgradePreview(state, game.upgradeById("cauldron")), { path: "Brewing", current: "100% brew speed", next: "110% brew speed", maxed: false });
+  assert.deepEqual(game.upgradePreview(state, game.upgradeById("ledger")), { path: "Trade", current: "+0% order coins", next: "+12% order coins", maxed: false });
+  assert.deepEqual(new Set(game.UPGRADES.map(upgrade => upgrade.path)), new Set(["Harvest", "Brewing", "Trade"]));
+});
+
 test("offline elapsed time is capped at four hours and future timestamps earn zero", () => {
   const state = game.defaultState(NOW);
   state.lastSeen = NOW - 24 * 60 * 60 * 1000;
@@ -142,10 +184,14 @@ test("a versioned existing save retains stardust, achievements, and lifetime sta
   existing.stardust = 17;
   existing.achievements = { firstBrew: 111, rebirth: 222 };
   existing.stats = { taps: 90, brewed: 30, orders: 14, coinsEarned: 912, prestiges: 3 };
+  existing.mastery.tonic = 12;
+  existing.customers["customer-0"] = { deliveries: 5, hearts: 1 };
   const loaded = game.parseSave(JSON.stringify(existing), NOW).state;
   assert.equal(loaded.stardust, 17);
   assert.deepEqual(loaded.achievements, existing.achievements);
   assert.deepEqual(loaded.stats, existing.stats);
+  assert.equal(loaded.mastery.tonic, 12);
+  assert.deepEqual(loaded.customers["customer-0"], { deliveries: 5, hearts: 1 });
 });
 
 test("generated orders only request recipes unlocked at the current level", () => {

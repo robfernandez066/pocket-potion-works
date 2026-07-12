@@ -5,10 +5,13 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 1;
+  const SAVE_VERSION = 2;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 30, amountPerCharge: 3 });
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
+  const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
+  const CUSTOMER_CONFIG = Object.freeze({ deliveriesPerHeart: 3, maxHearts: 3, heartBonusCoins: 12 });
+  const PRESTIGE_CONFIG = Object.freeze({ unlockLevel: 7, baseReward: 3, levelsPerBonus: 2 });
 
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
@@ -31,11 +34,11 @@
   ];
 
   const UPGRADES = [
-    { id: "garden", name: "Moonlit Garden", icon: "☘", description: "+25% passive ingredients per level", baseCost: 70, max: 8 },
-    { id: "basket", name: "Bottomless Basket", icon: "⌄", description: "+1 ingredient per charged harvest", baseCost: 65, max: 6 },
-    { id: "cauldron", name: "Copper Cauldron", icon: "⚗", description: "Brews finish 10% faster per level", baseCost: 90, max: 7 },
-    { id: "shelves", name: "Pantry Shelves", icon: "▤", description: "+25 ingredient storage per level", baseCost: 85, max: 6 },
-    { id: "ledger", name: "Golden Ledger", icon: "●", description: "+12% order coins per level", baseCost: 110, max: 6 },
+    { id: "garden", path: "Harvest", name: "Moonlit Garden", icon: "☘", description: "+25% passive ingredients per level", baseCost: 70, max: 8 },
+    { id: "basket", path: "Harvest", name: "Bottomless Basket", icon: "⌄", description: "+1 ingredient per charged harvest", baseCost: 65, max: 6 },
+    { id: "cauldron", path: "Brewing", name: "Copper Cauldron", icon: "⚗", description: "Brews finish 10% faster per level", baseCost: 90, max: 7 },
+    { id: "shelves", path: "Harvest", name: "Pantry Shelves", icon: "▤", description: "+25 ingredient storage per level", baseCost: 85, max: 6 },
+    { id: "ledger", path: "Trade", name: "Golden Ledger", icon: "●", description: "+12% order coins per level", baseCost: 110, max: 6 },
   ];
 
   const CUSTOMERS = [
@@ -86,6 +89,8 @@
       daily: { date: todayKey(now), orders: 0, claimed: false },
       gather: { charges: GATHER_CONFIG.maxCharges, lastRechargeAt: now, targetId: null },
       discovery: { brewed: {}, delivered: {} },
+      mastery: Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0])),
+      customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
       boostUntil: 0, starterClaimed: false, tutorialSeen: false,
       achievements: {},
       stats: { taps: 0, brewed: 0, orders: 0, coinsEarned: 0, prestiges: 0 },
@@ -95,6 +100,11 @@
 
   function recipeById(id) { return RECIPES.find(recipe => recipe.id === id); }
   function upgradeById(id) { return UPGRADES.find(upgrade => upgrade.id === id); }
+  function customerIdFromOrder(order) {
+    if (typeof order?.customerId === "string" && /^customer-(?:[0-9]|1[01])$/.test(order.customerId)) return order.customerId;
+    const index = CUSTOMERS.findIndex(customer => customer[0] === order?.customer);
+    return `customer-${Math.max(0, index)}`;
+  }
   function tutorialQuest({ id, step, status, title, detail, view, targetSelector, targetKind = "control", buttonLabel = "Show me" }) {
     return { id, step, status, label: `First steps · ${step} of ${BEGINNER_QUESTS.steps}`, title, detail, view, targetSelector, targetKind, buttonLabel };
   }
@@ -152,7 +162,18 @@
   function gatherRate(state) { return .18 * (1 + int(state.upgrades?.garden, 0, 0, 8) * .25); }
   function manualGatherAmount(state) { return GATHER_CONFIG.amountPerCharge + int(state.upgrades?.basket, 0, 0, 6); }
   function coinMultiplier(state, now = Date.now()) { return (1 + state.stardust * .1) * (now < state.boostUntil ? 2 : 1); }
-  function orderMultiplier(state, now = Date.now()) { return coinMultiplier(state, now) * (1 + state.upgrades.ledger * .12); }
+  function recipeMasteryRank(state, recipeId) {
+    const count = int(state.mastery?.[recipeId]);
+    return MASTERY_CONFIG.thresholds.filter(threshold => count >= threshold).length;
+  }
+  function recipeMasteryProgress(state, recipeId) {
+    const count = int(state.mastery?.[recipeId]), rank = recipeMasteryRank(state, recipeId);
+    return { count, rank, next: MASTERY_CONFIG.thresholds[rank] || null };
+  }
+  function orderMultiplier(state, now = Date.now(), recipeId = null) {
+    const masteryBonus = recipeId ? recipeMasteryRank(state, recipeId) * MASTERY_CONFIG.coinBonusPerRank : 0;
+    return coinMultiplier(state, now) * (1 + state.upgrades.ledger * .12 + masteryBonus);
+  }
   function brewSpeedMultiplier(state) { return 1 + state.upgrades.cauldron * .1; }
   function unlockedIngredients(state) { return Object.entries(INGREDIENTS).filter(([, item]) => item.unlock <= state.level).map(([id]) => id); }
   function totalIngredients(state) { return Object.values(state.ingredients).reduce((sum, count) => sum + count, 0); }
@@ -193,11 +214,19 @@
       brewed: isRecord(sourceDiscovery.brewed) ? { ...sourceDiscovery.brewed } : {},
       delivered: isRecord(sourceDiscovery.delivered) ? { ...sourceDiscovery.delivered } : {},
     };
+    const sourceCustomers = isRecord(input.customers) ? input.customers : {};
+    state.customers = Object.fromEntries(CUSTOMERS.map((_, index) => {
+      const id = `customer-${index}`, source = isRecord(sourceCustomers[id]) ? sourceCustomers[id] : {};
+      const deliveries = int(source.deliveries), hearts = Math.min(CUSTOMER_CONFIG.maxHearts, Math.floor(deliveries / CUSTOMER_CONFIG.deliveriesPerHeart));
+      return [id, { deliveries, hearts }];
+    }));
     if (!isRecord(input.discovery)) {
       if (state.stats.brewed > 0) state.discovery.brewed.tonic = 1;
       if (state.stats.orders > 0) state.discovery.delivered.tonic = 1;
       if (state.level >= 3) { state.discovery.brewed.clarity = 1; state.discovery.delivered.clarity = 1; }
     }
+    const sourceMastery = isRecord(input.mastery) ? input.mastery : {};
+    state.mastery = Object.fromEntries(RECIPES.map(recipe => [recipe.id, int(sourceMastery[recipe.id], state.discovery.brewed[recipe.id])]));
     const sourceBrew = isRecord(input.brew) ? input.brew : null;
     if (sourceBrew && recipeById(sourceBrew.recipeId)) {
       const startedAt = clamp(finite(sourceBrew.startedAt, now), 0, now);
@@ -226,7 +255,7 @@
     const id = int(order.id, 0, 1);
     if (!id) return null;
     return {
-      id, customer: typeof order.customer === "string" ? order.customer.slice(0, 80) : CUSTOMERS[0][0],
+      id, customerId: customerIdFromOrder(order), customer: typeof order.customer === "string" ? order.customer.slice(0, 80) : CUSTOMERS[0][0],
       avatar: typeof order.avatar === "string" ? order.avatar.slice(0, 8) : CUSTOMERS[0][1],
       note: typeof order.note === "string" ? order.note.slice(0, 160) : CUSTOMERS[0][2],
       avatarColor: typeof order.avatarColor === "string" ? order.avatarColor.slice(0, 30) : CUSTOMERS[0][3],
@@ -302,6 +331,7 @@
     state.potions[recipe.id] += 1;
     state.stats.brewed += 1;
     state.discovery.brewed[recipe.id] = int(state.discovery.brewed[recipe.id]) + 1;
+    state.mastery[recipe.id] = int(state.mastery[recipe.id]) + 1;
     state.brew = null;
     return { recipe, levels: addXp(state, 5 + recipe.unlock * 2) };
   }
@@ -313,9 +343,10 @@
     const pool = newestRecipes.length && state.level > 1 && (!boardHasNewest || random() < .55) ? newestRecipes : availableRecipes;
     const recipe = pool[Math.floor(clamp(random(), 0, .999999) * pool.length)];
     const quantity = state.level >= 4 && random() > .68 ? 2 : 1;
-    const customer = CUSTOMERS[Math.floor(clamp(random(), 0, .999999) * CUSTOMERS.length)];
+    const customerIndex = Math.floor(clamp(random(), 0, .999999) * CUSTOMERS.length);
+    const customer = CUSTOMERS[customerIndex];
     return {
-      id: state.nextOrderId++, customer: customer[0], avatar: customer[1], note: customer[2], avatarColor: customer[3],
+      id: state.nextOrderId++, customerId: `customer-${customerIndex}`, customer: customer[0], avatar: customer[1], note: customer[2], avatarColor: customer[3],
       recipeId: recipe.id, quantity,
       reward: Math.round(recipe.sell * quantity * (1.45 + random() * .25)),
       xp: Math.round(8 + recipe.unlock * 3 + quantity * 3),
@@ -330,16 +361,34 @@
     const order = state.orders[index];
     if (state.potions[order.recipeId] < order.quantity) return null;
     state.potions[order.recipeId] -= order.quantity;
-    const reward = Math.round(order.reward * orderMultiplier(state, now));
+    const customerId = customerIdFromOrder(order);
+    order.customerId = customerId;
+    const progress = state.customers[customerId] || { deliveries: 0, hearts: 0 };
+    const previousHearts = progress.hearts;
+    progress.deliveries += 1;
+    progress.hearts = Math.min(CUSTOMER_CONFIG.maxHearts, Math.floor(progress.deliveries / CUSTOMER_CONFIG.deliveriesPerHeart));
+    state.customers[customerId] = progress;
+    const customerBonus = progress.hearts > previousHearts ? CUSTOMER_CONFIG.heartBonusCoins : 0;
+    const reward = Math.round(order.reward * orderMultiplier(state, now, order.recipeId)) + customerBonus;
     state.coins += reward; state.stats.coinsEarned += reward; state.stats.orders += 1; state.daily.orders += 1;
     state.discovery.delivered[order.recipeId] = int(state.discovery.delivered[order.recipeId]) + order.quantity;
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
     state.orders.push(generateOrder(state, random));
-    return { reward, levels };
+    return { reward, levels, customerBonus, customerProgress: { ...progress } };
   }
 
   function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.9, state.upgrades[upgrade.id])); }
+  function upgradePreview(state, upgrade) {
+    if (!upgrade) return null;
+    const level = int(state.upgrades?.[upgrade.id], 0, 0, upgrade.max), next = Math.min(upgrade.max, level + 1);
+    const values = {
+      garden: rank => `${(.18 * (1 + rank * .25) * 60).toFixed(1)} items/min`, basket: rank => `${GATHER_CONFIG.amountPerCharge + rank} items/harvest`,
+      cauldron: rank => `${Math.round((1 + rank * .1) * 100)}% brew speed`, shelves: rank => `${60 + Math.max(0, state.level - 1) * 10 + rank * 25} capacity`,
+      ledger: rank => `+${rank * 12}% order coins`,
+    };
+    return { path: upgrade.path, current: values[upgrade.id](level), next: values[upgrade.id](next), maxed: level >= upgrade.max };
+  }
   function buyUpgrade(state, id) {
     const upgrade = upgradeById(id);
     if (!upgrade || state.upgrades[id] >= upgrade.max) return false;
@@ -353,13 +402,16 @@
     state.daily.claimed = true; state.coins += 50; state.stardust += 1; state.stats.coinsEarned += 50; return true;
   }
 
-  function prestigeReward(state) { return Math.max(1, Math.floor((state.level - 6) / 2)); }
+  function prestigeReward(state) { return PRESTIGE_CONFIG.baseReward + Math.floor(Math.max(0, state.level - PRESTIGE_CONFIG.unlockLevel) / PRESTIGE_CONFIG.levelsPerBonus); }
   function performPrestige(state, reward = prestigeReward(state), now = Date.now()) {
-    if (state.level < 8) return null;
+    if (state.level < PRESTIGE_CONFIG.unlockLevel) return null;
     const next = defaultState(now);
     next.stardust = state.stardust + int(reward, 1, 1);
     next.achievements = { ...state.achievements };
     next.stats = { ...state.stats, prestiges: state.stats.prestiges + 1 };
+    next.mastery = { ...state.mastery };
+    next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
+    next.daily = { ...state.daily };
     next.tutorialSeen = true;
     next.starterClaimed = state.starterClaimed;
     return next;
@@ -445,11 +497,11 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
-    storageCap, gatherRate, manualGatherAmount, coinMultiplier, orderMultiplier, brewSpeedMultiplier,
+    storageCap, gatherRate, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
-    generateOrder, ensureOrders, fulfillOrder, upgradeCost, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
+    generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, setGatherTarget, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

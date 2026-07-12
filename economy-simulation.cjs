@@ -112,6 +112,42 @@ function simulate(strategy, seed) {
   return { strategy: strategy.id, seed, milestones, level: state.level, deliveries: state.stats.orders, upgrades, recipes, coins: state.coins, maxBranch, longestStall };
 }
 
+function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200) {
+  const random = seededRandom(seed);
+  let passiveBank = 0;
+  game.ensureOrders(state, random);
+  for (let second = 0; second <= maxSeconds; second += 1) {
+    const now = start + second * 1000;
+    passiveBank += game.gatherRate(state);
+    if (passiveBank >= 1) {
+      const whole = Math.floor(passiveBank);
+      game.addRandomIngredients(state, whole, random);
+      passiveBank -= whole;
+    }
+    if (second % 3 === 0) game.chargedGather(state, now, random);
+    if (second % 5 === 0) {
+      game.collectBrew(state, now);
+      for (const order of [...state.orders]) game.fulfillOrder(state, order.id, now, random);
+      if (state.daily.orders >= 5) game.claimDaily(state);
+      const upgrade = chooseUpgrade(state, { buy: "priority" });
+      if (upgrade) game.buyUpgrade(state, upgrade.id);
+      if (!state.brew) {
+        const recipe = chooseRecipe(state);
+        if (recipe) game.startBrew(state, recipe.id, now);
+      }
+    }
+    if (state.level >= targetLevel) {
+      return {
+        seconds: second, level: state.level, orders: state.stats.orders, coins: state.coins,
+        upgrades: Object.values(state.upgrades).reduce((sum, value) => sum + value, 0),
+        mastery: Object.values(state.mastery).reduce((sum, value) => sum + value, 0),
+        customerDeliveries: Object.values(state.customers).reduce((sum, customer) => sum + customer.deliveries, 0),
+      };
+    }
+  }
+  assert.fail(`seed ${seed} did not reach level ${targetLevel} in ${maxSeconds}s`);
+}
+
 for (const recipe of game.RECIPES) {
   for (const ingredientId of Object.keys(recipe.ingredients)) {
     assert.ok(game.INGREDIENTS[ingredientId], `${recipe.id}: unknown ingredient ${ingredientId}`);
@@ -163,9 +199,61 @@ assert.ok(game.RECIPES.length >= 8);
 assert.ok(game.CUSTOMERS.length >= 12);
 assert.ok(game.ACHIEVEMENTS.length >= 8);
 
+const progressionSeeds = [7, 42, 2026];
+const prestigeRewards = [1, 2, 3, 4];
+const progressionRows = [];
+const recoveryRows = [];
+for (const seed of progressionSeeds) {
+  const cycleStart = Date.UTC(2026, 6, 12, 8);
+  const cycleState = game.defaultState(cycleStart);
+  const cycle = simulateToLevel(cycleState, seed, game.PRESTIGE_CONFIG.unlockLevel, cycleStart);
+  assert.equal(cycleState.daily.claimed, true, "a realistic first cycle should preserve the worthwhile daily claim");
+  assert.ok(cycle.mastery >= cycleState.stats.brewed && cycle.customerDeliveries === cycleState.stats.orders);
+  progressionRows.push({ seed, ...cycle, dailyStardust: cycleState.stardust });
+  const recoveryStart = cycleStart + (cycle.seconds + 60) * 1000;
+  const dailyOnlyReset = game.defaultState(recoveryStart);
+  dailyOnlyReset.stardust = cycleState.stardust;
+  dailyOnlyReset.mastery = { ...cycleState.mastery };
+  dailyOnlyReset.customers = structuredClone(cycleState.customers);
+  dailyOnlyReset.daily = { ...cycleState.daily };
+  const dailyOnly = simulateToLevel(dailyOnlyReset, seed + 10000, 3, recoveryStart, 1800);
+  for (const reward of prestigeRewards) {
+    const reborn = game.performPrestige(cycleState, reward, recoveryStart);
+    assert.deepEqual(reborn.mastery, cycleState.mastery, "rebirth recovery must carry mastery");
+    assert.deepEqual(reborn.customers, cycleState.customers, "rebirth recovery must carry customer trust");
+    const recovery = simulateToLevel(reborn, seed + 10000, 3, recoveryStart, 1800);
+    recoveryRows.push({ seed, reward, ...recovery, dailyOnlySeconds: dailyOnly.seconds, dailyOnlyCoins: dailyOnly.coins, dailyOnlyUpgrades: dailyOnly.upgrades, stardust: reborn.stardust });
+  }
+}
+const average = values => Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+const candidateRows = prestigeRewards.map(reward => {
+  const rows = recoveryRows.filter(row => row.reward === reward);
+  return { reward, recoverySeconds: average(rows.map(row => row.seconds)), recoveryCoins: average(rows.map(row => row.coins)), recoveryUpgrades: average(rows.map(row => row.upgrades)) };
+});
+const chosenPrestige = candidateRows.find(candidate => candidate.reward === game.PRESTIGE_CONFIG.baseReward);
+const dailyOnlyRecoverySeconds = average(recoveryRows.filter(row => row.reward === 1).map(row => row.dailyOnlySeconds));
+const dailyOnlyRecoveryCoins = average(recoveryRows.filter(row => row.reward === 1).map(row => row.dailyOnlyCoins));
+const dailyOnlyRecoveryUpgrades = average(recoveryRows.filter(row => row.reward === 1).map(row => row.dailyOnlyUpgrades));
+assert.equal(game.PRESTIGE_CONFIG.unlockLevel, 7, "prestige must meet the final recipe instead of leaving a dead level");
+assert.ok(game.unlocksAtLevel(game.PRESTIGE_CONFIG.unlockLevel).recipes.length > 0, "prestige gate must share a content unlock level");
+for (const row of progressionRows) {
+  assert.ok(row.seconds >= 2300 && row.seconds <= 3000, `seed ${row.seed}: first prestige cycle outside observed 38-50 minute band`);
+  assert.ok(row.orders >= 28 && row.orders <= 36 && row.mastery >= 34 && row.mastery <= 42, `seed ${row.seed}: cycle progression outside observed band`);
+  assert.equal(row.dailyStardust, 1, `seed ${row.seed}: daily alternative should remain a meaningful permanent gain`);
+}
+assert.ok(chosenPrestige.recoverySeconds <= dailyOnlyRecoverySeconds, "chosen prestige should not recover slower than a daily-only reset baseline");
+assert.ok(chosenPrestige.recoverySeconds >= 300 && chosenPrestige.recoverySeconds <= 340, "chosen recovery should remain in the observed five-to-six-minute band");
+assert.ok(chosenPrestige.recoveryCoins > dailyOnlyRecoveryCoins && chosenPrestige.recoveryCoins >= 40 && chosenPrestige.recoveryCoins <= 100, "chosen prestige should leave a bounded coin advantage after matching daily-only recovery");
+assert.equal(chosenPrestige.recoveryUpgrades, dailyOnlyRecoveryUpgrades, "chosen prestige should not require extra upgrades to match recovery");
+assert.ok(chosenPrestige.recoverySeconds <= candidateRows.find(row => row.reward === 4).recoverySeconds, "four stardust should not improve the observed recovery band enough to justify the larger grant");
+
 const results = STRATEGIES.flatMap(strategy => [7, 42, 2026].map(seed => simulate(strategy, seed)));
 console.log("10-minute economy strategy simulations passed:");
 for (const result of results) console.log(JSON.stringify(result));
 console.log("Charged-gather tuning candidates:");
 for (const row of gatherCandidateRows) console.log(JSON.stringify(row));
 console.log(JSON.stringify({ targetedCrystal180s: targeted.ingredients.crystal, smartCrystal180s: smart.ingredients.crystal, storageCap: game.storageCap(nearCap), offlineSoftCap: game.totalIngredients(offlinePressure) }));
+console.log("Seeded first-cycle progression to level 7:");
+for (const row of progressionRows) console.log(JSON.stringify(row));
+console.log(`Seeded post-rebirth recovery to level 3 (daily-only reset baseline ${dailyOnlyRecoverySeconds}s, ${dailyOnlyRecoveryCoins} coins, ${dailyOnlyRecoveryUpgrades} upgrades):`);
+for (const row of candidateRows) console.log(JSON.stringify({ ...row, chosen: row.reward === chosenPrestige.reward }));

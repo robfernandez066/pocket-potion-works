@@ -16,9 +16,10 @@ Audit date: 2026-07-12. Candidate version: `0.1.0`. This is an evidence report, 
 - `npm.cmd run check` covers deterministic gameplay, economy and scripted monetization simulations, save compatibility, fake-platform boundaries, sound/music mappings and persistence, service-worker behavior, security checks, and release budgets. Monetization magnitudes are exact for the checked-in scripted profile but directional for human play.
 - `npm.cmd run release:check` remains blocked while any required manual gate is pending or failed.
 - Runtime ceiling: 24,000,000 bytes including streamed music. The latest measured runtime is approximately 22.9 MB; `release-budgets.json` is authoritative and fails on material growth.
-- Service-worker cache generation is `ppw-shell-v25`. The install shell contains all code and eight sound effects; the three large music tracks stream from the same origin on demand so they do not block installation.
+- Service-worker cache generation is `ppw-shell-v26`. The install shell contains all code and eight sound effects; the three large music tracks stream from the same origin on demand so they do not block installation.
 - Gameplay, platform, sound, and compact Workshop UI preferences remain in separate versioned local namespaces.
-- Historical and future-save fixtures verify migration and future-version overwrite protection.
+- Historical v1, current v2, and future v3 fixtures verify migration and future-version overwrite protection; a frozen v1 reader also proves Task 8 v2 saves remain byte-for-byte protected during downlevel rollback.
+- Progression tests cover level-7 rebirth, same-date daily preservation, durable mastery/customer migration, exact upgrade previews, and deterministic trust favors.
 - No production SDK, remote font, third-party runtime asset, account, billing endpoint, analytics endpoint, or cloud endpoint is present.
 
 ## Current manual gate
@@ -32,6 +33,7 @@ The previous foundation-build evidence is archived and cannot establish readines
 - delivered CSP, service worker, local audio assets, and console/network smoke.
 - tutorial prompts never blocking Market, Settings, resources, or navigation;
 - bounded simulated finish-brew behavior, visible charm state, touch-readable Market locking, and stable Collect across timer ticks.
+- mastery, customer trust, upgrade previews, and level-7 rebirth copy remain readable and non-overflowing at both target sizes.
 
 ## Owner-only decisions
 
