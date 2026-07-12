@@ -1,0 +1,13 @@
+{
+  "name": "Pocket Potion Works",
+  "short_name": "Potion Works",
+  "description": "A cozy idle alchemy game.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fffaf0",
+  "theme_color": "#32244f",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

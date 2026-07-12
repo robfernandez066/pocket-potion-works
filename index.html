@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#32244f" />
+    <meta name="description" content="Pocket Potion Works — a cozy idle alchemy game." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Pocket Potion Works</title>
+  </head>
+  <body>
+    <div class="sky-glow sky-glow-one" aria-hidden="true"></div>
+    <div class="sky-glow sky-glow-two" aria-hidden="true"></div>
+
+    <div class="game-shell">
+      <header class="topbar">
+        <button class="icon-button" id="settingsButton" aria-label="Open settings">⚙</button>
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">⚗</span>
+          <div><small>POCKET</small><strong>Potion Works</strong></div>
+        </div>
+        <button class="icon-button" id="marketButton" aria-label="Open Moonlight Market">✦</button>
+      </header>
+
+      <section class="resource-bar" aria-label="Your resources">
+        <div class="resource resource-coins"><span>●</span><strong id="coinCount">0</strong><small>coins</small></div>
+        <div class="resource"><span>✧</span><strong id="xpCount">0/50</strong><small>level <b id="levelCount">1</b></small></div>
+        <div class="resource"><span>★</span><strong id="stardustCount">0</strong><small>stardust</small></div>
+      </section>
+
+      <main>
+        <section class="view is-active" id="workshopView" data-view="workshop">
+          <div class="welcome-row">
+            <div><p class="eyebrow" id="dayGreeting">GOOD MORNING, ALCHEMIST</p><h1>Your little workshop<br />is <em>bubbling.</em></h1></div>
+            <div class="level-seal"><span>LV.</span><strong id="levelSeal">1</strong></div>
+          </div>
+
+          <article class="workshop-card">
+            <div class="workshop-scene" aria-label="A cozy alchemy workbench">
+              <span class="hanging-herbs" aria-hidden="true">⌇⌇⌇</span>
+              <span class="shelf shelf-one" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="shelf shelf-two" aria-hidden="true"><i></i><i></i></span>
+              <div class="cauldron" aria-hidden="true"><span class="bubble b1"></span><span class="bubble b2"></span><span class="bubble b3"></span><div class="brew-liquid"></div></div>
+              <div class="cat" aria-hidden="true">◕‿◕</div>
+              <div class="scene-copy"><span id="workshopStatus">The kettle is warm</span><small id="incomeRate">Gathering 1.0 ingredient/sec</small></div>
+            </div>
+            <button class="gather-button" id="gatherButton"><span>☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>
+          </article>
+
+          <div class="section-heading"><div><p class="eyebrow">PANTRY</p><h2>Fresh ingredients</h2></div><span id="pantryTotal">0 items</span></div>
+          <div class="ingredient-grid" id="ingredientGrid"></div>
+
+          <div class="section-heading"><div><p class="eyebrow">CAULDRON</p><h2>Brew a potion</h2></div><span id="brewQueueLabel">Ready</span></div>
+          <div class="brew-slot" id="brewSlot"></div>
+          <div class="recipe-list" id="recipeList"></div>
+        </section>
+
+        <section class="view" id="ordersView" data-view="orders" hidden>
+          <div class="page-heading"><p class="eyebrow">VILLAGE NOTICEBOARD</p><h1>Customer <em>orders</em></h1><p>Fill requests to earn coins, experience, and the occasional surprise.</p></div>
+          <div class="daily-card">
+            <div><small>DAILY GOAL</small><strong id="dailyProgress">0 / 5 orders</strong></div>
+            <div class="daily-track"><span id="dailyBar"></span></div>
+            <div class="daily-reward"><span>Reward</span><strong>50 coins + 1 stardust</strong></div>
+            <button class="daily-claim-button" id="claimDailyButton" hidden>Claim daily reward</button>
+          </div>
+          <div class="order-list" id="orderList"></div>
+          <button class="secondary-button" id="refreshOrdersButton">↻ Refresh top order · 15 coins</button>
+        </section>
+
+        <section class="view" id="upgradesView" data-view="upgrades" hidden>
+          <div class="page-heading"><p class="eyebrow">MAKE THE SHOP YOURS</p><h1>Workshop <em>upgrades</em></h1><p>Invest your earnings in a faster, cozier, more productive potion works.</p></div>
+          <div class="upgrade-list" id="upgradeList"></div>
+          <article class="prestige-card" id="prestigeCard">
+            <span class="prestige-orbit">✦</span>
+            <p class="eyebrow">STARRY REBIRTH</p>
+            <h2>Reopen under a brighter star</h2>
+            <p>At level 8, trade your workshop progress for permanent stardust. Each stardust adds 10% to all coin earnings.</p>
+            <button class="primary-button" id="prestigeButton" disabled>Reach level 8 to unlock</button>
+          </article>
+        </section>
+
+        <section class="view" id="journalView" data-view="journal" hidden>
+          <div class="page-heading"><p class="eyebrow">ALCHEMIST'S JOURNAL</p><h1>Your curious <em>collection</em></h1><p>Every bottle tells the story of a slightly messy experiment.</p></div>
+          <div class="stats-grid" id="statsGrid"></div>
+          <div class="section-heading"><div><p class="eyebrow">ACHIEVEMENTS</p><h2>Milestones</h2></div></div>
+          <div class="achievement-list" id="achievementList"></div>
+          <button class="danger-text-button" id="resetSaveButton">Reset game data</button>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Game sections">
+        <button class="nav-button is-active" data-nav="workshop" aria-current="page"><span>⚗</span><small>Workshop</small></button>
+        <button class="nav-button" data-nav="orders"><span>▤</span><small>Orders</small><b class="notification-dot" id="orderDot"></b></button>
+        <button class="nav-button" data-nav="upgrades"><span>⌂</span><small>Upgrades</small></button>
+        <button class="nav-button" data-nav="journal"><span>♧</span><small>Journal</small></button>
+      </nav>
+    </div>
+
+    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" id="modalClose" aria-label="Close dialog">×</button>
+        <div class="modal-icon" id="modalIcon">✦</div>
+        <p class="eyebrow" id="modalKicker">MOONLIGHT MARKET</p>
+        <h2 id="modalTitle">A little something extra?</h2>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-actions" id="modalActions"></div>
+      </section>
+    </div>
+
+    <template id="particleTemplate"><span class="tap-particle">+1</span></template>
+    <script src="game-logic.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
