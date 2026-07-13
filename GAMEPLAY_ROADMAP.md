@@ -53,7 +53,7 @@ Exit gate: players have at least two meaningful goals beyond player level, and p
 - The optional daily goal keeps a monotonic saved local-date boundary: rollback or returning to the same high-water date cannot reissue it, while a later date restores ordinary missed-day play without a streak penalty. A fully offline client cannot prevent someone from repeatedly advancing the clock to brand-new future dates.
 - Three collection goals reuse approved mastery and prestige evidence: brew 10 potions, collect each recipe, and complete one rebirth. No large content set was added.
 - Critical screenshot chrome now uses inline SVG or CSS geometry for the brand, settings, market, resources, and four-tab navigation instead of platform-dependent glyphs.
-- Save schema v4 migrates v1/v2/v3, preserves earlier progression and Task 12 content, and is protected from overwrite by frozen v1/v2/v3 readers during downlevel rollback.
+- Save schema v5 migrates v1-v4, preserves earlier progression and Task 12 content, and is protected from overwrite by frozen v1-v4 readers during downlevel rollback.
 
 The second brew slot remains deferred. Current evidence validates one cauldron plus bounded quick-brew; there is no separate pacing simulation showing that a second concurrent timer preserves ingredient demand, delivery cadence, or upgrade value.
 
@@ -66,10 +66,11 @@ Owner direction is to add more playable content before monetization or broader r
 - Give every recurring customer three short story beats revealed by their existing trust hearts.
 - Add deterministic variety to each customer's order-request copy while preserving recipe requirements and rewards.
 - Add one compact lore entry for every existing recipe, revealed by existing discovery progress.
-- Present locked, newly available, and read story content clearly in the Journal without streaks, urgency, or required rewards.
-- Derive unlocks from existing trust and discovery state where possible so current saves remain compatible and the economy is unchanged.
+- Present locked, newly available, and read story content clearly in the Journal without streaks or urgency. Friends are collapsed first, then each villager expands to three story slots.
+- Award a bounded first-time claim of 5 coins per story or bottle note and 10 coins per earned achievement, capped at 320 coins across all current Journal content. Red dots derive from claimable state and clear only when that item is claimed; collection goals keep their existing Workshop Look rewards.
+- Derive unlocks from existing trust, discovery, and achievement state. Previously read stories and bottle notes stay complete; pre-v5 earned achievements become claimable once.
 
-Exit gate: the village feels more authored and worth revisiting, while the core loop, level-7 rebirth timing, and economy remain unchanged.
+Exit gate: the village feels more authored and worth revisiting, while bounded Journal claims do not become a recurring obligation or destabilize the level-7 rebirth curve.
 
 ## Completed - expanded potion book
 
@@ -78,7 +79,7 @@ Task 12 adds Frostmint and four new recipes across the existing level 4-7 progre
 - Deterministic seeds 7, 42, and 2026 reach level 7 in 2,635-2,655 seconds with 31 orders, inside the approved Task 8 envelope.
 - Frostmint and the four potions are integrated with Pantry targeting, passive/offline gathering, recipes, orders, mastery, discovery lore, and level-up presentation.
 - Mooncloth Shelves remains tied to the original eight-recipe sampler, so adding content cannot revoke the earned cosmetic.
-- Save schema v4 migrates v3 with zeroed new content and is protected from downlevel overwrite by a frozen v3 reader. Future v5 saves remain write-protected.
+- Save schema v5 migrates v4 Journal state, is protected from downlevel overwrite by a frozen v4 reader, and keeps future v6 saves write-protected.
 - The full loop, all tabs, and Settings passed 390x844 and 360x740 browser QA without horizontal overflow or console errors.
 
 Exit gate: the new potions create meaningful additional choices within levels 4-7 without materially delaying rebirth, relocking existing rewards, or destabilizing the economy.

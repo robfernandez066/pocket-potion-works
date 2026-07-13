@@ -114,15 +114,17 @@
         <section class="view" id="journalView" data-view="journal" hidden>
           <div class="page-heading"><p class="eyebrow">ALCHEMIST'S JOURNAL</p><h1>Your curious <em>collection</em></h1><p>Every bottle tells the story of a slightly messy experiment.</p></div>
           <div class="stats-grid" id="statsGrid"></div>
-          <div class="section-heading"><div><p class="eyebrow">VILLAGE STORIES</p><h2>Friends of the workshop</h2><p>Trust hearts reveal quiet moments from each villager's life.</p></div></div>
-          <div class="village-story-list" id="villageStoryList"></div>
-          <div class="section-heading"><div><p class="eyebrow">RECIPE LORE</p><h2>Bottle notes</h2><p>Brew or deliver a potion to reveal its story.</p></div></div>
+          <details class="journal-section-disclosure" id="friendsJournalSection">
+            <summary><div><p class="eyebrow">VILLAGE STORIES</p><h2>Friends of the workshop</h2><p>Trust hearts reveal quiet moments from each villager's life.</p></div><span class="journal-section-state"><b class="journal-attention-dot" id="friendsJournalDot" aria-hidden="true" hidden></b><i aria-hidden="true">⌄</i></span></summary>
+            <div class="village-story-list" id="villageStoryList"></div>
+          </details>
+          <div class="section-heading"><div><p class="eyebrow">RECIPE LORE</p><h2>Bottle notes</h2><p>Brew or deliver a potion to reveal its story.</p></div><span class="journal-section-indicator"><b class="journal-attention-dot" id="recipeJournalDot" aria-hidden="true" hidden></b></span></div>
           <div class="recipe-lore-list" id="recipeLoreList"></div>
           <div class="section-heading"><div><p class="eyebrow">COLLECTION GOALS</p><h2>Cozy curiosities</h2></div></div>
           <div class="collection-list" id="collectionList"></div>
           <div class="section-heading"><div><p class="eyebrow">WORKSHOP LOOK</p><h2>Workshop decorations</h2></div></div>
           <div class="cosmetic-list" id="cosmeticList"></div>
-          <div class="section-heading"><div><p class="eyebrow">ACHIEVEMENTS</p><h2>Milestones</h2></div></div>
+          <div class="section-heading"><div><p class="eyebrow">ACHIEVEMENTS</p><h2>Milestones</h2></div><span class="journal-section-indicator"><b class="journal-attention-dot" id="achievementJournalDot" aria-hidden="true" hidden></b></span></div>
           <div class="achievement-list" id="achievementList"></div>
           <button class="danger-text-button" id="resetSaveButton">Reset game data</button>
         </section>
@@ -132,7 +134,7 @@
         <button class="nav-button is-active" data-nav="workshop" aria-current="page"><span class="nav-shape nav-flask" aria-hidden="true"></span><small>Workshop</small></button>
         <button class="nav-button" data-nav="orders"><span class="nav-shape nav-list" aria-hidden="true"></span><small>Orders</small><b class="notification-dot" id="orderDot"></b></button>
         <button class="nav-button" data-nav="upgrades"><span class="nav-shape nav-home" aria-hidden="true"></span><small>Upgrades</small></button>
-        <button class="nav-button" data-nav="journal"><span class="nav-shape nav-book" aria-hidden="true"></span><small>Journal</small></button>
+        <button class="nav-button" data-nav="journal"><span class="nav-shape nav-book" aria-hidden="true"></span><small>Journal</small><b class="notification-dot" id="journalDot" aria-hidden="true" hidden></b></button>
       </nav>
       <button class="brew-shortcut" id="brewShortcut" hidden>Return to cauldron</button>
     </div>

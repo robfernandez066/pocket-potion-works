@@ -1,6 +1,6 @@
 # Device and lifecycle test matrix
 
-Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, five approved Sprixen sprites, bounded automatic gathering, and service-worker cache `ppw-shell-v35`.
+Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, five approved Sprixen sprites, bounded automatic gathering, first-time Journal rewards, and service-worker cache `ppw-shell-v36`.
 
 ## Required local/browser candidate gates
 
@@ -22,7 +22,8 @@ Automated evidence and real browser/device evidence are separate. The active can
 | --- | --- | --- |
 | Core loop and transactions | Pass | Deterministic gather -> brew -> collect -> deliver -> upgrade tests. |
 | Economy and content | Pass | Twelve seeded ten-minute simulations and unlock/order invariants. |
-| Save and rollback compatibility | Pass | Historical v1, Task 8 v2, and Task 9 v3 migrate to current v4; unsupported future v5 and frozen-v1/v2/v3 downlevel overwrite protection pass. |
+| Save and rollback compatibility | Pass | Historical v1-v4 migrate to current v5; unsupported future v6 and frozen-v1-v4 downlevel overwrite protection pass. |
+| Journal rewards | Pass | Stories and bottle notes grant 5 coins once, achievements grant 10 once, invalid/repeated claims are rejected, and claim state survives migration and rebirth. |
 | Offline retention/customization | Pass | Three calendar-independent rolling chains, capped claims, durable collection cosmetics, and economy-neutral selection tests. |
 | Lifecycle/offline progress | Pass | Background suppression, one resume credit, four-hour cap, and future-time zero credit. |
 | Platform boundaries | Pass | Fake ad/IAP, consent, local analytics schema, pending fulfillment, and local cloud-conflict contracts. |
@@ -35,7 +36,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | Area | Status | Required procedure |
 | --- | --- | --- |
 | Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
-| PWA install/update | Untested | Install, standalone launch, update from the previous candidate `ppw-shell-v34` to `ppw-shell-v35`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
+| PWA install/update | Untested | Install, standalone launch, update from the previous candidate `ppw-shell-v35` to `ppw-shell-v36`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
 | Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
 | Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
 | Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |
