@@ -9,6 +9,7 @@
   const AUDIO_PREFERENCE_KEY = "pocket-potion-works-audio-v1";
   const DEFAULT_AUDIO_PREFERENCE = Object.freeze({ version: AUDIO_PREFERENCE_VERSION, enabled: true, effectsVolume: .5, musicVolume: .5 });
   const MUSIC_TRACKS = Object.freeze(["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"]);
+  const SYNTH_OUTPUT_BOOST = 8;
 
   const SEQUENCES = Object.freeze({
     tap: [[520, .035, .025]],
@@ -23,14 +24,14 @@
   });
 
   const SAMPLE_CUES = Object.freeze({
-    tap: Object.freeze({ src: "assets/audio/tap.ogg", volume: .4, rateMin: 4, rateMax: 4, preservesPitch: false }),
-    gather: Object.freeze({ src: "assets/audio/gather.mp3", volume: .65 }),
-    brewStart: Object.freeze({ src: "assets/audio/brew-start.mp3", volume: .7 }),
-    brewReady: Object.freeze({ src: "assets/audio/brew-ready.mp3", volume: .7 }),
-    collect: Object.freeze({ src: "assets/audio/bagpop.mp3", volume: .65 }),
-    delivery: Object.freeze({ src: "assets/audio/confirm.mp3", volume: .7 }),
-    levelUp: Object.freeze({ src: "assets/audio/levelup.ogg", volume: .7 }),
-    coin: Object.freeze({ src: "assets/audio/coin.mp3", volume: .3, volumeJitter: .1, rateMin: .95, rateMax: 1.1 }),
+    tap: Object.freeze({ src: "assets/audio/tap.ogg", volume: 1, rateMin: 4, rateMax: 4, preservesPitch: false }),
+    gather: Object.freeze({ src: "assets/audio/gather.mp3", volume: 1 }),
+    brewStart: Object.freeze({ src: "assets/audio/brew-start.mp3", volume: 1 }),
+    brewReady: Object.freeze({ src: "assets/audio/brew-ready.mp3", volume: 1 }),
+    collect: Object.freeze({ src: "assets/audio/bagpop.mp3", volume: 1 }),
+    delivery: Object.freeze({ src: "assets/audio/confirm.mp3", volume: 1 }),
+    levelUp: Object.freeze({ src: "assets/audio/levelup.ogg", volume: 1 }),
+    coin: Object.freeze({ src: "assets/audio/coin.mp3", volume: .55, volumeJitter: .1, rateMin: .95, rateMax: 1.1 }),
   });
 
   function sampleSettings(name, random = Math.random) {
@@ -174,7 +175,7 @@
           oscillator.frequency.setValueAtTime(frequency, cursor);
           oscillator.connect(gain);
           gain.gain.setValueAtTime(0, cursor);
-          gain.gain.linearRampToValueAtTime(volume * effectsOutputGain(this.effectsVolume()), cursor + .008);
+          gain.gain.linearRampToValueAtTime(Math.min(1, volume * effectsOutputGain(this.effectsVolume()) * SYNTH_OUTPUT_BOOST), cursor + .008);
           gain.gain.exponentialRampToValueAtTime(.0001, cursor + duration);
           oscillator.start(cursor);
           oscillator.stop(cursor + duration + .01);
@@ -396,7 +397,7 @@
   }
 
   return Object.freeze({
-    AUDIO_PREFERENCE_VERSION, AUDIO_PREFERENCE_KEY, DEFAULT_AUDIO_PREFERENCE, MUSIC_TRACKS, SEQUENCES, SAMPLE_CUES, sampleSettings, coinChimeCount, effectsOutputGain,
+    AUDIO_PREFERENCE_VERSION, AUDIO_PREFERENCE_KEY, DEFAULT_AUDIO_PREFERENCE, MUSIC_TRACKS, SEQUENCES, SAMPLE_CUES, SYNTH_OUTPUT_BOOST, sampleSettings, coinChimeCount, effectsOutputGain,
     normalizeAudioPreference, parseAudioPreference, AudioPreferenceStore, SoundEngine, MusicEngine,
   });
 });
