@@ -1,6 +1,6 @@
 # Device and lifecycle test matrix
 
-Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio and service-worker cache `ppw-shell-v33`.
+Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, five approved Sprixen sprites, and service-worker cache `ppw-shell-v34`.
 
 ## Required local/browser candidate gates
 
@@ -35,7 +35,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | Area | Status | Required procedure |
 | --- | --- | --- |
 | Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
-| PWA install/update | Untested | Install, standalone launch, update from the previous candidate `ppw-shell-v32` to `ppw-shell-v33`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
+| PWA install/update | Untested | Install, standalone launch, update from the previous candidate `ppw-shell-v33` to `ppw-shell-v34`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
 | Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
 | Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
 | Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |

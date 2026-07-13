@@ -159,6 +159,7 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 .ingredient-card { position: relative; min-width: 0; padding: 13px 9px 11px; text-align: center; color: inherit; border: var(--border); border-radius: 18px; background: rgba(31,26,38,.92); cursor: pointer; }
 .ingredient-card:disabled { cursor: not-allowed; opacity: .62; }.ingredient-card.is-selected { border-color: var(--green); box-shadow: inset 0 0 0 2px rgba(120,201,149,.2); }
 .ingredient-icon { display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 7px; border-radius: 16px; font-size: 24px; background: color-mix(in srgb, var(--ingredient-bg, #6f7d68) 42%, #17131c); }
+.ingredient-icon[data-sprite="frostmint"] { font-size: 0; background-image: url("assets/images/ingredients/frostmint.png"); background-position: center; background-repeat: no-repeat; background-size: 158%; }
 .ingredient-card strong { display: block; font-size: 14px; }.ingredient-card small { display: block; overflow: hidden; color: var(--muted); font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
 
 .brew-slot { min-height: 92px; margin-bottom: 10px; padding: 14px; border: 1px dashed rgba(169,120,255,.38); border-radius: 18px; background: rgba(48,38,61,.55); }
@@ -166,11 +167,17 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 .potion-shelf { display: flex; flex-wrap: wrap; gap: 7px; margin: -2px 0 11px; }
 .potion-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 5px 9px; border: var(--border); border-radius: 999px; background: rgba(36,29,44,.86); color: var(--muted); font-size: 10px; }
 .potion-chip strong { color: var(--ink); }.potion-chip.is-requested { color: var(--purple); border-color: rgba(169,120,255,.48); background: #30243d; }
+.potion-chip-art { display: grid; place-items: center; width: 22px; height: 22px; font-size: 15px; }
 .compact-disclosure { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; margin: 9px 0 10px; padding: 8px 13px; border: var(--border); border-radius: 15px; background: rgba(36,29,44,.86); }
 .compact-disclosure span { display: block; }.compact-disclosure b, .compact-disclosure small { display: block; }.compact-disclosure b { color: var(--ink); font-family: Georgia, serif; font-size: 16px; }.compact-disclosure small { margin-top: 2px; color: var(--muted); font-size: 10px; }
 .brew-empty { display: flex; align-items: center; gap: 13px; min-height: 61px; color: var(--muted); }.brew-empty span { font-size: 30px; }.brew-empty strong { display: block; color: var(--ink); }
 .active-brew { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 12px; }
 .potion-bottle { display: grid; place-items: center; width: 49px; height: 54px; border-radius: 13px 13px 20px 20px; background: var(--potion-color, #c58ad1); color: white; font-size: 25px; box-shadow: inset 0 8px 0 rgba(255,255,255,.3); }
+[data-sprite="lantern"] { --sprite-art: url("assets/images/potions/lantern-sip.png"); }
+[data-sprite="quiet"] { --sprite-art: url("assets/images/potions/quietbell-tea.png"); }
+[data-sprite="way"] { --sprite-art: url("assets/images/potions/wayfinder-cordial.png"); }
+[data-sprite="aurora"] { --sprite-art: url("assets/images/potions/aurora-nectar.png"); }
+.potion-bottle[data-sprite], .potion-chip-art[data-sprite] { font-size: 0; background-color: transparent; background-image: var(--sprite-art); background-position: center; background-repeat: no-repeat; background-size: 158%; box-shadow: none; }
 .active-brew strong, .active-brew small { display: block; }.active-brew small { margin-top: 3px; color: var(--muted); }
 .brew-progress { height: 7px; margin-top: 8px; overflow: hidden; border-radius: 10px; background: rgba(66,47,83,.11); }.brew-progress span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #7760a5, #d07ca5); transition: width .2s linear; }
 .collect-button { min-width: 76px; min-height: 48px; border: 0; border-radius: 14px; color: white; background: var(--green); font-weight: 800; cursor: pointer; }

@@ -6,6 +6,8 @@ const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
 const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
+const POTION_SPRITES = new Set(["lantern", "quiet", "way", "aurora"]);
+const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
 const platformStore = new Platform.PlatformStateStore(localStorage);
 const consent = new Platform.ConsentManager(platformStore);
 const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
@@ -296,7 +298,7 @@ function renderIngredients() {
     const locked = item.unlock > state.level;
     const selected = state.gather.targetId === id;
     return `<button class="ingredient-card ${selected ? "is-selected" : ""}" type="button" style="--ingredient-bg:${item.color}" ${locked ? "disabled" : `data-gather-target="${id}" aria-pressed="${selected}"`}>
-      <span class="ingredient-icon">${locked ? "?" : item.icon}</span>
+      <span class="ingredient-icon"${id === "mint" && !locked ? ` data-sprite="frostmint"` : ""}>${locked ? "?" : item.icon}</span>
       <strong>${locked ? `Level ${item.unlock}` : formatNumber(state.ingredients[id])}</strong>
       <small>${locked ? "Locked" : item.name}</small>
     </button>`;
@@ -382,7 +384,7 @@ function renderBrew() {
   const brewKey = `${state.brew.recipeId}:${state.brew.startedAt}`;
   if (renderedBrewKey !== brewKey) {
     slot.innerHTML = `<div class="active-brew">
-      <span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span>
+      <span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span>
       <div><strong>${recipe.name}</strong><small data-brew-remaining></small><div class="brew-progress" role="progressbar" aria-label="${recipe.name} brewing progress" aria-valuemin="0" aria-valuemax="100"><span></span></div></div>
       <button class="collect-button" id="collectBrewButton" disabled>Brewing</button>
     </div>`;
@@ -403,7 +405,7 @@ function renderPotionShelf() {
   const visible = RECIPES.filter(recipe => recipe.unlock <= state.level && (state.potions[recipe.id] > 0 || state.orders.some(order => order.recipeId === recipe.id)));
   document.querySelector("#potionShelf").innerHTML = visible.map(recipe => {
     const requested = state.orders.some(order => order.recipeId === recipe.id);
-    return `<span class="potion-chip ${requested ? "is-requested" : ""}"><span>${recipe.icon}</span><strong>${state.potions[recipe.id]}</strong> ${recipe.name}${requested ? " · requested" : ""}</span>`;
+    return `<span class="potion-chip ${requested ? "is-requested" : ""}"><span class="potion-chip-art"${potionSpriteAttr(recipe)}>${recipe.icon}</span><strong>${state.potions[recipe.id]}</strong> ${recipe.name}${requested ? " · requested" : ""}</span>`;
   }).join("");
 }
 
@@ -422,7 +424,7 @@ function renderRecipes() {
     const masteryBonus = mastery.rank * MASTERY_CONFIG.coinBonusPerRank * 100;
     const masteryText = mastery.next ? `Mastery ${mastery.rank} · ${mastery.count}/${mastery.next} brews · +${masteryBonus}% order coins` : `Mastery ${mastery.rank} · complete · +${masteryBonus}% order coins`;
     return `<article class="recipe-card ${locked ? "is-locked" : ""} ${requested ? "is-requested" : ""}">
-      <span class="potion-bottle" style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
+      <span class="potion-bottle"${locked ? "" : potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
       <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small>${!locked && recipe.description ? `<small class="recipe-description">${recipe.description}</small>` : ""}<div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div>${locked ? "" : `<small class="mastery-progress">${masteryText}</small>`}</div>
       <button class="brew-button" data-brew="${recipe.id}" aria-label="${buttonLabel} ${locked ? "locked recipe" : recipe.name}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
     </article>`;
@@ -520,8 +522,8 @@ function renderJournal() {
   document.querySelector("#recipeLoreList").innerHTML = [...RECIPES].sort((a, b) => a.unlock - b.unlock).map(recipe => {
     const status = Logic.recipeLoreStatus(state, recipe.id);
     if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
-    if (!status.read) return `<button class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>New bottle note available</small></div><b>New · Read</b></button>`;
-    return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
+    if (!status.read) return `<button class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>New bottle note available</small></div><b>New · Read</b></button>`;
+    return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
   }).join("");
   document.querySelector("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
     const earned = Boolean(state.achievements[achievement.id]);

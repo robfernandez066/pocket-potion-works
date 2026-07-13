@@ -9,14 +9,17 @@ const automatedOnly = process.argv.includes("--automated-only");
 
 const runtimeFiles = ["index.html", "style.css", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
 const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
+const imageAssets = ["assets/images/ingredients/frostmint.png", "assets/images/potions/aurora-nectar.png", "assets/images/potions/lantern-sip.png", "assets/images/potions/quietbell-tea.png", "assets/images/potions/wayfinder-cordial.png"];
 const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
 assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
 for (const file of streamedAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
+for (const file of imageAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing approved sprite: ${file}`);
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
-for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v5.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
+for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v5.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const text = Object.fromEntries(runtimeFiles.map(file => [file, fs.readFileSync(file, "utf8")]));
+for (const file of imageAssets) assert.ok(text["style.css"].includes(file), `approved sprite is not wired into the stylesheet: ${file}`);
 const manifest = JSON.parse(text["manifest.webmanifest"]);
 assert.equal(manifest.name, "Pocket Potion Works");
 assert.equal(manifest.start_url, "./");
@@ -31,6 +34,7 @@ assert.ok(swShellMatch, "service worker shell list must remain statically inspec
 const swShell = JSON.parse(swShellMatch[1]);
 for (const file of runtimeFiles.filter(file => file !== "service-worker.js")) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
 for (const file of runtimeAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
+for (const file of imageAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing approved sprite ${file}`);
 assert.ok(swShell.includes("./"), "service worker cache is missing the start URL");
 
 for (const [file, source] of Object.entries(text)) {
@@ -67,7 +71,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 4/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v33`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v34`/);
 assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
 assert.match(text["app.js"], /permanently increasing order coins/);
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");
