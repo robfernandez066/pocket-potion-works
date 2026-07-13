@@ -9,7 +9,7 @@ const automatedOnly = process.argv.includes("--automated-only");
 
 const runtimeFiles = ["index.html", "style.css", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
 const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
-const imageAssets = ["assets/images/ingredients/frostmint.png", "assets/images/potions/aurora-nectar.png", "assets/images/potions/lantern-sip.png", "assets/images/potions/quietbell-tea.png", "assets/images/potions/wayfinder-cordial.png"];
+const imageAssets = ["assets/images/ingredients/frostmint.png", "assets/images/potions/aurora-nectar.png", "assets/images/potions/aurora-nectar-animated-12f.png", "assets/images/potions/lantern-sip.png", "assets/images/potions/quietbell-tea.png", "assets/images/potions/wayfinder-cordial.png"];
 const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
 assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
@@ -71,7 +71,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 5/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v36`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v37`/);
 assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
 assert.match(text["app.js"], /permanently increasing order coins/);
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");
