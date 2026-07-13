@@ -52,12 +52,12 @@ function fetchEvent(url, mode = "same-origin") {
 }
 
 (async () => {
-  stores.set("ppw-shell-v36", new Map());
+  stores.set("ppw-shell-v37", new Map());
   const install = lifecycleEvent();
   listeners.install(install);
   await install.done();
-  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v36");
-  assert.equal(activeCache, "ppw-shell-v37", "install must rotate the optimized Aurora animation shell cache");
+  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v37");
+  assert.equal(activeCache, "ppw-shell-v38", "install must rotate the corrected Aurora animation shell cache");
   const shell = stores.get(activeCache);
   for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg", "./assets/images/ingredients/frostmint.png", "./assets/images/potions/aurora-nectar.png", "./assets/images/potions/aurora-nectar-animated-12f.png", "./assets/images/potions/lantern-sip.png", "./assets/images/potions/quietbell-tea.png", "./assets/images/potions/wayfinder-cordial.png"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
 

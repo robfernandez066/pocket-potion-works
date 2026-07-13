@@ -71,7 +71,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 5/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v37`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v38`/);
 assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
 assert.match(text["app.js"], /permanently increasing order coins/);
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");
