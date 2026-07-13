@@ -7,6 +7,8 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
   const SAVE_VERSION = 4;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
+  const BASE_PASSIVE_RATE = .08;
+  const PASSIVE_STORAGE_RATIO = .6;
   const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 30, amountPerCharge: 3 });
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
   const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
@@ -259,7 +261,8 @@
   }
   function xpNeeded(level) { return Math.round(38 * Math.pow(Math.max(1, int(level, 1, 1)), 1.28)); }
   function storageCap(state) { return 60 + Math.max(0, state.level - 1) * 10 + int(state.upgrades?.shelves, 0, 0, 6) * 25; }
-  function gatherRate(state) { return .18 * (1 + int(state.upgrades?.garden, 0, 0, 8) * .25); }
+  function gatherRate(state) { return BASE_PASSIVE_RATE * (1 + int(state.upgrades?.garden, 0, 0, 8) * .25); }
+  function passiveStorageCap(state) { return Math.floor(storageCap(state) * PASSIVE_STORAGE_RATIO); }
   function manualGatherAmount(state) { return GATHER_CONFIG.amountPerCharge + int(state.upgrades?.basket, 0, 0, 6); }
   function coinMultiplier(state, now = Date.now()) { return (1 + state.stardust * .1) * (now < state.boostUntil ? 2 : 1); }
   function recipeMasteryRank(state, recipeId) {
@@ -511,7 +514,7 @@
     if (!upgrade) return null;
     const level = int(state.upgrades?.[upgrade.id], 0, 0, upgrade.max), next = Math.min(upgrade.max, level + 1);
     const values = {
-      garden: rank => `${(.18 * (1 + rank * .25) * 60).toFixed(1)} items/min`, basket: rank => `${GATHER_CONFIG.amountPerCharge + rank} items/harvest`,
+      garden: rank => `${(BASE_PASSIVE_RATE * (1 + rank * .25) * 60).toFixed(1)} items/min`, basket: rank => `${GATHER_CONFIG.amountPerCharge + rank} items/harvest`,
       cauldron: rank => `${Math.round((1 + rank * .1) * 100)}% brew speed`, shelves: rank => `${60 + Math.max(0, state.level - 1) * 10 + rank * 25} capacity`,
       ledger: rank => `+${rank * 12}% order coins`,
     };
@@ -626,8 +629,8 @@
     }
   }
 
-  function addRandomIngredients(state, amount, random = Math.random) {
-    const available = unlockedIngredients(state), cap = storageCap(state);
+  function addRandomIngredients(state, amount, random = Math.random, maxTotal = storageCap(state)) {
+    const available = unlockedIngredients(state), cap = Math.floor(clamp(finite(maxTotal, storageCap(state)), 0, storageCap(state)));
     let added = 0;
     for (let i = 0; i < int(amount) && totalIngredients(state) < cap; i += 1) {
       const fallbackRecipe = state.level >= 2 && !state.discovery.delivered.clarity ? recipeById("clarity") : RECIPES.find(recipe => recipe.unlock <= state.level);
@@ -638,6 +641,11 @@
       state.ingredients[id] += 1; added += 1;
     }
     return added;
+  }
+
+  function grantPassiveIngredients(state, amount, random = Math.random) {
+    if (state.stats.orders < 1) return 0;
+    return addRandomIngredients(state, amount, random, passiveStorageCap(state));
   }
 
   function rechargeGather(state, now = Date.now()) {
@@ -675,24 +683,33 @@
     return true;
   }
 
+  function discardIngredient(state, ingredientId, amount) {
+    if (!INGREDIENTS[ingredientId] || INGREDIENTS[ingredientId].unlock > state.level) return 0;
+    const removed = Math.min(state.ingredients[ingredientId], int(amount, 0));
+    if (removed < 1) return 0;
+    state.ingredients[ingredientId] -= removed;
+    if (state.gather.targetId === ingredientId) state.gather.targetId = null;
+    return removed;
+  }
+
   function offlineElapsedSeconds(state, now = Date.now()) { return clamp((now - finite(state.lastSeen, now)) / 1000, 0, OFFLINE_CAP_SECONDS); }
   function grantOfflineIngredients(state, elapsedSeconds, random = Math.random) {
     if (state.stats.orders < 1) return 0;
-    const softCap = Math.floor(storageCap(state) * .75);
+    const softCap = passiveStorageCap(state);
     const availableSpace = Math.max(0, softCap - totalIngredients(state));
     const requested = Math.min(availableSpace, Math.floor(clamp(finite(elapsedSeconds), 0, OFFLINE_CAP_SECONDS) * gatherRate(state) * .65));
-    return addRandomIngredients(state, requested, random);
+    return grantPassiveIngredients(state, requested, random);
   }
   function activeElapsedSeconds(lastTickAt, now = Date.now(), hidden = false) {
     return hidden ? 0 : clamp((now - finite(lastTickAt, now)) / 1000, 0, 5);
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
-    storageCap, gatherRate, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
+    storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
-    resetDailyIfNeeded, addRandomIngredients, rechargeGather, chargedGather, setGatherTarget, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
+    resetDailyIfNeeded, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

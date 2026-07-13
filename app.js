@@ -183,7 +183,7 @@ function renderAll() {
   document.querySelector("#levelCount").textContent = state.level;
   document.querySelector("#levelSeal").textContent = state.level;
   document.querySelector("#stardustCount").textContent = state.stardust;
-  document.querySelector("#incomeRate").textContent = `Garden grows ~${Math.round(gatherRate() * 60)} ingredients/min · ${storageCap()} capacity`;
+  document.querySelector("#incomeRate").textContent = state.stats.orders < 1 ? "Garden wakes after your first delivery" : `Garden trickles ~${Math.round(gatherRate() * 60)}/min · stops at ${Math.round(Logic.PASSIVE_STORAGE_RATIO * 100)}%`;
   document.querySelector("#pantryTotal").textContent = `${formatNumber(totalIngredients())} / ${storageCap()} items`;
   const hour = new Date().getHours();
   document.querySelector("#dayGreeting").textContent = `${hour < 12 ? "GOOD MORNING" : hour < 18 ? "GOOD AFTERNOON" : "GOOD EVENING"}, ALCHEMIST`;
@@ -312,6 +312,35 @@ function selectGatherTarget(targetId) {
   renderAll();
   const item = targetId ? INGREDIENTS[targetId] : null;
   toast(item ? `${item.name} selected for charged harvests.` : "Smart mix will prioritize useful ingredients.");
+}
+
+function showPantryCleanup() {
+  const choices = Object.entries(INGREDIENTS).filter(([id, item]) => item.unlock <= state.level && state.ingredients[id] > 0);
+  openModal({
+    icon: "⌄", kicker: "PANTRY", title: "Clear some space",
+    body: choices.length ? `<p>Choose an ingredient to discard. Discarded ingredients earn no coins.</p><div class="discard-grid">${choices.map(([id, item]) => `<button data-discard-choice="${id}"><span>${item.icon}</span><strong>${item.name}</strong><small>${state.ingredients[id]} stored</small></button>`).join("")}</div>` : "<p>Your Pantry has nothing available to discard.</p>",
+    actions: [{ label: "Back", primary: true }],
+  });
+  document.querySelectorAll("[data-discard-choice]").forEach(button => button.addEventListener("click", () => showDiscardIngredient(button.dataset.discardChoice)));
+}
+
+function showDiscardIngredient(ingredientId) {
+  const item = INGREDIENTS[ingredientId];
+  const stored = state.ingredients[ingredientId];
+  if (!item || stored < 1) { showPantryCleanup(); return; }
+  const discard = amount => {
+    const removed = Logic.discardIngredient(state, ingredientId, amount);
+    closeModal();
+    if (!removed) return;
+    renderAll();
+    scheduleSave();
+    feedback(`Discarded ${removed} ${item.name}.`, { tone: "gather", soundName: "confirm", target: "#pantryDisclosure" });
+  };
+  const actions = [{ label: "Back", onClick: showPantryCleanup }];
+  if (stored > 1) actions.push({ label: "Discard 1", onClick: () => discard(1) });
+  if (stored > 5) actions.push({ label: "Discard 5", onClick: () => discard(5) });
+  actions.push({ label: `Discard all ${stored}`, primary: true, onClick: () => discard(stored) });
+  openModal({ icon: item.icon, kicker: "CLEAR SPACE", title: `Discard ${item.name}?`, body: `<p>You have <strong>${stored}</strong>. This cannot be undone and earns no coins.</p>`, actions });
 }
 
 function renderReadyDeliverStrip() {
@@ -944,7 +973,7 @@ function tick() {
   passiveBank += gatherRate() * elapsedSeconds;
   const whole = Math.floor(passiveBank);
   if (whole > 0) {
-    const added = addRandomIngredients(whole);
+    const added = Logic.grantPassiveIngredients(state, whole);
     passiveBank -= whole;
     if (added > 0) { renderIngredients(); document.querySelector("#pantryTotal").textContent = `${formatNumber(totalIngredients())} / ${storageCap()} items`; }
   }
@@ -980,6 +1009,7 @@ document.querySelector("#claimWeeklyButton").addEventListener("click", claimWeek
 document.querySelector("#prestigeButton").addEventListener("click", confirmPrestige);
 document.querySelector("#marketButton").addEventListener("click", showMarket);
 document.querySelector("#settingsButton").addEventListener("click", showSettings);
+document.querySelector("#clearPantryButton").addEventListener("click", showPantryCleanup);
 document.querySelector("#resetSaveButton").addEventListener("click", confirmReset);
 document.querySelector("#modalClose").addEventListener("click", closeModal);
 document.querySelector("#modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
