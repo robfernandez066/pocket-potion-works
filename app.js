@@ -408,7 +408,7 @@ function renderPotionShelf() {
 }
 
 function renderRecipes() {
-  const visibleRecipes = RECIPES.filter(recipe => recipe.unlock <= state.level + 2);
+  const visibleRecipes = RECIPES.filter(recipe => recipe.unlock <= state.level + 2).sort((a, b) => a.unlock - b.unlock);
   const hiddenCount = RECIPES.length - visibleRecipes.length;
   document.querySelector("#recipeList").innerHTML = visibleRecipes.map(recipe => {
     const locked = recipe.unlock > state.level;
@@ -423,7 +423,7 @@ function renderRecipes() {
     const masteryText = mastery.next ? `Mastery ${mastery.rank} · ${mastery.count}/${mastery.next} brews · +${masteryBonus}% order coins` : `Mastery ${mastery.rank} · complete · +${masteryBonus}% order coins`;
     return `<article class="recipe-card ${locked ? "is-locked" : ""} ${requested ? "is-requested" : ""}">
       <span class="potion-bottle" style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
-      <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small><div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div>${locked ? "" : `<small class="mastery-progress">${masteryText}</small>`}</div>
+      <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small>${!locked && recipe.description ? `<small class="recipe-description">${recipe.description}</small>` : ""}<div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div>${locked ? "" : `<small class="mastery-progress">${masteryText}</small>`}</div>
       <button class="brew-button" data-brew="${recipe.id}" aria-label="${buttonLabel} ${locked ? "locked recipe" : recipe.name}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
     </article>`;
   }).join("") + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
@@ -517,7 +517,7 @@ function renderJournal() {
     const progress = `${unlockedCount}/${CUSTOMER_CONFIG.maxHearts} stories${newCount ? ` · ${newCount} new` : ""}`;
     return `<details class="villager-journal-card" data-journal-customer="${customerId}"><summary><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
   }).join("");
-  document.querySelector("#recipeLoreList").innerHTML = RECIPES.map(recipe => {
+  document.querySelector("#recipeLoreList").innerHTML = [...RECIPES].sort((a, b) => a.unlock - b.unlock).map(recipe => {
     const status = Logic.recipeLoreStatus(state, recipe.id);
     if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
     if (!status.read) return `<button class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>New bottle note available</small></div><b>New · Read</b></button>`;

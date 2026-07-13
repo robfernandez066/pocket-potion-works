@@ -11,14 +11,14 @@ function test(name, fn) {
 
 test("exact ingredient cost starts a brew and consumes exactly the cost", () => {
   const state = game.defaultState(NOW);
-  state.ingredients = { herb: 2, mushroom: 1, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+  state.ingredients = { herb: 2, mushroom: 1, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
   assert.equal(game.startBrew(state, "tonic", NOW), true);
-  assert.deepEqual(state.ingredients, { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 });
+  assert.deepEqual(state.ingredients, { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 });
 });
 
 test("insufficient cost cannot start or partially charge a brew", () => {
   const state = game.defaultState(NOW);
-  state.ingredients = { herb: 2, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+  state.ingredients = { herb: 2, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
   const before = structuredClone(state.ingredients);
   assert.equal(game.startBrew(state, "tonic", NOW), false);
   assert.deepEqual(state.ingredients, before);
@@ -88,10 +88,10 @@ test("XP overflow crosses multiple levels and keeps the remainder", () => {
 
 test("ingredient additions stop exactly at the storage cap", () => {
   const state = game.defaultState(NOW);
-  state.ingredients = { herb: 59, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+  state.ingredients = { herb: 59, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
   assert.equal(game.addRandomIngredients(state, 50, () => 0), 1);
   assert.equal(game.totalIngredients(state), 60);
-  const corrupt = { ...state, ingredients: { herb: 1000, mushroom: 1000, crystal: 1000, mist: 1000, ember: 1000, lavender: 1000 } };
+  const corrupt = { ...state, ingredients: { herb: 1000, mushroom: 1000, crystal: 1000, mist: 1000, ember: 1000, mint: 1000, lavender: 1000 } };
   assert.equal(game.totalIngredients(game.normalizeState(corrupt, NOW)), 60);
 });
 
@@ -165,6 +165,97 @@ test("all recipe lore unlocks from existing discovery without changing gameplay"
     assert.equal(game.recipeLoreStatus(state, recipe.id).read, true);
   }
   assert.deepEqual({ coins: state.coins, xp: state.xp, ingredients: state.ingredients, potions: state.potions }, before);
+});
+
+test("expanded potion book adds exactly one ingredient and four authored recipes across levels four to seven", () => {
+  const expansionIds = ["lantern", "quiet", "way", "aurora"];
+  assert.equal(Object.keys(game.INGREDIENTS).length, 7);
+  assert.equal(game.INGREDIENTS.mint.unlock, 4);
+  assert.equal(game.RECIPES.length, 12);
+  assert.deepEqual(expansionIds.map(id => game.recipeById(id).unlock), [4, 5, 6, 7]);
+  for (const id of expansionIds) {
+    const recipe = game.recipeById(id);
+    assert.ok(recipe.name && recipe.description && game.RECIPE_LORE[id]);
+    assert.ok(recipe.ingredients.mint > 0, `${id} should make Frostmint useful`);
+    assert.ok(recipe.seconds > 0 && recipe.sell > 0);
+  }
+  assert.equal(game.PRESTIGE_CONFIG.unlockLevel, 7);
+  assert.deepEqual([4, 5, 6, 7].map(level => game.unlocksAtLevel(level).recipes.filter(recipe => expansionIds.includes(recipe.id)).map(recipe => recipe.id)), [["lantern"], ["quiet"], ["way"], ["aurora"]]);
+  assert.equal(game.unlocksAtLevel(4).ingredients.some(item => item.name === "Frostmint"), true);
+});
+
+test("new recipes participate in brewing, mastery, discovery, and eligible orders", () => {
+  const state = game.defaultState(NOW);
+  state.level = 4;
+  Object.assign(state.ingredients, game.recipeById("lantern").ingredients);
+  assert.equal(game.setGatherTarget(state, "mint"), true);
+  assert.equal(game.startBrew(state, "lantern", NOW), true);
+  const result = game.collectBrew(state, NOW + game.recipeById("lantern").seconds * 1000);
+  assert.equal(result.recipe.id, "lantern");
+  assert.equal(state.potions.lantern, 1);
+  assert.equal(state.mastery.lantern, 1);
+  assert.equal(state.discovery.brewed.lantern, 1);
+  assert.equal(game.recipeLoreStatus(state, "lantern").unlocked, true);
+
+  const generated = new Set();
+  for (let index = 0; index < 100; index += 1) generated.add(game.generateOrder(state, () => (index % 97) / 97).recipeId);
+  assert.equal(generated.has("lantern"), true);
+  assert.equal([...generated].some(id => game.recipeById(id).unlock > state.level), false);
+});
+
+test("Frostmint participates in smart passive and offline gathering after unlock", () => {
+  const state = game.defaultState(NOW);
+  state.level = 4;
+  state.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
+  assert.equal(game.addRandomIngredients(state, 1, () => .999999), 1);
+  assert.equal(state.ingredients.mint, 1);
+  state.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
+  state.stats.orders = 1;
+  assert.equal(game.grantOfflineIngredients(state, 10, () => .999999), 1);
+  assert.equal(state.ingredients.mint, 1);
+});
+
+test("Potion Sampler remains the durable original-eight Mooncloth goal", () => {
+  const state = game.defaultState(NOW);
+  for (const id of game.SAMPLER_IDS) state.mastery[id] = 1;
+  assert.deepEqual(game.collectionGoalProgress(state, "sampler"), { current: 8, target: 8 });
+  assert.equal(state.mastery.lantern, 0);
+  assert.equal(state.mastery.quiet, 0);
+  assert.equal(state.mastery.way, 0);
+  assert.equal(state.mastery.aurora, 0);
+  assert.equal(game.cosmeticUnlocked(state, "mooncloth"), true);
+  state.customization.selected = "mooncloth";
+  assert.equal(game.normalizeState(state, NOW).customization.selected, "mooncloth");
+});
+
+test("version-three and malformed saves zero new content keys without losing prior progress", () => {
+  const existing = game.defaultState(NOW - 1000);
+  existing.version = 3;
+  existing.coins = 345;
+  existing.mastery.tonic = 8;
+  existing.discovery.brewed.tonic = 4;
+  delete existing.ingredients.mint;
+  for (const id of ["lantern", "quiet", "way", "aurora"]) {
+    delete existing.potions[id];
+    delete existing.mastery[id];
+    delete existing.discovery.brewed[id];
+    delete existing.discovery.delivered[id];
+  }
+  existing.potions.unknown = 99;
+  existing.mastery.lantern = "broken";
+  existing.discovery.delivered.aurora = -50;
+  const loaded = game.normalizeState(existing, NOW);
+  assert.equal(loaded.coins, 345);
+  assert.equal(loaded.mastery.tonic, 8);
+  assert.equal(loaded.discovery.brewed.tonic, 4);
+  assert.equal(loaded.ingredients.mint, 0);
+  for (const id of ["lantern", "quiet", "way", "aurora"]) {
+    assert.equal(loaded.potions[id], 0);
+    assert.equal(loaded.mastery[id], 0);
+    assert.equal(loaded.discovery.brewed[id], 0);
+    assert.equal(loaded.discovery.delivered[id], 0);
+  }
+  assert.equal("unknown" in loaded.potions, false);
 });
 
 test("malformed journal state normalizes to known unique content ids", () => {
@@ -426,7 +517,7 @@ test("tutorial recognizes coin, ingredient, upgrade, and new unlock states", () 
   const state = game.defaultState(NOW);
   state.stats.orders = 1;
   state.coins = 40;
-  state.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+  state.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
   let quest = game.beginnerQuest(state, NOW);
   assert.equal(quest.blockedBy, "insufficient-coins");
   assert.equal(quest.status, "insufficient-ingredients");

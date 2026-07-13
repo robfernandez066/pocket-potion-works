@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const game = require("./game-logic.js");
 const v1Reader = require("./fixtures/rollback/game-save-reader-v1.cjs");
 const v2Reader = require("./fixtures/rollback/game-save-reader-v2.cjs");
+const v3Reader = require("./fixtures/rollback/game-save-reader-v3.cjs");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
 const fixture = name => fs.readFileSync(`fixtures/saves/${name}`, "utf8");
@@ -37,13 +38,13 @@ test("historical pre-release v1 fixture preserves durable progress, brew, and or
 });
 
 test("future-version fixture is detected and cannot be normalized for overwrite", () => {
-  const raw = fixture("future-version-v4.json");
+  const raw = fixture("future-version-v5.json");
   const result = game.parseSave(raw, NOW);
-  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 4 });
+  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 5 });
   assert.equal(game.shouldBlockSaveWrite(result), true);
   let stored = raw;
   if (!game.shouldBlockSaveWrite(result)) stored = JSON.stringify(result.state);
-  assert.equal(stored, raw, "v2 tooling must preserve the unsupported future save byte-for-byte");
+  assert.equal(stored, raw, "v4 tooling must preserve the unsupported future save byte-for-byte");
 });
 
 test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () => {
@@ -65,7 +66,7 @@ test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () =
   assert.deepEqual(reloaded.customers["customer-0"], { deliveries: 4, hearts: 1 });
 });
 
-test("Task 8 v2 migrates explicitly and the frozen v2 reader blocks Task 9 v3", () => {
+test("Task 8 v2 migrates to current v4 and the frozen v2 reader blocks Task 9 v3", () => {
   const task8 = game.defaultState(NOW);
   task8.version = 2;
   delete task8.weekly;
@@ -73,20 +74,29 @@ test("Task 8 v2 migrates explicitly and the frozen v2 reader blocks Task 9 v3", 
   task8.mastery.tonic = 8;
   task8.customers["customer-0"] = { deliveries: 4, hearts: 1 };
   const migrated = game.parseSave(JSON.stringify(task8), NOW).state;
-  assert.equal(migrated.version, 3);
+  assert.equal(migrated.version, 4);
   assert.deepEqual(migrated.weekly, { cycle: 0, progress: 0, claimedSteps: 0 });
   assert.deepEqual(migrated.customization, { selected: "midnight" });
   assert.equal(migrated.mastery.tonic, 8);
   assert.deepEqual(migrated.customers["customer-0"], { deliveries: 4, hearts: 1 });
 
-  const raw = JSON.stringify(migrated);
+  const task9 = structuredClone(migrated);
+  task9.version = 3;
+  delete task9.ingredients.mint;
+  for (const id of ["lantern", "quiet", "way", "aurora"]) {
+    delete task9.potions[id];
+    delete task9.mastery[id];
+    delete task9.discovery.brewed[id];
+    delete task9.discovery.delivered[id];
+  }
+  const raw = JSON.stringify(task9);
   const downlevel = v2Reader.parseSave(raw);
   assert.deepEqual(downlevel, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 3 });
   assert.equal(v2Reader.shouldBlockSaveWrite(downlevel), true);
-  assert.equal(raw, JSON.stringify(migrated), "the v3 save remains byte-for-byte available to the current reader");
+  assert.equal(raw, JSON.stringify(task9), "the v3 save remains byte-for-byte available to the current reader");
 });
 
-test("current v3 and malformed saves retain their existing compatibility behavior", () => {
+test("current v4 and malformed saves retain their existing compatibility behavior", () => {
   const current = game.defaultState(NOW);
   current.stardust = 4;
   assert.equal(game.parseSave(JSON.stringify(current), NOW).state.stardust, 4);
@@ -94,6 +104,55 @@ test("current v3 and malformed saves retain their existing compatibility behavio
   assert.equal(malformed.recovered, true);
   assert.equal(malformed.state.version, game.SAVE_VERSION);
   assert.equal(game.shouldBlockSaveWrite(malformed), false);
+});
+
+test("pre-expansion version-three saves acquire safe zeroed content entries", () => {
+  const priorV3 = game.defaultState(NOW);
+  priorV3.version = 3;
+  priorV3.coins = 812;
+  priorV3.mastery.tonic = 15;
+  priorV3.discovery.delivered.tonic = 9;
+  delete priorV3.ingredients.mint;
+  for (const id of ["lantern", "quiet", "way", "aurora"]) {
+    delete priorV3.potions[id];
+    delete priorV3.mastery[id];
+    delete priorV3.discovery.brewed[id];
+    delete priorV3.discovery.delivered[id];
+  }
+  const loaded = game.parseSave(JSON.stringify(priorV3), NOW).state;
+  assert.equal(loaded.version, 4);
+  assert.equal(loaded.coins, 812);
+  assert.equal(loaded.mastery.tonic, 15);
+  assert.equal(loaded.discovery.delivered.tonic, 9);
+  assert.equal(loaded.ingredients.mint, 0);
+  for (const id of ["lantern", "quiet", "way", "aurora"]) {
+    assert.equal(loaded.potions[id], 0);
+    assert.equal(loaded.mastery[id], 0);
+    assert.equal(loaded.discovery.brewed[id], 0);
+    assert.equal(loaded.discovery.delivered[id], 0);
+  }
+});
+
+test("the frozen v3 reader blocks and preserves a Task 12 v4 save byte-for-byte", () => {
+  const task12 = game.defaultState(NOW);
+  task12.ingredients.mint = 7;
+  task12.potions.lantern = 2;
+  task12.mastery.quiet = 3;
+  task12.discovery.brewed.way = 1;
+  task12.discovery.delivered.aurora = 1;
+  const raw = JSON.stringify(task12);
+  const downlevel = v3Reader.parseSave(raw);
+  assert.deepEqual(downlevel, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 4 });
+  assert.equal(v3Reader.shouldBlockSaveWrite(downlevel), true);
+  let stored = raw;
+  if (!v3Reader.shouldBlockSaveWrite(downlevel)) stored = JSON.stringify(downlevel.state);
+  assert.equal(stored, raw, "the Task 12 v4 save must remain byte-for-byte intact for the current reader");
+  const reloaded = game.parseSave(stored, NOW).state;
+  assert.equal(reloaded.ingredients.mint, 7);
+  assert.equal(reloaded.potions.lantern, 2);
+  assert.equal(reloaded.mastery.quiet, 3);
+  assert.equal(reloaded.discovery.brewed.way, 1);
+  assert.equal(reloaded.discovery.delivered.aurora, 1);
 });
 
 console.log(`All ${passed} historical and rollback save compatibility tests passed.`);

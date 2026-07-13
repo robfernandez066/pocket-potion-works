@@ -52,12 +52,12 @@ function fetchEvent(url, mode = "same-origin") {
 }
 
 (async () => {
-  stores.set("ppw-shell-v1", new Map());
+  stores.set("ppw-shell-v31", new Map());
   const install = lifecycleEvent();
   listeners.install(install);
   await install.done();
-  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v1");
-  assert.ok(activeCache, "install must create a versioned shell cache");
+  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v31");
+  assert.equal(activeCache, "ppw-shell-v32", "install must rotate the Task 12 shell cache");
   const shell = stores.get(activeCache);
   for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
 

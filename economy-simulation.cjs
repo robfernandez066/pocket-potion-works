@@ -141,12 +141,108 @@ function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200) {
         seconds: second, level: state.level, orders: state.stats.orders, coins: state.coins,
         upgrades: Object.values(state.upgrades).reduce((sum, value) => sum + value, 0),
         mastery: Object.values(state.mastery).reduce((sum, value) => sum + value, 0),
+        expandedMastery: ["lantern", "quiet", "way", "aurora"].reduce((sum, id) => sum + state.mastery[id], 0),
+        frostmintStock: state.ingredients.mint,
         customerDeliveries: Object.values(state.customers).reduce((sum, customer) => sum + customer.deliveries, 0),
       };
     }
   }
   assert.fail(`seed ${seed} did not reach level ${targetLevel} in ${maxSeconds}s`);
 }
+
+const expansionTunings = [
+  {
+    id: "quick-light",
+    recipes: {
+      lantern: { seconds: 88, sell: 72, ingredients: { mist: 1, ember: 1, mint: 2 } },
+      quiet: { seconds: 98, sell: 91, ingredients: { mushroom: 1, lavender: 1, mint: 2 } },
+      way: { seconds: 110, sell: 118, ingredients: { crystal: 1, mist: 1, ember: 1, mint: 2 } },
+      aurora: { seconds: 122, sell: 156, ingredients: { mist: 1, ember: 1, lavender: 1, mint: 2 } },
+    },
+  },
+  {
+    id: "chosen-parity",
+    recipes: {
+      lantern: { seconds: 88, sell: 72, ingredients: { herb: 2, crystal: 1, mint: 2 } },
+      quiet: { seconds: 100, sell: 91, ingredients: { mushroom: 2, lavender: 1, mint: 2 } },
+      way: { seconds: 112, sell: 118, ingredients: { mushroom: 3, crystal: 2, mint: 2 } },
+      aurora: { seconds: 125, sell: 156, ingredients: { mist: 2, ember: 2, mint: 2 } },
+    },
+  },
+  {
+    id: "slow-rich",
+    recipes: {
+      lantern: { seconds: 100, sell: 80, ingredients: { herb: 1, mist: 1, ember: 1, mint: 3 } },
+      quiet: { seconds: 114, sell: 101, ingredients: { mushroom: 2, lavender: 1, mint: 3 } },
+      way: { seconds: 128, sell: 130, ingredients: { crystal: 2, mist: 1, ember: 1, mint: 3 } },
+      aurora: { seconds: 140, sell: 170, ingredients: { mist: 1, ember: 1, lavender: 2, mint: 3 } },
+    },
+  },
+];
+
+function applyExpansionTuning(tuning) {
+  for (const [id, values] of Object.entries(tuning.recipes)) {
+    const recipe = game.recipeById(id);
+    recipe.seconds = values.seconds;
+    recipe.sell = values.sell;
+    recipe.ingredients = { ...values.ingredients };
+  }
+}
+
+const configuredExpansion = expansionTunings.find(tuning => tuning.id === "chosen-parity");
+for (const [id, values] of Object.entries(configuredExpansion.recipes)) {
+  const recipe = game.recipeById(id);
+  assert.deepEqual({ seconds: recipe.seconds, sell: recipe.sell, ingredients: recipe.ingredients }, values, `${id}: runtime tuning should match the simulated chosen candidate`);
+}
+
+const expansionTuningRows = expansionTunings.map(tuning => {
+  applyExpansionTuning(tuning);
+  const rows = [7, 42, 2026].map(seed => {
+    const start = Date.UTC(2026, 6, 12, 8);
+    const state = game.defaultState(start);
+    const cycle = simulateToLevel(state, seed, game.PRESTIGE_CONFIG.unlockLevel, start);
+    const recoveryStart = start + (cycle.seconds + 60) * 1000;
+    const dailyOnlyState = game.defaultState(recoveryStart);
+    dailyOnlyState.stardust = state.stardust;
+    dailyOnlyState.mastery = { ...state.mastery };
+    dailyOnlyState.customers = structuredClone(state.customers);
+    dailyOnlyState.daily = { ...state.daily };
+    const dailyOnly = simulateToLevel(dailyOnlyState, seed + 10000, 3, recoveryStart, 1800);
+    const reborn = game.performPrestige(state, game.PRESTIGE_CONFIG.baseReward, recoveryStart);
+    const recovery = simulateToLevel(reborn, seed + 10000, 3, recoveryStart, 1800);
+    return { cycle, dailyOnly, recovery };
+  });
+  return {
+    id: tuning.id,
+    averageSeconds: Math.round(rows.reduce((sum, row) => sum + row.cycle.seconds, 0) / rows.length),
+    seconds: rows.map(row => row.cycle.seconds),
+    orders: rows.map(row => row.cycle.orders),
+    mastery: rows.map(row => row.cycle.mastery),
+    expandedMastery: rows.map(row => row.cycle.expandedMastery),
+    frostmintStock: rows.map(row => row.cycle.frostmintStock),
+    recoverySeconds: rows.map(row => row.recovery.seconds),
+    dailyOnlySeconds: rows.map(row => row.dailyOnly.seconds),
+    recoveryCoins: rows.map(row => row.recovery.coins),
+    dailyOnlyCoins: rows.map(row => row.dailyOnly.coins),
+    recoveryUpgrades: rows.map(row => row.recovery.upgrades),
+    dailyOnlyUpgrades: rows.map(row => row.dailyOnly.upgrades),
+  };
+});
+applyExpansionTuning(configuredExpansion);
+const chosenExpansion = expansionTuningRows.find(row => row.id === "chosen-parity");
+const quickExpansion = expansionTuningRows.find(row => row.id === "quick-light");
+const slowExpansion = expansionTuningRows.find(row => row.id === "slow-rich");
+const rowAverage = values => values.reduce((sum, value) => sum + value, 0) / values.length;
+assert.ok(chosenExpansion.seconds.every(seconds => seconds >= 2425 && seconds <= 2730), "chosen expansion should remain inside the approved seeded Task 8 timing envelope");
+assert.ok(chosenExpansion.orders.every(orders => orders >= 30 && orders <= 33), "chosen expansion should preserve the approved first-cycle order cadence");
+assert.ok(chosenExpansion.mastery.every(mastery => mastery >= 35 && mastery <= 39), "chosen expansion should stay within one brew of the approved mastery envelope");
+assert.ok(chosenExpansion.expandedMastery.every(count => count >= 8 && count <= 14), "new recipes should be used without dominating the first cycle");
+assert.ok(chosenExpansion.frostmintStock.every(count => count >= 6 && count <= 24), "Frostmint should remain bounded without stalling the seeded strategy");
+assert.ok(rowAverage(chosenExpansion.recoverySeconds) <= rowAverage(chosenExpansion.dailyOnlySeconds), "chosen expansion should preserve the Task 8 prestige recovery timing guardrail");
+assert.ok(rowAverage(chosenExpansion.recoveryCoins) > rowAverage(chosenExpansion.dailyOnlyCoins), "chosen expansion should preserve a post-rebirth coin advantage");
+assert.deepEqual(chosenExpansion.recoveryUpgrades, chosenExpansion.dailyOnlyUpgrades, "chosen expansion should not add a recovery upgrade tax");
+assert.ok(Math.max(...quickExpansion.expandedMastery) >= 15, "quick-light candidate should expose its low-scarcity content bias");
+assert.ok(Math.max(...slowExpansion.seconds) > 2730, "slow-rich candidate should expose its delay beyond the approved Task 8 envelope");
 
 for (const recipe of game.RECIPES) {
   for (const ingredientId of Object.keys(recipe.ingredients)) {
@@ -173,7 +269,7 @@ const pressureStart = Date.UTC(2026, 6, 12, 13);
 const targeted = game.defaultState(pressureStart);
 const smart = game.defaultState(pressureStart);
 targeted.level = smart.level = 2;
-targeted.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+targeted.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
 smart.ingredients = { ...targeted.ingredients };
 game.setGatherTarget(targeted, "crystal");
 const pressureRandom = seededRandom(42);
@@ -184,7 +280,7 @@ for (let second = 0; second <= 180; second += 5) {
 assert.ok(targeted.ingredients.crystal >= 24, "targeted pressure run should reliably stock a scarce unlocked ingredient");
 assert.ok(targeted.ingredients.crystal > smart.ingredients.crystal * 2, "targeting should materially outperform smart mix for a chosen scarce ingredient");
 const nearCap = game.defaultState(pressureStart);
-nearCap.ingredients = { herb: game.storageCap(nearCap) - 1, mushroom: 0, crystal: 0, mist: 0, ember: 0, lavender: 0 };
+nearCap.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, id === "herb" ? game.storageCap(nearCap) - 1 : 0]));
 game.setGatherTarget(nearCap, "herb");
 assert.equal(game.chargedGather(nearCap, pressureStart, () => 0).added, 1, "targeted harvest should stop exactly at storage capacity");
 assert.equal(game.totalIngredients(nearCap), game.storageCap(nearCap));
@@ -194,8 +290,8 @@ offlinePressure.stats.orders = 1;
 game.grantOfflineIngredients(offlinePressure, game.OFFLINE_CAP_SECONDS, () => 0);
 assert.equal(game.totalIngredients(offlinePressure), Math.floor(game.storageCap(offlinePressure) * .75));
 assert.ok(game.storageCap(offlinePressure) - game.totalIngredients(offlinePressure) >= game.GATHER_CONFIG.maxCharges * game.GATHER_CONFIG.amountPerCharge, "offline soft cap must leave room for a full targeted charge stock");
-assert.ok(Object.keys(game.INGREDIENTS).length >= 6);
-assert.ok(game.RECIPES.length >= 8);
+assert.equal(Object.keys(game.INGREDIENTS).length, 7, "content expansion should add exactly one gatherable ingredient");
+assert.equal(game.RECIPES.length, 12, "content expansion should add exactly four recipes");
 assert.ok(game.CUSTOMERS.length >= 12);
 assert.ok(game.ACHIEVEMENTS.length >= 8);
 
@@ -250,6 +346,8 @@ assert.ok(chosenPrestige.recoverySeconds <= candidateRows.find(row => row.reward
 const results = STRATEGIES.flatMap(strategy => [7, 42, 2026].map(seed => simulate(strategy, seed)));
 console.log("10-minute economy strategy simulations passed:");
 for (const result of results) console.log(JSON.stringify(result));
+console.log("Expanded potion book tuning candidates (seeds 7, 42, 2026):");
+for (const row of expansionTuningRows) console.log(JSON.stringify({ ...row, chosen: row.id === chosenExpansion.id }));
 console.log("Charged-gather tuning candidates:");
 for (const row of gatherCandidateRows) console.log(JSON.stringify(row));
 console.log(JSON.stringify({ targetedCrystal180s: targeted.ingredients.crystal, smartCrystal180s: smart.ingredients.crystal, storageCap: game.storageCap(nearCap), offlineSoftCap: game.totalIngredients(offlinePressure) }));

@@ -102,5 +102,23 @@
       "Existing saves remain compatible and malformed content-related state cannot crash the game",
       "npm.cmd run check passes and 390x844 plus 360x740 browser QA has no overflow or console errors"
     ]
+  },
+  {
+    "id": 12,
+    "status": "complete",
+    "title": "Expanded potion book",
+    "model": "Use a fresh high-reasoning coding context for balance, migration, and cross-system integration",
+    "freshChat": true,
+    "prompt": "Add a bounded playable-content expansion inside the existing level 4-7 curve: one new gatherable ingredient and four distinct new recipes, with concise names, descriptions, and recipe lore matching the established cozy village voice. Choose exact unlock levels, ingredient costs, brew times, and order values using deterministic simulations rather than guesswork. Integrate the content through charged gathering targets, passive/offline gathering, inventory normalization, brewing, order generation, mastery, discovery, level-up presentation, the Pantry, Recipe Book, Journal, and all relevant tests. Keep starry rebirth available at level 7 and preserve the approved first-cycle pacing near the existing Task 8 seeded ranges. Preserve Mooncloth Shelves for players who completed the original eight-recipe Potion Sampler; adding recipes must not revoke an earned cosmetic or silently move the old goalpost. Existing version-3 saves must acquire safe zeroed entries for new content without losing progress, and malformed saves must remain non-crashing. Keep one cauldron, existing currencies, current gathering rules, and the four-tab structure. Do not add monetization, release-stage work, new progression levels, another customer set, a second brew slot, external assets, or production services. Do not read archive/.",
+    "acceptance": [
+      "Exactly one new ingredient and four new recipes are playable within levels 4-7 and match the existing tone",
+      "New content is integrated with gathering, offline/passive gains, inventory, brewing, orders, mastery, discovery, lore, level-up presentation, and compact mobile UI",
+      "Deterministic seeded simulations justify costs, times, values, and unlock placement while keeping level-7 first-cycle timing and ingredient scarcity near the approved baseline",
+      "Prestige remains available at level 7 and no new progression tier, currency, timer system, or cauldron slot is added",
+      "The original eight-recipe Potion Sampler remains the durable Mooncloth requirement and already-qualified players are not relocked",
+      "Existing and malformed saves normalize the new inventory, mastery, potion, and discovery keys safely without losing prior progress",
+      "Focused tests cover content integrity, order eligibility, collection-goal durability, save normalization, and simulation guardrails",
+      "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
+    ]
   }
 ]
