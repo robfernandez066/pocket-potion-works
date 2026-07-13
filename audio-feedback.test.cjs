@@ -46,6 +46,14 @@ test("sound preference persists independently and reloads safely", () => {
   assert.equal(new audio.AudioPreferenceStore(memory).musicVolume(), .25);
 });
 
+test("effects use a louder perceptual curve without exceeding the safe base mix", () => {
+  assert.equal(audio.effectsOutputGain(0), 0);
+  assert.equal(audio.effectsOutputGain(.5), .75);
+  assert.ok(Math.abs(audio.effectsOutputGain(.7) - .91) < 1e-9);
+  assert.equal(audio.effectsOutputGain(1), 1);
+  assert.equal(audio.effectsOutputGain(4), 1);
+});
+
 test("muted sounds never initialize or play", () => {
   let initialized = 0;
   const preference = new audio.AudioPreferenceStore(storage()); preference.setEnabled(false);
@@ -115,7 +123,7 @@ test("each coin sample gets the requested live volume and playback-rate jitter",
   engine.activate();
   assert.deepEqual(engine.play("coin", { bypassCooldown: true }), { played: true, source: "sample" });
   assert.equal(created[0].src, "assets/audio/coin.mp3");
-  assert.equal(created[0].volume, .135);
+  assert.equal(created[0].volume, .2025);
   assert.equal(created[0].playbackRate, 1.1);
 });
 
