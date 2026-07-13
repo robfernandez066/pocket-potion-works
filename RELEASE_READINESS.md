@@ -15,8 +15,8 @@ Audit date: 2026-07-12. Candidate version: `0.1.0`. This is an evidence report, 
 
 - `npm.cmd run check` covers deterministic gameplay, economy and scripted monetization simulations, save compatibility, fake-platform boundaries, sound/music mappings and persistence, service-worker behavior, security checks, and release budgets. Monetization magnitudes are exact for the checked-in scripted profile but directional for human play.
 - `npm.cmd run release:check` remains blocked while any required manual gate is pending or failed.
-- Runtime ceiling: 24,000,000 bytes including streamed music. The latest measured runtime is approximately 22.9 MB; `release-budgets.json` is authoritative and fails on material growth.
-- Service-worker cache generation is `ppw-shell-v40`. The install shell contains all code, eight sound effects, five approved sprite designs, and the corrected optimized Aurora animation sheet; the three large music tracks stream from the same origin on demand so they do not block installation.
+- Runtime ceiling: 24,000,000 bytes including streamed music. The latest measured runtime is 23,941,469 bytes; `release-budgets.json` is authoritative and fails on material growth.
+- Service-worker cache generation is `ppw-shell-v43`. The install shell contains all code, eight sound effects, twenty-two supplied static/utility sprites, and the optimized Aurora animation sheet; the three large music tracks stream from the same origin on demand so they do not block installation.
 - Gameplay, platform, sound, and compact Workshop UI preferences remain in separate versioned local namespaces.
 - Historical v1 through v6 saves migrate to current v7; future v8 coverage verifies overwrite protection, and frozen v1-v6 readers prove downlevel builds preserve newer saves.
 - Progression tests cover level-7 rebirth, same-date daily preservation, durable mastery/customer migration, exact upgrade previews, and deterministic trust favors.

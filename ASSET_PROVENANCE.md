@@ -35,14 +35,15 @@ The tracks are used only as part of Pocket Potion Works and must not be offered,
 
 ## Owner-generated Sprixen sprites
 
-- `assets/images/ingredients/frostmint.png`, the four static potion files, and the optimized Aurora animation sheet are owner-generated transparent PNG sprite assets created with Sprixen for Pocket Potion Works.
-- Lantern Sip was the visual reference for Quietbell Tea, Wayfinder Cordial, and Aurora Nectar. The owner-provided Aurora cinematic sheet contained 96 frames at 256x256 each. The shipped `aurora-nectar-animated-12f.png` samples every eighth source frame and downsizes each frame to 128x128 without generative redrawing; the static Aurora sprite remains the reduced-motion and tiny shelf-chip fallback.
-- The six shipped image files add 354,664 bytes to the offline installation shell and require no remote runtime service. The 4 MB source sheet is retained only in the owner's ignored local source folder and is not shipped. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
+- The 23 shipped image files under `assets/images/` are owner-generated transparent PNG sprite assets created with Sprixen for Pocket Potion Works: seven ingredients, three Workshop utility images, twelve static potion designs, and one optimized Aurora animation sheet.
+- Static images are square 128x128 or 256x256 PNGs. `aurora-nectar-animated-12f.png` is a 1536x128 horizontal sheet containing twelve 128x128 frames. It was derived from the owner-provided 96-frame cinematic sheet by sampling every eighth frame and downsizing without generative redrawing; the static Aurora sprite remains the reduced-motion and compact-icon fallback.
+- The release checks require every supplied sprite to be a valid expected-size PNG, wired into the stylesheet, copied to Pages, and included in the offline shell.
+- The 23 shipped image files add 983,858 bytes to the offline installation shell and require no remote runtime service. The 4 MB source sheet is retained only in the owner's ignored local source folder and is not shipped. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
 
 ## Unchanged pre-existing assets
 
 - `icon.svg` is the existing local Pocket Potion Works application icon and was not modified in Task 4.
-- The pre-existing workshop scene, shelves, herbs, cauldron, cat, potion bottles, ingredient and customer glyphs, and all other interface artwork remain HTML/CSS/SVG or system glyphs already present in the repository.
+- The remaining workshop scene, shelves, customer glyphs, and other interface artwork remain HTML/CSS/SVG or system glyphs already present in the repository.
 - The existing font stack uses only local system fonts. No remote fonts or runtime asset requests were added.
 
 ## Footprint

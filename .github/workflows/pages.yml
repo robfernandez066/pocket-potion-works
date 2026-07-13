@@ -30,12 +30,11 @@ jobs:
       - name: Prepare playable artifact only
         shell: bash
         run: |
-          mkdir -p _site/assets/audio _site/assets/images/ingredients _site/assets/images/potions
+          mkdir -p _site/assets/audio _site/assets
           cp index.html style.css game-logic.js platform-adapters.js audio-feedback.js app.js manifest.webmanifest icon.svg service-worker.js _site/
           cp assets/audio/bagpop.mp3 assets/audio/brew-ready.mp3 assets/audio/brew-start.mp3 assets/audio/coin.mp3 assets/audio/confirm.mp3 assets/audio/gather.mp3 assets/audio/levelup.ogg assets/audio/tap.ogg _site/assets/audio/
           cp assets/audio/music1.mp3 assets/audio/music2.mp3 assets/audio/music3.mp3 _site/assets/audio/
-          cp assets/images/ingredients/frostmint.png _site/assets/images/ingredients/
-          cp assets/images/potions/aurora-nectar.png assets/images/potions/aurora-nectar-animated-12f.png assets/images/potions/lantern-sip.png assets/images/potions/quietbell-tea.png assets/images/potions/wayfinder-cordial.png _site/assets/images/potions/
+          cp -r assets/images _site/assets/
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
