@@ -5,7 +5,7 @@ const UI_PREFS_KEY = "pocket-potion-works-ui-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
-const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
+const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, SIGNATURE_COMMISSIONS, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
 const POTION_SPRITES = new Set(["lantern", "quiet", "way", "aurora"]);
 const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
 const platformStore = new Platform.PlatformStateStore(localStorage);
@@ -469,6 +469,15 @@ function renderOrders() {
   document.querySelector("#dailyBar").style.width = `${Math.min(100, state.daily.orders / 5 * 100)}%`;
   const dailyClaimButton = document.querySelector("#claimDailyButton");
   dailyClaimButton.hidden = !dailyComplete || state.daily.claimed;
+  const commissionChoices = Logic.refreshCommissionChoices(state);
+  const choiceCard = document.querySelector("#commissionChoices");
+  choiceCard.hidden = Boolean(state.commissions.selectedId) || commissionChoices.length === 0;
+  document.querySelector("#commissionChoiceList").innerHTML = commissionChoices.map(commission => {
+    const customer = CUSTOMERS[Number(commission.customerId.slice(9))];
+    const recipe = recipeById(commission.recipeId);
+    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}"><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><span><strong>${commission.title}</strong><small>${customer[0]} · ${recipe.name}</small></span><b>Choose</b></button>`;
+  }).join("");
+  document.querySelectorAll("[data-commission-choice]").forEach(button => button.addEventListener("click", () => chooseCommission(button.dataset.commissionChoice)));
   document.querySelector("#orderList").innerHTML = state.orders.map(order => {
     const recipe = recipeById(order.recipeId);
     const owned = state.potions[recipe.id];
@@ -477,12 +486,21 @@ function renderOrders() {
     const towardHeart = customer.deliveries % CUSTOMER_CONFIG.deliveriesPerHeart;
     const reward = orderReward(order);
     const trust = customer.hearts >= CUSTOMER_CONFIG.maxHearts ? `${"♥".repeat(customer.hearts)} trusted friend` : `${"♥".repeat(customer.hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - customer.hearts)} · ${towardHeart}/${CUSTOMER_CONFIG.deliveriesPerHeart} toward next favor`;
-    return `<article class="order-card">
+    const commission = Logic.commissionById(order.commissionId);
+    return `<article class="order-card ${commission ? "is-commission" : ""}">
+      ${commission ? `<div class="commission-ribbon">Signature commission · ${commission.title}</div>` : ""}
       <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
       <div class="order-bottom"><div class="order-request"><span>${recipe.icon} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
     </article>`;
   }).join("");
   document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.order))));
+}
+
+function chooseCommission(commissionId) {
+  const order = Logic.selectSignatureCommission(state, commissionId);
+  if (!order) return;
+  feedback("Signature commission pinned. Two ordinary requests remain open.", { tone: "reward", soundName: "confirm", target: "#orderList" });
+  renderAll();
 }
 
 function renderWeekly() {
@@ -503,7 +521,7 @@ function renderWeekly() {
   const finalTarget = status.chain.thresholds.at(-1);
   document.querySelector("#weeklyTitle").textContent = status.chain.name;
   document.querySelector("#weeklyPolicy").textContent = `Rolling chain ${status.cycle + 1} of ${status.totalCycles}. Complete all 3 parcels at your pace${status.cycle === 0 ? " to unlock the Guild Ribbon Workshop Look" : ""}. Nothing expires.`;
-  document.querySelector("#weeklyProgress").textContent = `${status.progress} of ${status.nextThreshold} deliveries`;
+  document.querySelector("#weeklyProgress").textContent = status.ready ? `Parcel ready · ${status.progress} deliveries completed` : `${status.progress} of ${status.nextThreshold} deliveries`;
   document.querySelector("#weeklyReward").textContent = `Parcel ${status.claimedSteps + 1}: ${status.reward} coins`;
   document.querySelector("#weeklyBar").style.width = `${Math.min(100, status.progress / finalTarget * 100)}%`;
   button.hidden = !status.ready;
@@ -560,6 +578,12 @@ function renderJournal() {
     if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
     if (!status.read) return `<button type="button" class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>Read this bottle note and claim ${Logic.JOURNAL_REWARDS.recipe} coins</small></div><b>Read & claim</b></button>`;
     return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
+  }).join("");
+  const completedKeepsakes = new Set(state.commissions.completedIds);
+  document.querySelector("#keepsakeProgress").textContent = `${completedKeepsakes.size} / ${SIGNATURE_COMMISSIONS.length} collected · all twelve unlock the Heirloom Garland look.`;
+  document.querySelector("#keepsakeList").innerHTML = SIGNATURE_COMMISSIONS.map(commission => {
+    const collected = completedKeepsakes.has(commission.id);
+    return `<article class="keepsake-card ${collected ? "is-collected" : "is-locked"}"><span aria-hidden="true">${collected ? commission.keepsake.mark : "?"}</span><div><strong>${collected ? commission.keepsake.name : "Uncollected keepsake"}</strong><small>${collected ? commission.keepsake.description : `Help ${CUSTOMERS[Number(commission.customerId.slice(9))][0]} with a signature commission.`}</small></div></article>`;
   }).join("");
   document.querySelector("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
     const earned = Number.isFinite(state.achievements[achievement.id]) && state.achievements[achievement.id] > 0;
@@ -644,7 +668,8 @@ function fulfillOrder(orderId) {
   if (!result) return;
   announceLevels(result.levels);
   checkAchievements();
-  feedback(`Order delivered! +${result.reward} coins${result.customerBonus ? ` · friendship favor +${result.customerBonus}` : ""}`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
+  const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";
+  feedback(`Order delivered! +${result.reward} coins${result.customerBonus ? ` · friendship favor +${result.customerBonus}` : ""}${completion}`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
   renderAll();
   playCoinArrivals(result.reward);
   showTutorialTransition(tutorialBefore, viewBeforeAction);
@@ -689,7 +714,7 @@ function prestigeReward() { return Logic.prestigeReward(state); }
 function confirmPrestige() {
   if (state.level < PRESTIGE_CONFIG.unlockLevel) return;
   const reward = prestigeReward();
-  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, and upgrades.</p><p>Mastery, friendships, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth also leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
+  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active signature commission.</p><p>Mastery, friendships, completed keepsakes, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth also leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
     { label: "Not yet" },
     { label: `Rebirth for ${reward} stardust`, primary: true, onClick: () => performPrestige(reward) },
   ] });

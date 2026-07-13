@@ -380,6 +380,88 @@ test("malformed fully claimed weekly state advances to a reachable next chain", 
   assert.deepEqual(game.claimWeeklyStep(normalized), { reward: 10, chainCompleted: false, cycle: 1 });
 });
 
+test("all villagers have one distinct authored signature commission and keepsake", () => {
+  assert.equal(game.SIGNATURE_COMMISSIONS.length, game.CUSTOMERS.length);
+  assert.equal(new Set(game.SIGNATURE_COMMISSIONS.map(item => item.id)).size, game.CUSTOMERS.length);
+  assert.equal(new Set(game.SIGNATURE_COMMISSIONS.map(item => item.customerId)).size, game.CUSTOMERS.length);
+  assert.equal(new Set(game.SIGNATURE_COMMISSIONS.map(item => item.title)).size, game.CUSTOMERS.length);
+  assert.equal(new Set(game.SIGNATURE_COMMISSIONS.map(item => item.keepsake.name)).size, game.CUSTOMERS.length);
+  assert.equal(new Set(game.SIGNATURE_COMMISSIONS.map(item => item.keepsake.mark)).size, game.CUSTOMERS.length);
+  for (const commission of game.SIGNATURE_COMMISSIONS) {
+    assert.ok(game.recipeById(commission.recipeId));
+    assert.ok(commission.request.length >= 20);
+    assert.ok(commission.keepsake.description.length >= 20);
+  }
+});
+
+test("signature choices require an ordinary delivery and an unlocked assigned recipe", () => {
+  const state = game.defaultState(NOW);
+  state.level = 1;
+  game.ensureOrders(state, () => 0);
+  assert.deepEqual(game.refreshCommissionChoices(state), []);
+  state.orders[0] = { id: 50, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 };
+  state.potions.tonic = 1;
+  assert.ok(game.fulfillOrder(state, 50, NOW, () => 0));
+  assert.deepEqual(state.commissions.choices, ["mira-dawn"]);
+  state.customers["customer-1"].deliveries = 1;
+  game.refreshCommissionChoices(state);
+  assert.ok(!state.commissions.choices.includes("moss-rainpath"), "Moonmilk remains locked at level one");
+  state.level = 3;
+  game.refreshCommissionChoices(state);
+  assert.ok(state.commissions.choices.includes("moss-rainpath"));
+});
+
+test("choosing a signature commission preserves two ordinary slots and all normal delivery rules", () => {
+  const state = game.defaultState(NOW);
+  state.level = 7;
+  for (const customer of Object.values(state.customers)) customer.deliveries = 1;
+  game.ensureOrders(state, () => 0);
+  assert.deepEqual(state.commissions.choices, ["mira-dawn", "moss-rainpath"]);
+  const chosen = game.selectSignatureCommission(state, "mira-dawn");
+  assert.equal(chosen.commissionId, "mira-dawn");
+  assert.equal(state.orders.length, 3);
+  assert.equal(state.orders.filter(game.isSignatureOrder).length, 1);
+  assert.equal(state.orders.filter(order => !game.isSignatureOrder(order)).length, 2);
+  assert.equal(state.commissions.choices[0], "moss-rainpath", "the unchosen commission remains first in the persisted choices");
+  assert.equal(state.commissions.choices.length, 2);
+  const before = { coins: state.coins, orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered.tonic };
+  state.potions.tonic = 1;
+  const result = game.fulfillOrder(state, chosen.id, NOW, () => 0);
+  assert.equal(result.commission.id, "mira-dawn");
+  assert.equal(result.customerBonus, 0);
+  assert.equal(result.reward, chosen.reward);
+  assert.equal(state.coins, before.coins + chosen.reward);
+  assert.equal(state.stats.orders, before.orders + 1);
+  assert.equal(state.daily.orders, before.daily + 1);
+  assert.equal(state.weekly.progress, before.weekly + 1);
+  assert.equal(state.discovery.delivered.tonic, before.delivered + 1);
+  assert.deepEqual(state.commissions.completedIds, ["mira-dawn"]);
+  assert.equal(state.commissions.selectedId, null);
+  assert.equal(game.fulfillOrder(state, chosen.id, NOW, () => 0), null, "signature payout cannot repeat");
+  assert.equal(state.orders.filter(game.isSignatureOrder).length, 0);
+  assert.equal(state.orders.filter(order => !game.isSignatureOrder(order)).length, 3);
+});
+
+test("commission state normalizes safely and completed keepsakes survive prestige", () => {
+  const malformed = game.defaultState(NOW);
+  malformed.level = 7;
+  malformed.customers["customer-0"].deliveries = 1;
+  malformed.commissions = { choices: ["mira-dawn", "mira-dawn", "unknown", "moss-rainpath"], selectedId: "unknown", completedIds: ["juniper-encore", "juniper-encore", "bad"] };
+  malformed.orders = [{ id: 90, commissionId: "mira-dawn", customerId: "customer-3", recipeId: "tonic", quantity: 1, reward: 999, xp: 1 }];
+  const normalized = game.normalizeState(malformed, NOW);
+  assert.deepEqual(normalized.commissions, { choices: ["mira-dawn"], selectedId: null, completedIds: ["juniper-encore"] });
+  assert.equal(normalized.orders.some(game.isSignatureOrder), false);
+
+  const state = game.defaultState(NOW);
+  state.level = game.PRESTIGE_CONFIG.unlockLevel;
+  state.commissions.completedIds = ["mira-dawn", "moss-rainpath"];
+  state.commissions.choices = ["juniper-encore"];
+  state.commissions.selectedId = "juniper-encore";
+  const reborn = game.performPrestige(state, 3, NOW + 1000);
+  assert.deepEqual(reborn.commissions, { choices: [], selectedId: null, completedIds: ["mira-dawn", "moss-rainpath"] });
+  assert.equal(reborn.orders.length, 0);
+});
+
 test("collection cosmetics are few, durable, and have no economy effects", () => {
   const state = game.defaultState(NOW);
   const baseline = { order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) };
@@ -391,6 +473,7 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   Object.keys(state.mastery).forEach(id => { state.mastery[id] = 1; });
   state.stats.prestiges = 1;
   state.weekly.cycle = 1;
+  state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(commission => commission.id);
   const visualStates = {};
   for (const cosmetic of game.COSMETICS) {
     assert.equal(game.selectCosmetic(state, cosmetic.id), true);
@@ -404,7 +487,7 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   assert.equal(game.selectCosmetic(state, "midnight"), false, "selecting the current look is a no-op");
   const reloaded = game.normalizeState(state, NOW);
   assert.equal(reloaded.customization.selected, "midnight");
-  assert.ok(game.COSMETICS.length <= 5);
+  assert.ok(game.COSMETICS.length <= 6);
 });
 
 test("upgrade previews expose exact current and next effects across three paths", () => {

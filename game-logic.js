@@ -5,7 +5,7 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 5;
+  const SAVE_VERSION = 6;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const BASE_PASSIVE_RATE = .08;
   const PASSIVE_STORAGE_RATIO = .6;
@@ -26,6 +26,7 @@
     Object.freeze({ id: "mooncloth", name: "Mooncloth Shelves", description: "Unlocked by collecting the original eight recipes." }),
     Object.freeze({ id: "starglass", name: "Starglass Keepsake", description: "Unlocked by your first starry rebirth." }),
     Object.freeze({ id: "guild", name: "Guild Ribbon", description: "Unlocked by completing one rolling request chain." }),
+    Object.freeze({ id: "heirloom", name: "Heirloom Garland", description: "Unlocked by collecting all twelve villager keepsakes." }),
   ]);
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
@@ -58,6 +59,7 @@
     Object.freeze({ id: "brewer", name: "Brewkeeper", target: 10, cosmeticId: "fern" }),
     Object.freeze({ id: "sampler", name: "Potion Sampler", target: SAMPLER_IDS.length, cosmeticId: "mooncloth" }),
     Object.freeze({ id: "keepsake", name: "First Star Keepsake", target: 1, cosmeticId: "starglass" }),
+    Object.freeze({ id: "heirlooms", name: "Village Heirlooms", target: 12, cosmeticId: "heirloom" }),
   ]);
 
   const UPGRADES = [
@@ -96,6 +98,21 @@
     Object.freeze({ orderLines: Object.freeze(["This hem refuses to see reason.", "I need a brighter stitch of inspiration.", "Something elegant for a tangled afternoon."]), stories: Object.freeze(["Rowan saves every ribbon end because even the shortest piece can mend something.", "He sews tiny silver pockets inside winter coats for lucky stones and secret notes.", "His patchwork festival banner uses a scrap from every household in the village."]) }),
     Object.freeze({ orderLines: Object.freeze(["This footnote is resisting cataloging.", "The archives require a clearer afternoon.", "I have found a mystery between paragraphs."]), stories: Object.freeze(["Sol can tell who borrowed a book by the crumbs left between its pages.", "A missing catalogue card leads him to a shelf of villagers' unfinished stories.", "He leaves several pages blank so new village tales always have somewhere to belong."]) }),
     Object.freeze({ orderLines: Object.freeze(["The hives are rehearsing a tiny opera.", "A calmer buzz would be lovely.", "The bees voted for this request."]), stories: Object.freeze(["Bea names each hive after a different kind of weather.", "The bees build one honeycomb shaped exactly like the village clock.", "Bea bottles the season's last honey for a feast where everyone brings something sweet."]) }),
+  ]);
+
+  const SIGNATURE_COMMISSIONS = Object.freeze([
+    Object.freeze({ id: "mira-dawn", customerId: "customer-0", recipeId: "tonic", title: "The First Oven", request: "A steady bottle for the village's earliest batch.", keepsake: Object.freeze({ mark: "FS", name: "Flour-Sun Pin", description: "Mira's tiny sunrise, dusted with flour." }) }),
+    Object.freeze({ id: "moss-rainpath", customerId: "customer-1", recipeId: "moon", title: "The Rainpath Walk", request: "Moonlight for a footpath that appears after rain.", keepsake: Object.freeze({ mark: "WK", name: "Willow Knot", description: "A smooth knot from Old Moss's crooked willow." }) }),
+    Object.freeze({ id: "juniper-encore", customerId: "customer-2", recipeId: "heart", title: "The Moonmoth Encore", request: "One brave cordial before the song's first public encore.", keepsake: Object.freeze({ mark: "SN", name: "Silver Note", description: "A bright note from Juniper's moonmoth song." }) }),
+    Object.freeze({ id: "pip-hilltop", customerId: "customer-3", recipeId: "clarity", title: "Hilltop Express", request: "A clear head for the steepest route before sundown.", keepsake: Object.freeze({ mark: "BP", name: "Brass Postmark", description: "Pip's mark for a letter delivered with care." }) }),
+    Object.freeze({ id: "bramble-toast", customerId: "customer-4", recipeId: "aurora", title: "The Conservatory Toast", request: "Dawn colors for the conservatory's first village picnic.", keepsake: Object.freeze({ mark: "RC", name: "Robin Cameo", description: "A tiny robin from Lady Bramble's rescued hat." }) }),
+    Object.freeze({ id: "tink-trial", customerId: "customer-5", recipeId: "quiet", title: "The Quiet Forge Trial", request: "A calmer brew for one perfectly controlled experiment.", keepsake: Object.freeze({ mark: "CG", name: "Copper Gear", description: "The first gear Tink decided was not scrap." }) }),
+    Object.freeze({ id: "fern-patience", customerId: "customer-6", recipeId: "bloom", title: "Patience in Bloom", request: "A gentle tea for the stubborn seed in the blue pot.", keepsake: Object.freeze({ mark: "BS", name: "Blue Seed", description: "A keepsake from Fern's famously patient flower." }) }),
+    Object.freeze({ id: "wren-harbor", customerId: "customer-7", recipeId: "way", title: "A Safe Harbor", request: "A cordial for mapping the village's kindest resting places.", keepsake: Object.freeze({ mark: "CR", name: "Compass Rose", description: "Wren's compass rose points toward whoever needs help." }) }),
+    Object.freeze({ id: "nell-moonfair", customerId: "customer-8", recipeId: "lantern", title: "The Silver Mill Shift", request: "Lantern light for flour that sparkles after midnight.", keepsake: Object.freeze({ mark: "MS", name: "Mill-Sail Charm", description: "A painted charm shaped like Nell's cheerful mill sails." }) }),
+    Object.freeze({ id: "rowan-banner", customerId: "customer-9", recipeId: "sun", title: "The Festival Banner", request: "Bottled sunshine for the banner's final golden stitch.", keepsake: Object.freeze({ mark: "PS", name: "Patchwork Star", description: "A star sewn from Rowan's smallest ribbon ends." }) }),
+    Object.freeze({ id: "sol-catalog", customerId: "customer-10", recipeId: "dream", title: "The Blank-Page Catalogue", request: "A dreaming draught for stories not written yet.", keepsake: Object.freeze({ mark: "IB", name: "Ivory Bookmark", description: "Sol's bookmark leaves room for the next village tale." }) }),
+    Object.freeze({ id: "bea-feast", customerId: "customer-11", recipeId: "starlight", title: "The Last Honey Feast", request: "A starlit bottle for the feast's final jar of honey.", keepsake: Object.freeze({ mark: "HS", name: "Honeycomb Seal", description: "Bea's seal for a season shared sweetly." }) }),
   ]);
 
   const RECIPE_LORE = Object.freeze({
@@ -149,6 +166,7 @@
       discovery: { brewed: recipeCounts(), delivered: recipeCounts() },
       mastery: recipeCounts(),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
+      commissions: { choices: [], selectedId: null, completedIds: [] },
       journal: { readStories: [], readRecipes: [], claimedAchievements: [] },
       weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
       customization: { selected: "midnight" },
@@ -168,6 +186,50 @@
   }
   function customerIndexFromId(customerId) {
     return typeof customerId === "string" && /^customer-(?:[0-9]|1[01])$/.test(customerId) ? Number(customerId.slice(9)) : 0;
+  }
+  function commissionById(id) { return SIGNATURE_COMMISSIONS.find(commission => commission.id === id); }
+  function isSignatureOrder(order) { return Boolean(commissionById(order?.commissionId)); }
+  function signatureOrderEconomics(commission) {
+    const recipe = recipeById(commission?.recipeId);
+    return recipe ? { reward: Math.round(recipe.sell * 1.55), xp: Math.round(11 + recipe.unlock * 3) } : null;
+  }
+  function commissionEligible(state, commissionOrId) {
+    const commission = typeof commissionOrId === "string" ? commissionById(commissionOrId) : commissionOrId;
+    if (!commission || state?.commissions?.completedIds?.includes(commission.id) || state?.commissions?.selectedId === commission.id) return false;
+    return int(state?.customers?.[commission.customerId]?.deliveries) >= 1 && recipeById(commission.recipeId)?.unlock <= int(state?.level, 1, 1);
+  }
+  function refreshCommissionChoices(state) {
+    if (!isRecord(state?.commissions)) state.commissions = { choices: [], selectedId: null, completedIds: [] };
+    const retained = Array.isArray(state.commissions.choices)
+      ? state.commissions.choices.filter((id, index, ids) => ids.indexOf(id) === index && commissionEligible(state, id)).slice(0, 2)
+      : [];
+    for (const commission of SIGNATURE_COMMISSIONS) {
+      if (retained.length >= 2) break;
+      if (!retained.includes(commission.id) && commissionEligible(state, commission)) retained.push(commission.id);
+    }
+    state.commissions.choices = retained;
+    return retained.map(commissionById);
+  }
+  function selectSignatureCommission(state, commissionId) {
+    const commission = commissionById(commissionId);
+    refreshCommissionChoices(state);
+    if (!commission || state.commissions.selectedId || !state.commissions.choices.includes(commissionId) || !commissionEligible(state, commission)) return null;
+    const ordinary = state.orders.filter(order => !isSignatureOrder(order))
+      .sort((a, b) => recipeById(b.recipeId).unlock - recipeById(a.recipeId).unlock || a.id - b.id).slice(0, 2);
+    const recipe = recipeById(commission.recipeId);
+    const economics = signatureOrderEconomics(commission);
+    const customerIndex = customerIndexFromId(commission.customerId);
+    const customer = CUSTOMERS[customerIndex];
+    const order = {
+      id: state.nextOrderId++, commissionId: commission.id, customerId: commission.customerId, customer: customer[0], avatar: customer[1],
+      note: commission.request, avatarColor: customer[3], recipeId: recipe.id, quantity: 1,
+      reward: economics.reward, xp: economics.xp,
+    };
+    state.commissions.selectedId = commission.id;
+    state.commissions.choices = state.commissions.choices.filter(id => id !== commission.id);
+    state.orders = [order, ...ordinary];
+    ensureOrders(state);
+    return order;
   }
   function customerOrderLine(customerId, orderId, recipeId, quantity = 1) {
     const customerIndex = customerIndexFromId(customerId);
@@ -363,6 +425,14 @@
       const deliveries = int(source.deliveries), hearts = Math.min(CUSTOMER_CONFIG.maxHearts, Math.floor(deliveries / CUSTOMER_CONFIG.deliveriesPerHeart));
       return [id, { deliveries, hearts }];
     }));
+    const sourceCommissions = isRecord(input.commissions) ? input.commissions : {};
+    const validCommissionIds = new Set(SIGNATURE_COMMISSIONS.map(commission => commission.id));
+    const completedIds = [...new Set(Array.isArray(sourceCommissions.completedIds) ? sourceCommissions.completedIds.filter(id => validCommissionIds.has(id)) : [])];
+    state.commissions = { choices: [], selectedId: null, completedIds };
+    const requestedSelectedId = typeof sourceCommissions.selectedId === "string" ? sourceCommissions.selectedId : null;
+    if (requestedSelectedId && commissionEligible(state, requestedSelectedId)) state.commissions.selectedId = requestedSelectedId;
+    state.commissions.choices = [...new Set(Array.isArray(sourceCommissions.choices) ? sourceCommissions.choices : [])]
+      .filter(id => id !== state.commissions.selectedId && commissionEligible(state, id)).slice(0, 2);
     if (!isRecord(input.discovery)) {
       if (state.stats.brewed > 0) state.discovery.brewed.tonic = 1;
       if (state.stats.orders > 0) state.discovery.delivered.tonic = 1;
@@ -401,10 +471,13 @@
       state.brew = { recipeId: sourceBrew.recipeId, startedAt, endsAt, durationMs, assistUses: int(sourceBrew.assistUses, 0, 0, FINISH_BREW_CONFIG.maxUsesPerBrew) };
     }
     const seenIds = new Set();
-    state.orders = (Array.isArray(input.orders) ? input.orders : []).map(order => normalizeOrder(order, state)).filter(order => {
+    const normalizedOrders = (Array.isArray(input.orders) ? input.orders : []).map(order => normalizeOrder(order, state)).filter(order => {
       if (!order || seenIds.has(order.id)) return false;
       seenIds.add(order.id); return true;
-    }).slice(0, 3);
+    });
+    const selectedOrder = normalizedOrders.find(order => isSignatureOrder(order));
+    if (!selectedOrder) state.commissions.selectedId = null;
+    state.orders = selectedOrder ? [selectedOrder, ...normalizedOrders.filter(order => !isSignatureOrder(order)).slice(0, 2)] : normalizedOrders.filter(order => !isSignatureOrder(order)).slice(0, 3);
     state.nextOrderId = Math.max(state.nextOrderId, ...state.orders.map(order => order.id + 1), 1);
     while (state.xp >= xpNeeded(state.level)) {
       state.xp -= xpNeeded(state.level);
@@ -420,16 +493,22 @@
     if (!recipe || recipe.unlock > state.level) return null;
     const id = int(order.id, 0, 1);
     if (!id) return null;
-    const customerId = customerIdFromOrder(order);
+    const requestedCommission = typeof order.commissionId === "string" ? commissionById(order.commissionId) : null;
+    const commission = requestedCommission && state.commissions.selectedId === requestedCommission.id && !state.commissions.completedIds.includes(requestedCommission.id)
+      && requestedCommission.recipeId === recipe.id && customerIdFromOrder(order) === requestedCommission.customerId ? requestedCommission : null;
+    if (requestedCommission && !commission) return null;
+    const customerId = commission?.customerId || customerIdFromOrder(order);
     const customerIndex = customerIndexFromId(customerId);
     const quantity = int(order.quantity, 1, 1, 2);
+    const signatureEconomics = commission ? signatureOrderEconomics(commission) : null;
     return {
       id, customerId, customer: CUSTOMERS[customerIndex][0],
       avatar: typeof order.avatar === "string" ? order.avatar.slice(0, 8) : CUSTOMERS[0][1],
-      note: customerOrderLine(customerId, id, recipe.id, quantity),
+      note: commission?.request || customerOrderLine(customerId, id, recipe.id, quantity),
       avatarColor: typeof order.avatarColor === "string" ? order.avatarColor.slice(0, 30) : CUSTOMERS[0][3],
-      recipeId: recipe.id, quantity,
-      reward: int(order.reward, recipe.sell, 1), xp: int(order.xp, 12, 1),
+      recipeId: recipe.id, quantity: commission ? 1 : quantity,
+      reward: signatureEconomics?.reward ?? int(order.reward, recipe.sell, 1), xp: signatureEconomics?.xp ?? int(order.xp, 12, 1),
+      ...(commission ? { commissionId: commission.id } : {}),
     };
   }
 
@@ -523,7 +602,13 @@
     };
   }
 
-  function ensureOrders(state, random = Math.random) { while (state.orders.length < 3) state.orders.push(generateOrder(state, random)); }
+  function ensureOrders(state, random = Math.random) {
+    const signature = state.orders.find(order => isSignatureOrder(order));
+    const ordinary = state.orders.filter(order => !isSignatureOrder(order)).slice(0, signature ? 2 : 3);
+    state.orders = signature ? [signature, ...ordinary] : ordinary;
+    while (state.orders.filter(order => !isSignatureOrder(order)).length < (signature ? 2 : 3)) state.orders.push(generateOrder(state, random));
+    refreshCommissionChoices(state);
+  }
 
   function fulfillOrder(state, orderId, now = Date.now(), random = Math.random) {
     const index = state.orders.findIndex(item => item.id === orderId);
@@ -543,10 +628,15 @@
     state.coins += reward; state.stats.coinsEarned += reward; state.stats.orders += 1; state.daily.orders += 1;
     recordWeeklyDelivery(state);
     state.discovery.delivered[order.recipeId] = int(state.discovery.delivered[order.recipeId]) + order.quantity;
+    const completedCommission = commissionById(order.commissionId);
+    if (completedCommission && !state.commissions.completedIds.includes(completedCommission.id)) {
+      state.commissions.completedIds.push(completedCommission.id);
+      state.commissions.selectedId = null;
+    }
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
-    state.orders.push(generateOrder(state, random));
-    return { reward, levels, customerBonus, customerProgress: { ...progress } };
+    ensureOrders(state, random);
+    return { reward, levels, customerBonus, customerProgress: { ...progress }, commission: completedCommission || null };
   }
 
   function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.9, state.upgrades[upgrade.id])); }
@@ -577,6 +667,7 @@
     if (goalId === "brewer") return { current: Math.min(10, int(state.stats?.brewed)), target: 10 };
     if (goalId === "sampler") return { current: SAMPLER_IDS.filter(id => int(state.mastery?.[id]) > 0).length, target: SAMPLER_IDS.length };
     if (goalId === "keepsake") return { current: Math.min(1, int(state.stats?.prestiges)), target: 1 };
+    if (goalId === "heirlooms") return { current: Math.min(SIGNATURE_COMMISSIONS.length, state.commissions?.completedIds?.length || 0), target: SIGNATURE_COMMISSIONS.length };
     return null;
   }
 
@@ -642,6 +733,7 @@
     next.stats = { ...state.stats, prestiges: state.stats.prestiges + 1 };
     next.mastery = { ...state.mastery };
     next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
+    next.commissions = { choices: [], selectedId: null, completedIds: [...state.commissions.completedIds] };
     next.journal = { readStories: [...state.journal.readStories], readRecipes: [...state.journal.readRecipes], claimedAchievements: [...state.journal.claimedAchievements] };
     next.weekly = { ...state.weekly };
     next.customization = { ...state.customization };
@@ -652,8 +744,9 @@
   }
 
   function refreshOrder(state, random = Math.random) {
-    if (state.coins < 15 || !state.orders.length) return false;
-    state.coins -= 15; state.orders.shift(); state.orders.push(generateOrder(state, random)); return true;
+    const index = state.orders.findIndex(order => !isSignatureOrder(order));
+    if (state.coins < 15 || index < 0) return false;
+    state.coins -= 15; state.orders.splice(index, 1); ensureOrders(state, random); return true;
   }
 
   function resetDailyIfNeeded(state, now = Date.now()) {
@@ -745,11 +838,11 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
-    generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
+    generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });
