@@ -5,7 +5,7 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 6;
+  const SAVE_VERSION = 7;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const BASE_PASSIVE_RATE = .08;
   const PASSIVE_STORAGE_RATIO = .6;
@@ -13,6 +13,7 @@
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
   const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
   const CUSTOMER_CONFIG = Object.freeze({ deliveriesPerHeart: 3, maxHearts: 3, heartBonusCoins: 12 });
+  const COMPLETION_CARD_CONFIG = Object.freeze({ readableMs: 3000, fadeMs: 300 });
   const JOURNAL_REWARDS = Object.freeze({ story: 5, recipe: 5, achievement: 10 });
   const PRESTIGE_CONFIG = Object.freeze({ unlockLevel: 7, baseReward: 3, levelsPerBonus: 2 });
   const WEEKLY_CHAINS = Object.freeze([
@@ -166,7 +167,7 @@
       discovery: { brewed: recipeCounts(), delivered: recipeCounts() },
       mastery: recipeCounts(),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
-      commissions: { choices: [], selectedId: null, completedIds: [] },
+      commissions: { invitations: 0, selectedId: null, completedIds: [] },
       journal: { readStories: [], readRecipes: [], claimedAchievements: [] },
       weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
       customization: { selected: "midnight" },
@@ -193,27 +194,22 @@
     const recipe = recipeById(commission?.recipeId);
     return recipe ? { reward: Math.round(recipe.sell * 1.55), xp: Math.round(11 + recipe.unlock * 3) } : null;
   }
+  function unfinishedCommissionCount(state) {
+    const completed = new Set(Array.isArray(state?.commissions?.completedIds) ? state.commissions.completedIds : []);
+    return SIGNATURE_COMMISSIONS.filter(commission => !completed.has(commission.id)).length;
+  }
   function commissionEligible(state, commissionOrId) {
     const commission = typeof commissionOrId === "string" ? commissionById(commissionOrId) : commissionOrId;
     if (!commission || state?.commissions?.completedIds?.includes(commission.id) || state?.commissions?.selectedId === commission.id) return false;
-    return int(state?.customers?.[commission.customerId]?.deliveries) >= 1 && recipeById(commission.recipeId)?.unlock <= int(state?.level, 1, 1);
+    return recipeById(commission.recipeId)?.unlock <= int(state?.level, 1, 1);
   }
   function refreshCommissionChoices(state) {
-    if (!isRecord(state?.commissions)) state.commissions = { choices: [], selectedId: null, completedIds: [] };
-    const retained = Array.isArray(state.commissions.choices)
-      ? state.commissions.choices.filter((id, index, ids) => ids.indexOf(id) === index && commissionEligible(state, id)).slice(0, 2)
-      : [];
-    for (const commission of SIGNATURE_COMMISSIONS) {
-      if (retained.length >= 2) break;
-      if (!retained.includes(commission.id) && commissionEligible(state, commission)) retained.push(commission.id);
-    }
-    state.commissions.choices = retained;
-    return retained.map(commissionById);
+    if (!isRecord(state?.commissions)) state.commissions = { invitations: 0, selectedId: null, completedIds: [] };
+    return SIGNATURE_COMMISSIONS.filter(commission => commissionEligible(state, commission));
   }
   function selectSignatureCommission(state, commissionId) {
     const commission = commissionById(commissionId);
-    refreshCommissionChoices(state);
-    if (!commission || state.commissions.selectedId || !state.commissions.choices.includes(commissionId) || !commissionEligible(state, commission)) return null;
+    if (!commission || int(state?.commissions?.invitations) < 1 || state.commissions.selectedId || !commissionEligible(state, commission)) return null;
     const ordinary = state.orders.filter(order => !isSignatureOrder(order))
       .sort((a, b) => recipeById(b.recipeId).unlock - recipeById(a.recipeId).unlock || a.id - b.id).slice(0, 2);
     const recipe = recipeById(commission.recipeId);
@@ -226,7 +222,7 @@
       reward: economics.reward, xp: economics.xp,
     };
     state.commissions.selectedId = commission.id;
-    state.commissions.choices = state.commissions.choices.filter(id => id !== commission.id);
+    state.commissions.invitations = Math.max(0, int(state.commissions.invitations) - 1);
     state.orders = [order, ...ordinary];
     ensureOrders(state);
     return order;
@@ -428,11 +424,9 @@
     const sourceCommissions = isRecord(input.commissions) ? input.commissions : {};
     const validCommissionIds = new Set(SIGNATURE_COMMISSIONS.map(commission => commission.id));
     const completedIds = [...new Set(Array.isArray(sourceCommissions.completedIds) ? sourceCommissions.completedIds.filter(id => validCommissionIds.has(id)) : [])];
-    state.commissions = { choices: [], selectedId: null, completedIds };
+    state.commissions = { invitations: int(sourceCommissions.invitations, 0, 0, SIGNATURE_COMMISSIONS.length - completedIds.length), selectedId: null, completedIds };
     const requestedSelectedId = typeof sourceCommissions.selectedId === "string" ? sourceCommissions.selectedId : null;
     if (requestedSelectedId && commissionEligible(state, requestedSelectedId)) state.commissions.selectedId = requestedSelectedId;
-    state.commissions.choices = [...new Set(Array.isArray(sourceCommissions.choices) ? sourceCommissions.choices : [])]
-      .filter(id => id !== state.commissions.selectedId && commissionEligible(state, id)).slice(0, 2);
     if (!isRecord(input.discovery)) {
       if (state.stats.brewed > 0) state.discovery.brewed.tonic = 1;
       if (state.stats.orders > 0) state.discovery.delivered.tonic = 1;
@@ -632,6 +626,7 @@
     if (completedCommission && !state.commissions.completedIds.includes(completedCommission.id)) {
       state.commissions.completedIds.push(completedCommission.id);
       state.commissions.selectedId = null;
+      state.commissions.invitations = Math.min(int(state.commissions.invitations), unfinishedCommissionCount(state));
     }
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
@@ -660,7 +655,18 @@
 
   function claimDaily(state) {
     if (state.daily.claimed || state.daily.orders < 5) return false;
-    state.daily.claimed = true; state.coins += 50; state.stardust += 1; state.stats.coinsEarned += 50; return true;
+    state.daily.claimed = true; state.coins += 50; state.stardust += 1; state.stats.coinsEarned += 50;
+    const invitationCap = unfinishedCommissionCount(state);
+    state.commissions.invitations = Math.min(int(state.commissions?.invitations), invitationCap);
+    if (state.commissions.invitations < invitationCap) state.commissions.invitations += 1;
+    return true;
+  }
+
+  function completionCardPhase(shownAt, now = Date.now(), reducedMotion = false) {
+    const elapsed = Math.max(0, finite(now) - finite(shownAt, now));
+    if (elapsed < COMPLETION_CARD_CONFIG.readableMs) return "readable";
+    if (reducedMotion || elapsed >= COMPLETION_CARD_CONFIG.readableMs + COMPLETION_CARD_CONFIG.fadeMs) return "hidden";
+    return "fading";
   }
 
   function collectionGoalProgress(state, goalId) {
@@ -733,7 +739,7 @@
     next.stats = { ...state.stats, prestiges: state.stats.prestiges + 1 };
     next.mastery = { ...state.mastery };
     next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
-    next.commissions = { choices: [], selectedId: null, completedIds: [...state.commissions.completedIds] };
+    next.commissions = { invitations: Math.min(int(state.commissions.invitations), unfinishedCommissionCount(state)), selectedId: null, completedIds: [...state.commissions.completedIds] };
     next.journal = { readStories: [...state.journal.readStories], readRecipes: [...state.journal.readRecipes], claimedAchievements: [...state.journal.claimedAchievements] };
     next.weekly = { ...state.weekly };
     next.customization = { ...state.customization };
@@ -838,11 +844,11 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
-    generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
+    generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

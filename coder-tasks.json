@@ -139,5 +139,24 @@
       "Deterministic simulations and focused tests show no material regression to the approved level-7 progression and economy envelope",
       "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
     ]
+  },
+  {
+    "id": 14,
+    "status": "complete",
+    "title": "Daily Villager Special Requests and collapsing completion cards",
+    "model": "Use a fresh efficient coding context with high reasoning for save migration, reward idempotency, and transient mobile UI",
+    "freshChat": true,
+    "prompt": "Replace the developer-facing signature-commission discovery flow with a clear player-facing Villager Special Request earned from the existing daily 5-delivery reward. Claiming the daily reward must still grant exactly 50 coins and 1 stardust once, and additionally grant one saved special-request invitation while unfinished keepsakes remain. Invitations may accumulate only up to the number of unfinished commissions, persist across reload/offline/date reset/prestige, and are consumed one at a time when the player selects a request. A daily claim with an active request saves the invitation for later. The dismissible chooser must be reopenable and list every unfinished villager request whose assigned potion is unlocked, without requiring a prior random ordinary delivery, so players can intentionally target a villager's trust and keepsake. Show villager, potion, current trust, and named keepsake; choosing still creates at most one special order and keeps two ordinary Orders slots playable. Rename player-facing commission copy to Villager Special Request without changing normal order coins, XP, trust, daily, rolling-chain, achievement, or delivery rules. After a daily reward claim, final rolling-chain claim, or special-request delivery, show an accessible completed state for about three seconds and then fade/collapse it so later content moves up; already completed state must start hidden after reload and reduced motion must remain readable. Keep a compact chooser prompt only while invitations are unused. Advance save v6 to v7 with safe v1-v6 migration, frozen-v6 rollback protection, malformed-state normalization, and future-v8 overwrite protection. Do not add new currencies, recipes, villagers, timers, deadlines, repeatable commissions, external assets, monetization, release-stage work, dependencies, or archive access.",
+    "acceptance": [
+      "Daily 5/5 claim grants exactly 50 coins, 1 stardust, and one bounded saved invitation once; all-twelve completion still grants currencies but no invitation",
+      "The chooser is dismissible, reopenable, and lists all unfinished requests with unlocked potions using clear villager, potion, trust, and keepsake copy",
+      "Selecting requires and consumes exactly one invitation, permits only one active special request, and preserves two ordinary order slots",
+      "Special requests retain existing normal reward, XP, trust, daily, rolling-chain, achievement, and one-time keepsake rules",
+      "Claimed daily, fully completed rolling-chain, and delivered special-request states remain readable for about three seconds then fade and collapse; reload does not replay them",
+      "Unused invitations persist through reload, offline time, daily reset, clock rollback, and prestige, with malformed or oversized values safely bounded",
+      "Save v7 migrates v1-v6 safely, includes frozen-v6 rollback protection, and protects future-v8 saves from overwrite",
+      "Focused tests cover idempotency, invitation targeting and caps, active-request interactions, persistence, migration, reduced-motion behavior, and completion-card visibility",
+      "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
+    ]
   }
 ]

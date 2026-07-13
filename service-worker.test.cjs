@@ -57,7 +57,7 @@ function fetchEvent(url, mode = "same-origin") {
   listeners.install(install);
   await install.done();
   const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v38");
-  assert.equal(activeCache, "ppw-shell-v39", "install must rotate the signature commission shell cache");
+  assert.equal(activeCache, "ppw-shell-v40", "install must rotate the Villager Special Request shell cache");
   const shell = stores.get(activeCache);
   for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg", "./assets/images/ingredients/frostmint.png", "./assets/images/potions/aurora-nectar.png", "./assets/images/potions/aurora-nectar-animated-12f.png", "./assets/images/potions/lantern-sip.png", "./assets/images/potions/quietbell-tea.png", "./assets/images/potions/wayfinder-cordial.png"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
 

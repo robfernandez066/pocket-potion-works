@@ -100,6 +100,16 @@ test("daily reward is idempotent", () => {
   assert.equal(game.claimDaily(state), true);
   assert.equal(game.claimDaily(state), false);
   assert.equal(state.coins, 80); assert.equal(state.stardust, 1); assert.equal(state.stats.coinsEarned, 50);
+  assert.equal(state.commissions.invitations, 1);
+  state.daily = { date: game.todayKey(NOW + 86400000), orders: 5, claimed: false };
+  state.commissions.invitations = 12;
+  assert.equal(game.claimDaily(state), true);
+  assert.equal(state.commissions.invitations, 12, "daily invitations cannot exceed unfinished requests");
+  state.daily = { date: game.todayKey(NOW + 2 * 86400000), orders: 5, claimed: false };
+  state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(item => item.id);
+  assert.equal(game.claimDaily(state), true);
+  assert.equal(state.commissions.invitations, 0, "finishing the collection grants currencies but no invitation");
+  assert.equal(state.coins, 180); assert.equal(state.stardust, 3);
 });
 
 test("recipe mastery has bounded milestones and raises only matching order value", () => {
@@ -394,43 +404,42 @@ test("all villagers have one distinct authored signature commission and keepsake
   }
 });
 
-test("signature choices require an ordinary delivery and an unlocked assigned recipe", () => {
+test("special-request choices include every unfinished request with an unlocked potion", () => {
   const state = game.defaultState(NOW);
   state.level = 1;
   game.ensureOrders(state, () => 0);
-  assert.deepEqual(game.refreshCommissionChoices(state), []);
-  state.orders[0] = { id: 50, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 };
-  state.potions.tonic = 1;
-  assert.ok(game.fulfillOrder(state, 50, NOW, () => 0));
-  assert.deepEqual(state.commissions.choices, ["mira-dawn"]);
-  state.customers["customer-1"].deliveries = 1;
-  game.refreshCommissionChoices(state);
-  assert.ok(!state.commissions.choices.includes("moss-rainpath"), "Moonmilk remains locked at level one");
+  assert.deepEqual(game.refreshCommissionChoices(state).map(item => item.id), ["mira-dawn"], "no prior random delivery is required");
   state.level = 3;
-  game.refreshCommissionChoices(state);
-  assert.ok(state.commissions.choices.includes("moss-rainpath"));
+  const choices = game.refreshCommissionChoices(state);
+  assert.ok(choices.some(item => item.id === "moss-rainpath"));
+  state.commissions.completedIds.push("moss-rainpath");
+  assert.ok(!game.refreshCommissionChoices(state).some(item => item.id === "moss-rainpath"));
 });
 
-test("choosing a signature commission preserves two ordinary slots and all normal delivery rules", () => {
+test("choosing a special request consumes one invitation and preserves normal delivery rules", () => {
   const state = game.defaultState(NOW);
   state.level = 7;
-  for (const customer of Object.values(state.customers)) customer.deliveries = 1;
   game.ensureOrders(state, () => 0);
-  assert.deepEqual(state.commissions.choices, ["mira-dawn", "moss-rainpath"]);
+  assert.equal(game.selectSignatureCommission(state, "mira-dawn"), null, "an earned invitation is required");
+  state.commissions.invitations = 2;
   const chosen = game.selectSignatureCommission(state, "mira-dawn");
   assert.equal(chosen.commissionId, "mira-dawn");
+  assert.equal(state.commissions.invitations, 1);
   assert.equal(state.orders.length, 3);
   assert.equal(state.orders.filter(game.isSignatureOrder).length, 1);
   assert.equal(state.orders.filter(order => !game.isSignatureOrder(order)).length, 2);
-  assert.equal(state.commissions.choices[0], "moss-rainpath", "the unchosen commission remains first in the persisted choices");
-  assert.equal(state.commissions.choices.length, 2);
+  assert.equal(game.selectSignatureCommission(state, "moss-rainpath"), null, "only one request may be active");
+  assert.equal(state.commissions.invitations, 1, "a rejected selection cannot consume an invitation");
+  state.daily.orders = 5;
+  assert.equal(game.claimDaily(state), true);
+  assert.equal(state.commissions.invitations, 2, "a daily invitation waits safely behind an active request");
   const before = { coins: state.coins, orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered.tonic };
   state.potions.tonic = 1;
   const result = game.fulfillOrder(state, chosen.id, NOW, () => 0);
   assert.equal(result.commission.id, "mira-dawn");
   assert.equal(result.customerBonus, 0);
-  assert.equal(result.reward, chosen.reward);
-  assert.equal(state.coins, before.coins + chosen.reward);
+  assert.equal(result.reward, Math.round(chosen.reward * game.orderMultiplier(state, NOW, "tonic")));
+  assert.equal(state.coins, before.coins + result.reward);
   assert.equal(state.stats.orders, before.orders + 1);
   assert.equal(state.daily.orders, before.daily + 1);
   assert.equal(state.weekly.progress, before.weekly + 1);
@@ -442,24 +451,35 @@ test("choosing a signature commission preserves two ordinary slots and all norma
   assert.equal(state.orders.filter(order => !game.isSignatureOrder(order)).length, 3);
 });
 
-test("commission state normalizes safely and completed keepsakes survive prestige", () => {
+test("special-request invitations normalize safely and survive dates, reload, and prestige", () => {
   const malformed = game.defaultState(NOW);
   malformed.level = 7;
-  malformed.customers["customer-0"].deliveries = 1;
-  malformed.commissions = { choices: ["mira-dawn", "mira-dawn", "unknown", "moss-rainpath"], selectedId: "unknown", completedIds: ["juniper-encore", "juniper-encore", "bad"] };
+  malformed.commissions = { invitations: 999, selectedId: "unknown", completedIds: ["juniper-encore", "juniper-encore", "bad"] };
   malformed.orders = [{ id: 90, commissionId: "mira-dawn", customerId: "customer-3", recipeId: "tonic", quantity: 1, reward: 999, xp: 1 }];
   const normalized = game.normalizeState(malformed, NOW);
-  assert.deepEqual(normalized.commissions, { choices: ["mira-dawn"], selectedId: null, completedIds: ["juniper-encore"] });
+  assert.deepEqual(normalized.commissions, { invitations: 11, selectedId: null, completedIds: ["juniper-encore"] });
   assert.equal(normalized.orders.some(game.isSignatureOrder), false);
+  const reloaded = game.parseSave(JSON.stringify(normalized), NOW + 1000).state;
+  game.resetDailyIfNeeded(reloaded, NOW + 86400000);
+  game.resetDailyIfNeeded(reloaded, NOW - 86400000);
+  assert.equal(reloaded.commissions.invitations, 11);
 
-  const state = game.defaultState(NOW);
+  const state = reloaded;
   state.level = game.PRESTIGE_CONFIG.unlockLevel;
   state.commissions.completedIds = ["mira-dawn", "moss-rainpath"];
-  state.commissions.choices = ["juniper-encore"];
   state.commissions.selectedId = "juniper-encore";
+  state.commissions.invitations = 4;
   const reborn = game.performPrestige(state, 3, NOW + 1000);
-  assert.deepEqual(reborn.commissions, { choices: [], selectedId: null, completedIds: ["mira-dawn", "moss-rainpath"] });
+  assert.deepEqual(reborn.commissions, { invitations: 4, selectedId: null, completedIds: ["mira-dawn", "moss-rainpath"] });
   assert.equal(reborn.orders.length, 0);
+});
+
+test("completion cards stay readable before fading and reduced motion skips only the fade", () => {
+  const shownAt = NOW;
+  assert.equal(game.completionCardPhase(shownAt, shownAt + 2999), "readable");
+  assert.equal(game.completionCardPhase(shownAt, shownAt + 3000), "fading");
+  assert.equal(game.completionCardPhase(shownAt, shownAt + 3000, true), "hidden");
+  assert.equal(game.completionCardPhase(shownAt, shownAt + 3300), "hidden");
 });
 
 test("collection cosmetics are few, durable, and have no economy effects", () => {

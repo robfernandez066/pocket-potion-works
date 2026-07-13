@@ -84,22 +84,23 @@
 
         <section class="view" id="ordersView" data-view="orders" hidden>
           <div class="page-heading"><p class="eyebrow">VILLAGE NOTICEBOARD</p><h1>Customer <em>orders</em></h1><p>Fill requests for coins, experience, and surprises.</p></div>
-          <div class="daily-card">
+          <div class="daily-card" id="dailyCard" role="status" aria-live="polite">
             <div><small>DAILY GOAL</small><strong id="dailyProgress">0 / 5 orders</strong></div>
             <div class="daily-track"><span id="dailyBar"></span></div>
-            <div class="daily-reward"><span>Reward</span><strong>50 coins + 1 stardust</strong></div>
+            <div class="daily-reward"><span id="dailyRewardLabel">Reward</span><strong id="dailyRewardCopy">50 coins + 1 stardust + Villager Special Request</strong></div>
             <button class="daily-claim-button" id="claimDailyButton" hidden>Claim daily reward</button>
           </div>
-          <article class="weekly-card" id="weeklyCard">
+          <article class="weekly-card" id="weeklyCard" role="status" aria-live="polite">
             <div><p class="eyebrow">ROLLING REQUEST CHAIN</p><h2 id="weeklyTitle">Neighborly Notes</h2><p id="weeklyPolicy">Complete 3 parcels at your pace to unlock the Guild Ribbon look. Nothing expires.</p></div>
             <div class="weekly-track"><span id="weeklyBar"></span></div>
             <div class="weekly-status"><span id="weeklyProgress">0 of 2 deliveries</span><strong id="weeklyReward">Parcel 1: 10 coins</strong></div>
             <button class="primary-button" id="claimWeeklyButton" hidden>Claim request parcel</button>
           </article>
           <section class="commission-choices" id="commissionChoices" aria-labelledby="commissionChoicesTitle" hidden>
-            <div><p class="eyebrow">SIGNATURE COMMISSIONS</p><h2 id="commissionChoicesTitle">Choose a special request</h2><p>One commission uses a noticeboard slot. The other stays available for later.</p></div>
-            <div class="commission-choice-list" id="commissionChoiceList"></div>
+            <div><p class="eyebrow">VILLAGER SPECIAL REQUEST</p><h2 id="commissionChoicesTitle">A villager request is waiting</h2><p id="commissionChoiceSummary">Choose who to help and which keepsake to earn.</p></div>
+            <button class="primary-button" id="openCommissionChoicesButton">Choose a request</button>
           </section>
+          <article class="special-request-complete" id="specialRequestComplete" role="status" aria-live="polite" hidden></article>
           <div class="order-list" id="orderList"></div>
           <button class="secondary-button" id="refreshOrdersButton">↻ Refresh an ordinary request · 15 coins</button>
         </section>
@@ -126,7 +127,7 @@
           <div class="section-heading"><div><p class="eyebrow">RECIPE LORE</p><h2>Bottle notes</h2><p>Brew or deliver a potion to reveal its story.</p></div><span class="journal-section-indicator"><b class="journal-attention-dot" id="recipeJournalDot" aria-hidden="true" hidden></b></span></div>
           <div class="recipe-lore-list" id="recipeLoreList"></div>
           <details class="journal-section-disclosure" id="keepsakeJournalSection">
-            <summary><div><p class="eyebrow">VILLAGER KEEPSAKES</p><h2>Little thank-yous</h2><p id="keepsakeProgress">Complete signature commissions to fill this collection.</p></div><span class="journal-section-state"><i aria-hidden="true">⌄</i></span></summary>
+            <summary><div><p class="eyebrow">VILLAGER KEEPSAKES</p><h2>Little thank-yous</h2><p id="keepsakeProgress">Complete Villager Special Requests to fill this collection.</p></div><span class="journal-section-state"><i aria-hidden="true">⌄</i></span></summary>
             <div class="keepsake-list" id="keepsakeList"></div>
           </details>
           <div class="section-heading"><div><p class="eyebrow">COLLECTION GOALS</p><h2>Cozy curiosities</h2></div></div>
