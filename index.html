@@ -60,6 +60,7 @@
               <div class="cat" aria-hidden="true">◕‿◕</div>
               <span class="prestige-keepsake" aria-hidden="true"></span>
               <span class="guild-ribbon" aria-hidden="true"></span>
+              <span class="heirloom-garland" aria-hidden="true"></span>
               <div class="scene-copy"><span id="workshopStatus">The kettle is warm</span><small id="incomeRate">Gathering 1.0 ingredient/sec</small></div>
             </div>
             <button class="gather-button" id="gatherButton"><span>☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>
@@ -95,8 +96,12 @@
             <div class="weekly-status"><span id="weeklyProgress">0 of 2 deliveries</span><strong id="weeklyReward">Parcel 1: 10 coins</strong></div>
             <button class="primary-button" id="claimWeeklyButton" hidden>Claim request parcel</button>
           </article>
+          <section class="commission-choices" id="commissionChoices" aria-labelledby="commissionChoicesTitle" hidden>
+            <div><p class="eyebrow">SIGNATURE COMMISSIONS</p><h2 id="commissionChoicesTitle">Choose a special request</h2><p>One commission uses a noticeboard slot. The other stays available for later.</p></div>
+            <div class="commission-choice-list" id="commissionChoiceList"></div>
+          </section>
           <div class="order-list" id="orderList"></div>
-          <button class="secondary-button" id="refreshOrdersButton">↻ Refresh top order · 15 coins</button>
+          <button class="secondary-button" id="refreshOrdersButton">↻ Refresh an ordinary request · 15 coins</button>
         </section>
 
         <section class="view" id="upgradesView" data-view="upgrades" hidden>
@@ -106,7 +111,7 @@
             <span class="prestige-orbit">✦</span>
             <p class="eyebrow">STARRY REBIRTH</p>
             <h2>Reopen under a brighter star</h2>
-            <p>At level 7, reset workshop progress for at least 3 permanent stardust. Mastery, friendships, daily progress, and achievements remain. Each stardust adds 10% to order coins.</p>
+            <p>At level 7, reset workshop progress for at least 3 permanent stardust. Mastery, friendships, completed keepsakes, daily progress, and achievements remain. Each stardust adds 10% to order coins.</p>
             <button class="primary-button" id="prestigeButton" disabled>Reach level 7 to unlock</button>
           </article>
         </section>
@@ -120,6 +125,10 @@
           </details>
           <div class="section-heading"><div><p class="eyebrow">RECIPE LORE</p><h2>Bottle notes</h2><p>Brew or deliver a potion to reveal its story.</p></div><span class="journal-section-indicator"><b class="journal-attention-dot" id="recipeJournalDot" aria-hidden="true" hidden></b></span></div>
           <div class="recipe-lore-list" id="recipeLoreList"></div>
+          <details class="journal-section-disclosure" id="keepsakeJournalSection">
+            <summary><div><p class="eyebrow">VILLAGER KEEPSAKES</p><h2>Little thank-yous</h2><p id="keepsakeProgress">Complete signature commissions to fill this collection.</p></div><span class="journal-section-state"><i aria-hidden="true">⌄</i></span></summary>
+            <div class="keepsake-list" id="keepsakeList"></div>
+          </details>
           <div class="section-heading"><div><p class="eyebrow">COLLECTION GOALS</p><h2>Cozy curiosities</h2></div></div>
           <div class="collection-list" id="collectionList"></div>
           <div class="section-heading"><div><p class="eyebrow">WORKSHOP LOOK</p><h2>Workshop decorations</h2></div></div>

@@ -112,7 +112,7 @@ function simulate(strategy, seed) {
   return { strategy: strategy.id, seed, milestones, level: state.level, deliveries: state.stats.orders, upgrades, recipes, coins: state.coins, maxBranch, longestStall };
 }
 
-function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200) {
+function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200, useCommissions = false) {
   const random = seededRandom(seed);
   let passiveBank = 0;
   game.ensureOrders(state, random);
@@ -128,6 +128,10 @@ function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200) {
     if (second % 5 === 0) {
       game.collectBrew(state, now);
       for (const order of [...state.orders]) game.fulfillOrder(state, order.id, now, random);
+      if (useCommissions && !state.commissions.selectedId) {
+        game.refreshCommissionChoices(state);
+        if (state.commissions.choices[0]) game.selectSignatureCommission(state, state.commissions.choices[0]);
+      }
       if (state.daily.orders >= 5) game.claimDaily(state);
       const upgrade = chooseUpgrade(state, { buy: "priority" });
       if (upgrade) game.buyUpgrade(state, upgrade.id);
@@ -138,16 +142,17 @@ function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200) {
     }
     if (state.level >= targetLevel) {
       return {
-        seconds: second, level: state.level, orders: state.stats.orders, coins: state.coins,
+        seconds: second, level: state.level, orders: state.stats.orders, coins: state.coins, coinsEarned: state.stats.coinsEarned,
         upgrades: Object.values(state.upgrades).reduce((sum, value) => sum + value, 0),
         mastery: Object.values(state.mastery).reduce((sum, value) => sum + value, 0),
         expandedMastery: ["lantern", "quiet", "way", "aurora"].reduce((sum, id) => sum + state.mastery[id], 0),
         frostmintStock: state.ingredients.mint,
         customerDeliveries: Object.values(state.customers).reduce((sum, customer) => sum + customer.deliveries, 0),
+        commissions: state.commissions.completedIds.length,
       };
     }
   }
-  assert.fail(`seed ${seed} did not reach level ${targetLevel} in ${maxSeconds}s`);
+  assert.fail(`seed ${seed} did not reach level ${targetLevel} in ${maxSeconds}s: level=${state.level} xp=${state.xp} orders=${state.stats.orders} brew=${state.brew?.recipeId || "none"} selected=${state.commissions?.selectedId || "none"} board=${state.orders.map(order => `${order.recipeId}:${order.commissionId || "ordinary"}`).join(",")}`);
 }
 
 const expansionTunings = [
@@ -298,6 +303,7 @@ assert.ok(game.ACHIEVEMENTS.length >= 8);
 const progressionSeeds = [7, 42, 2026];
 const prestigeRewards = [1, 2, 3, 4];
 const progressionRows = [];
+const commissionRows = [];
 const recoveryRows = [];
 for (const seed of progressionSeeds) {
   const cycleStart = Date.UTC(2026, 6, 12, 8);
@@ -306,6 +312,9 @@ for (const seed of progressionSeeds) {
   assert.equal(cycleState.daily.claimed, true, "a realistic first cycle should preserve the worthwhile daily claim");
   assert.ok(cycle.mastery >= cycleState.stats.brewed && cycle.customerDeliveries === cycleState.stats.orders);
   progressionRows.push({ seed, ...cycle, dailyStardust: cycleState.stardust });
+  const commissionState = game.defaultState(cycleStart);
+  const commissionedCycle = simulateToLevel(commissionState, seed, game.PRESTIGE_CONFIG.unlockLevel, cycleStart, 7200, true);
+  commissionRows.push({ seed, ...commissionedCycle, dailyStardust: commissionState.stardust });
   const recoveryStart = cycleStart + (cycle.seconds + 60) * 1000;
   const dailyOnlyReset = game.defaultState(recoveryStart);
   dailyOnlyReset.stardust = cycleState.stardust;
@@ -337,6 +346,15 @@ for (const row of progressionRows) {
   assert.ok(row.orders >= 28 && row.orders <= 36 && row.mastery >= 34 && row.mastery <= 42, `seed ${row.seed}: cycle progression outside observed band`);
   assert.equal(row.dailyStardust, 1, `seed ${row.seed}: daily alternative should remain a meaningful permanent gain`);
 }
+for (const row of commissionRows) {
+  const baseline = progressionRows.find(item => item.seed === row.seed);
+  assert.ok(row.commissions >= 1, `seed ${row.seed}: signature policy should complete at least one commission before level 7`);
+  assert.ok(row.seconds >= 2300 && row.seconds <= 3000, `seed ${row.seed}: signature policy left the approved first-cycle timing envelope`);
+  assert.ok(Math.abs(row.seconds - baseline.seconds) <= 300, `seed ${row.seed}: signature policy changed level-7 timing by more than five minutes`);
+  assert.ok(Math.abs(row.orders - baseline.orders) <= 3, `seed ${row.seed}: signature policy materially changed order cadence`);
+  assert.ok(Math.abs(row.coinsEarned - baseline.coinsEarned) <= Math.max(150, baseline.coinsEarned * .12), `seed ${row.seed}: signature policy materially changed lifetime coin generation`);
+  assert.ok(row.coins >= 0 && row.coins <= 600, `seed ${row.seed}: signature policy produced an out-of-envelope coin result`);
+}
 assert.ok(chosenPrestige.recoverySeconds <= dailyOnlyRecoverySeconds, "chosen prestige should not recover slower than a daily-only reset baseline");
 assert.ok(chosenPrestige.recoverySeconds >= 300 && chosenPrestige.recoverySeconds <= 340, "chosen recovery should remain in the observed five-to-six-minute band");
 assert.ok(chosenPrestige.recoveryCoins > dailyOnlyRecoveryCoins && chosenPrestige.recoveryCoins >= 30 && chosenPrestige.recoveryCoins <= 100, `chosen prestige should leave a bounded coin advantage after matching daily-only recovery: ${chosenPrestige.recoveryCoins} vs ${dailyOnlyRecoveryCoins}`);
@@ -353,5 +371,7 @@ for (const row of gatherCandidateRows) console.log(JSON.stringify(row));
 console.log(JSON.stringify({ targetedCrystal180s: targeted.ingredients.crystal, smartCrystal180s: smart.ingredients.crystal, storageCap: game.storageCap(nearCap), offlineSoftCap: game.totalIngredients(offlinePressure) }));
 console.log("Seeded first-cycle progression to level 7:");
 for (const row of progressionRows) console.log(JSON.stringify(row));
+console.log("Seeded first-cycle progression with signature commissions:");
+for (const row of commissionRows) console.log(JSON.stringify(row));
 console.log(`Seeded post-rebirth recovery to level 3 (daily-only reset baseline ${dailyOnlyRecoverySeconds}s, ${dailyOnlyRecoveryCoins} coins, ${dailyOnlyRecoveryUpgrades} upgrades):`);
 for (const row of candidateRows) console.log(JSON.stringify({ ...row, chosen: row.reward === chosenPrestige.reward }));

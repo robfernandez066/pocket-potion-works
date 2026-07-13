@@ -120,5 +120,24 @@
       "Focused tests cover content integrity, order eligibility, collection-goal durability, save normalization, and simulation guardrails",
       "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
     ]
+  },
+  {
+    "id": 13,
+    "status": "complete",
+    "title": "Signature villager commissions and keepsakes",
+    "model": "Use a fresh efficient coding context with high reasoning for deterministic order integration, save migration, and mobile UI",
+    "freshChat": true,
+    "prompt": "Add one authored, one-time signature commission for each of the twelve existing villagers. A commission becomes eligible after the player's first ordinary delivery to that villager and when its assigned existing recipe is unlocked. When multiple commissions are eligible, present at most two compact choices and let the player choose which commission occupies one normal Orders-board slot; the unchosen commission remains available later. Never allow more than one signature commission on the board at once, and keep two ordinary order slots playable so commissions cannot block the core loop. Each commission must use an existing potion and the normal order reward, XP, trust, daily, rolling-request, achievement, and delivery rules with no bonus coins or repeatable payout. Completion records one distinct code-native keepsake in a compact, collapsed Journal collection. Collecting all twelve keepsakes unlocks exactly one non-economic Workshop Look. Pending choices, the selected commission, and completed keepsakes must persist safely across reload and offline time; prestige may clear the active order choice with other ordinary orders but must preserve completed keepsakes. Advance the save schema with v1-v5 migration, a frozen-v5 rollback reader, and future-version overwrite protection. Use deterministic generation and simulations to prove commissions do not materially alter the approved level-7 timing or economy. Do not add new recipes, ingredients, customers, currencies, timers, deadlines, recurring commissions, external assets, monetization, release-stage work, a second cauldron, or dependencies. Do not read archive/.",
+    "acceptance": [
+      "All twelve existing villagers have distinct authored signature commission copy, an assigned existing recipe, and a distinct code-native keepsake",
+      "Commissions unlock only after one ordinary delivery to that villager and the assigned recipe is available",
+      "At most two eligible choices are shown, the unchosen commission remains available, and no more than one selected commission occupies the three-slot board",
+      "Two ordinary orders remain playable and ignoring a commission never blocks gathering, brewing, delivery, progression, refresh, or prestige",
+      "Signature deliveries use the existing reward, XP, trust, daily, rolling-request, achievement, and delivery rules without bonus or repeatable rewards",
+      "The Journal keepsake collection is compact and collapsed by default, and all twelve keepsakes unlock exactly one non-economic Workshop Look",
+      "Save v6 safely migrates v1-v5, preserves completed keepsakes through prestige, rejects malformed commission state, and is protected from frozen-v5 rollback and future-v7 overwrite",
+      "Deterministic simulations and focused tests show no material regression to the approved level-7 progression and economy envelope",
+      "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
+    ]
   }
 ]

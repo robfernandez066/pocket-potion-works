@@ -48,12 +48,11 @@ Exit gate: players have at least two meaningful goals beyond player level, and p
 
 ## Completed - offline-friendly retention and identity
 
-- Five compact code-native workshop looks are available: the original, two collection-goal looks, one first-prestige Starglass Keepsake, and one rolling-request ribbon. None changes economy or required progression.
+- Five compact code-native workshop looks shipped with the retention pass: the original, two collection-goal looks, one first-prestige Starglass Keepsake, and one rolling-request ribbon. None changes economy or required progression.
 - Three deterministic request chains progress only on validated deliveries. Progress and claims never expire, local dates are ignored, and total prototype rewards are capped at 105 coins. This claim-when-ready policy avoids both missed-week punishment and false trust in a device clock.
 - The optional daily goal keeps a monotonic saved local-date boundary: rollback or returning to the same high-water date cannot reissue it, while a later date restores ordinary missed-day play without a streak penalty. A fully offline client cannot prevent someone from repeatedly advancing the clock to brand-new future dates.
-- Three collection goals reuse approved mastery and prestige evidence: brew 10 potions, collect each recipe, and complete one rebirth. No large content set was added.
+- Three collection goals reuse approved progress: brew 10 potions, collect the original eight recipes, and complete one rebirth.
 - Critical screenshot chrome now uses inline SVG or CSS geometry for the brand, settings, market, resources, and four-tab navigation instead of platform-dependent glyphs.
-- Save schema v5 migrates v1-v4, preserves earlier progression and Task 12 content, and is protected from overwrite by frozen v1-v4 readers during downlevel rollback.
 
 The second brew slot remains deferred. Current evidence validates one cauldron plus bounded quick-brew; there is no separate pacing simulation showing that a second concurrent timer preserves ingredient demand, delivery cadence, or upgrade value.
 
@@ -79,10 +78,25 @@ Task 12 adds Frostmint and four new recipes across the existing level 4-7 progre
 - Deterministic seeds 7, 42, and 2026 reach level 7 in 2,635-2,655 seconds with 31 orders, inside the approved Task 8 envelope.
 - Frostmint and the four potions are integrated with Pantry targeting, passive/offline gathering, recipes, orders, mastery, discovery lore, and level-up presentation.
 - Mooncloth Shelves remains tied to the original eight-recipe sampler, so adding content cannot revoke the earned cosmetic.
-- Save schema v5 migrates v4 Journal state, is protected from downlevel overwrite by a frozen v4 reader, and keeps future v6 saves write-protected.
+- Current save schema v6 migrates v4 Journal state, is protected from downlevel overwrite by frozen readers through v5, and keeps future v7 saves write-protected.
 - The full loop, all tabs, and Settings passed 390x844 and 360x740 browser QA without horizontal overflow or console errors.
 
 Exit gate: the new potions create meaningful additional choices within levels 4-7 without materially delaying rebirth, relocking existing rewards, or destabilizing the economy.
+
+## Completed - signature villager commissions and keepsakes
+
+Task 13 turns existing friendships into twelve authored, one-time commissions without adding another economy or timer. Each villager's commission becomes eligible after one ordinary delivery and its assigned existing recipe unlocks. When several are eligible, the player chooses between at most two; the unchosen commission remains available and only one may occupy the normal three-slot Orders board at a time.
+
+- Signature commissions use normal order rewards, XP, trust, daily, rolling-request, achievement, and delivery rules. They add no bonus coins and cannot repeat.
+- Two ordinary order slots remain playable, so an ignored commission cannot block the core loop.
+- Each completed commission records one code-native keepsake in a compact, collapsed Journal collection.
+- Completing all twelve unlocks exactly one non-economic Workshop Look.
+- Completed keepsakes survive prestige. Pending and selected commissions persist across reload and offline time, while prestige may clear them with ordinary orders.
+- Save v6 migrates v1-v5 safely and adds frozen-v5 rollback plus future-v7 overwrite protection.
+- Across seeds 7, 42, and 2026, an always-choose-commissions strategy reached level 7 in 2,540-2,570 seconds with 32-33 total deliveries and 3-9 commissions completed. The unchanged baseline reached level 7 in 2,540-2,660 seconds with 31-32 deliveries; lifetime coin generation stayed inside the checked 12% guardrail.
+- Browser acceptance completed the gather, brew, collect, ordinary delivery, upgrade, commission choice, reload, signature delivery, and keepsake path. The Orders board and collapsed or expanded keepsake collection had no horizontal overflow or console errors at 390x844 and 360x740.
+
+Exit gate: friendships create authored playable goals and a clear collection payoff while deterministic evidence keeps first-cycle level-7 pacing and the existing economy materially unchanged.
 
 ## Later
 
