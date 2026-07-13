@@ -685,7 +685,8 @@ function renderJournal() {
     const cosmetic = COSMETICS.find(item => item.id === goal.cosmeticId);
     return `<article class="collection-card"><div><strong>${goal.name}</strong><small>Unlocks the ${cosmetic.name} Workshop Look</small></div><span>${complete ? "Unlocked" : `${progress.current} / ${progress.target}`}</span></article>`;
   }).join("");
-  document.querySelector("#cosmeticList").innerHTML = COSMETICS.map(cosmetic => {
+  const journalCosmetics = COSMETICS.filter(cosmetic => cosmetic.id !== "dawnthread" || state.stats.prestiges > 0);
+  document.querySelector("#cosmeticList").innerHTML = journalCosmetics.map(cosmetic => {
     const unlocked = Logic.cosmeticUnlocked(state, cosmetic.id);
     const selected = state.customization.selected === cosmetic.id;
     return `<button class="cosmetic-button" data-cosmetic="${cosmetic.id}" aria-pressed="${selected}" ${unlocked ? "" : "disabled"}><div><strong>${cosmetic.name}</strong><small>${cosmetic.description}</small></div><span>${selected ? "In use" : unlocked ? "Use" : "Locked"}</span></button>`;

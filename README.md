@@ -35,7 +35,7 @@ The checks cover syntax, deterministic gameplay and economy behavior, scripted m
 - Compact remembered Pantry/Recipe sections, inline Workshop delivery, and a contextual brew shortcut reduce tab and scroll movement.
 - Gameplay save schema v8 with v1-v7 migration and downlevel overwrite protection, plus four-hour offline progress that begins after the first delivery and preserves targeted-harvest space.
 - Level-7 starry rebirth grants at least 3 stardust while preserving mastery, customer trust, achievements, and the current daily boundary.
-- Six code-native workshop looks are earned through collection goals, the first prestige keepsake, one rolling request chain, and all twelve one-time Villager Special Requests. They never alter economy or progression.
+- Seven code-native workshop looks are earned through collection goals, the first prestige keepsake, one rolling request chain, all twelve one-time Villager Special Requests, and After the Stars. They never alter economy or progression.
 - Charcoal-black and purple mobile interface with safe areas, reduced motion, keyboard support, and 44px touch targets.
 - Local sound effects plus a three-track Pixabay-licensed background playlist credited to Trycja via Pixabay. Sound starts On; effects and music each default to 50% and persist independently.
 - Coin rewards use capped sound tiers rather than one sound per coin.
