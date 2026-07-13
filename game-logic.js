@@ -5,7 +5,7 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 4;
+  const SAVE_VERSION = 5;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const BASE_PASSIVE_RATE = .08;
   const PASSIVE_STORAGE_RATIO = .6;
@@ -13,6 +13,7 @@
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
   const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
   const CUSTOMER_CONFIG = Object.freeze({ deliveriesPerHeart: 3, maxHearts: 3, heartBonusCoins: 12 });
+  const JOURNAL_REWARDS = Object.freeze({ story: 5, recipe: 5, achievement: 10 });
   const PRESTIGE_CONFIG = Object.freeze({ unlockLevel: 7, baseReward: 3, levelsPerBonus: 2 });
   const WEEKLY_CHAINS = Object.freeze([
     Object.freeze({ id: "neighbors", name: "Neighborly Notes", thresholds: Object.freeze([2, 4, 6]), rewards: Object.freeze([10, 10, 15]) }),
@@ -148,7 +149,7 @@
       discovery: { brewed: recipeCounts(), delivered: recipeCounts() },
       mastery: recipeCounts(),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
-      journal: { readStories: [], readRecipes: [] },
+      journal: { readStories: [], readRecipes: [], claimedAchievements: [] },
       weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
       customization: { selected: "midnight" },
       boostUntil: 0, starterClaimed: false, tutorialSeen: false,
@@ -206,6 +207,40 @@
       return true;
     }
     return false;
+  }
+  function journalClaimableCounts(state) {
+    const story = CUSTOMERS.reduce((sum, _, customerIndex) => sum + [0, 1, 2].filter(storyIndex => {
+      const status = customerStoryStatus(state, `customer-${customerIndex}`, storyIndex);
+      return status.unlocked && !status.read;
+    }).length, 0);
+    const recipe = RECIPES.filter(item => {
+      const status = recipeLoreStatus(state, item.id);
+      return status.unlocked && !status.read;
+    }).length;
+    const claimedAchievements = new Set(state?.journal?.claimedAchievements || []);
+    const achievement = ACHIEVEMENTS.filter(item => Number.isFinite(state?.achievements?.[item.id]) && state.achievements[item.id] > 0 && !claimedAchievements.has(item.id)).length;
+    return { story, recipe, achievement, total: story + recipe + achievement };
+  }
+  function claimJournalReward(state, kind, id) {
+    let reward = 0;
+    if (kind === "story") {
+      const match = typeof id === "string" ? /^customer-(?:[0-9]|1[01]):([1-3])$/.exec(id) : null;
+      if (!match) return null;
+      const status = customerStoryStatus(state, id.split(":")[0], Number(match[1]) - 1);
+      if (!status.unlocked || status.read || !markJournalRead(state, kind, id)) return null;
+      reward = JOURNAL_REWARDS.story;
+    } else if (kind === "recipe") {
+      const status = recipeLoreStatus(state, id);
+      if (!recipeById(id) || !status.unlocked || status.read || !markJournalRead(state, kind, id)) return null;
+      reward = JOURNAL_REWARDS.recipe;
+    } else if (kind === "achievement") {
+      if (!ACHIEVEMENTS.some(item => item.id === id) || !Number.isFinite(state.achievements[id]) || state.achievements[id] <= 0 || state.journal.claimedAchievements.includes(id)) return null;
+      state.journal.claimedAchievements.push(id);
+      reward = JOURNAL_REWARDS.achievement;
+    } else return null;
+    state.coins += reward;
+    state.stats.coinsEarned += reward;
+    return { kind, id, reward };
   }
   function tutorialQuest({ id, step, status, title, detail, view, targetSelector, targetKind = "control", buttonLabel = "Show me" }) {
     return { id, step, status, label: `First steps · ${step} of ${BEGINNER_QUESTS.steps}`, title, detail, view, targetSelector, targetKind, buttonLabel };
@@ -297,7 +332,11 @@
     state.starterClaimed = input.starterClaimed === true;
     state.tutorialSeen = input.tutorialSeen === true;
     state.lastSeen = clamp(finite(input.lastSeen, now), 0, now);
-    state.achievements = isRecord(input.achievements) ? { ...input.achievements } : {};
+    const sourceAchievements = isRecord(input.achievements) ? input.achievements : {};
+    state.achievements = Object.fromEntries(ACHIEVEMENTS.flatMap(achievement => {
+      const earnedAt = Number(sourceAchievements[achievement.id]);
+      return Number.isFinite(earnedAt) && earnedAt > 0 ? [[achievement.id, earnedAt]] : [];
+    }));
     const sourceStats = isRecord(input.stats) ? input.stats : {};
     state.stats = { ...sourceStats };
     for (const id of Object.keys(fresh.stats)) state.stats[id] = int(sourceStats[id]);
@@ -337,6 +376,7 @@
     state.journal = {
       readStories: [...new Set(Array.isArray(sourceJournal.readStories) ? sourceJournal.readStories.filter(id => validStoryIds.has(id)) : [])],
       readRecipes: [...new Set(Array.isArray(sourceJournal.readRecipes) ? sourceJournal.readRecipes.filter(id => validRecipeIds.has(id)) : [])],
+      claimedAchievements: [...new Set(Array.isArray(sourceJournal.claimedAchievements) ? sourceJournal.claimedAchievements.filter(id => ACHIEVEMENTS.some(item => item.id === id)) : [])],
     };
     const sourceWeekly = isRecord(input.weekly) ? input.weekly : {};
     let cycle = int(sourceWeekly.cycle, 0, 0, WEEKLY_CHAINS.length);
@@ -602,7 +642,7 @@
     next.stats = { ...state.stats, prestiges: state.stats.prestiges + 1 };
     next.mastery = { ...state.mastery };
     next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
-    next.journal = { readStories: [...state.journal.readStories], readRecipes: [...state.journal.readRecipes] };
+    next.journal = { readStories: [...state.journal.readStories], readRecipes: [...state.journal.readRecipes], claimedAchievements: [...state.journal.claimedAchievements] };
     next.weekly = { ...state.weekly };
     next.customization = { ...state.customization };
     next.daily = { ...state.daily };
@@ -705,8 +745,8 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
-    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,

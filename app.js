@@ -529,6 +529,13 @@ function renderUpgrades() {
 }
 
 function renderJournal() {
+  const openCustomers = new Set([...document.querySelectorAll("[data-journal-customer][open]")].map(node => node.dataset.journalCustomer));
+  const claims = Logic.journalClaimableCounts(state);
+  document.querySelector("#journalDot").hidden = claims.total === 0;
+  document.querySelector('[data-nav="journal"]').setAttribute("aria-label", claims.total ? `Journal, ${claims.total} reward${claims.total === 1 ? "" : "s"} ready` : "Journal");
+  document.querySelector("#friendsJournalDot").hidden = claims.story === 0;
+  document.querySelector("#recipeJournalDot").hidden = claims.recipe === 0;
+  document.querySelector("#achievementJournalDot").hidden = claims.achievement === 0;
   const stats = [
     ["Potions brewed", state.stats.brewed], ["Orders delivered", state.stats.orders],
     ["Lifetime coins", state.stats.coinsEarned], ["Harvest taps", state.stats.taps],
@@ -542,21 +549,23 @@ function renderJournal() {
     const newCount = statuses.filter(status => status.unlocked && !status.read).length;
     const beats = statuses.map((status, storyIndex) => {
       if (!status.unlocked) return `<div class="journal-entry is-locked"><div><strong>Story ${storyIndex + 1}</strong><small>Unlocks at ${status.requiredHearts} trust heart${status.requiredHearts === 1 ? "" : "s"}</small></div><span>Locked</span></div>`;
-      if (!status.read) return `<button class="journal-entry is-new" data-journal-story="${status.id}"><div><strong>Story ${storyIndex + 1} is ready</strong><small>Unlocked by ${status.requiredHearts} trust heart${status.requiredHearts === 1 ? "" : "s"}</small></div><span>New · Read</span></button>`;
-      return `<div class="journal-entry is-read"><div><strong>Story ${storyIndex + 1}</strong><small>${status.text}</small></div><span>Read</span></div>`;
+      if (!status.read) return `<button type="button" class="journal-entry is-new" data-journal-story="${status.id}"><div><strong>Story ${storyIndex + 1} is ready</strong><small>Unlocked by ${status.requiredHearts} trust heart${status.requiredHearts === 1 ? "" : "s"}</small></div><span>+${Logic.JOURNAL_REWARDS.story} coins · Read & claim</span></button>`;
+      return `<div class="journal-entry is-read" data-journal-story-read="${status.id}" tabindex="-1"><div><strong>Story ${storyIndex + 1}</strong><small>${status.text}</small></div><span>Read</span></div>`;
     }).join("");
     const progress = `${unlockedCount}/${CUSTOMER_CONFIG.maxHearts} stories${newCount ? ` · ${newCount} new` : ""}`;
-    return `<details class="villager-journal-card" data-journal-customer="${customerId}"><summary><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
+    return `<details class="villager-journal-card ${newCount ? "has-claim" : ""}" data-journal-customer="${customerId}" ${openCustomers.has(customerId) ? "open" : ""}><summary><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
   }).join("");
   document.querySelector("#recipeLoreList").innerHTML = [...RECIPES].sort((a, b) => a.unlock - b.unlock).map(recipe => {
     const status = Logic.recipeLoreStatus(state, recipe.id);
     if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
-    if (!status.read) return `<button class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>New bottle note available</small></div><b>New · Read</b></button>`;
+    if (!status.read) return `<button type="button" class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>Read this bottle note and claim ${Logic.JOURNAL_REWARDS.recipe} coins</small></div><b>Read & claim</b></button>`;
     return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
   }).join("");
   document.querySelector("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
-    const earned = Boolean(state.achievements[achievement.id]);
-    return `<article class="achievement-card ${earned ? "" : "is-locked"}"><span class="achievement-icon">${earned ? achievement.icon : "?"}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">${earned ? "Earned" : "Locked"}</span></article>`;
+    const earned = Number.isFinite(state.achievements[achievement.id]) && state.achievements[achievement.id] > 0;
+    const claimed = state.journal.claimedAchievements.includes(achievement.id);
+    if (earned && !claimed) return `<button type="button" class="achievement-card is-claimable" data-journal-achievement="${achievement.id}"><span class="achievement-icon">${achievement.icon}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">+${Logic.JOURNAL_REWARDS.achievement} · Claim</span></button>`;
+    return `<article class="achievement-card ${earned ? "" : "is-locked"}"><span class="achievement-icon">${earned ? achievement.icon : "?"}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">${earned ? "Claimed" : "Locked"}</span></article>`;
   }).join("");
   document.querySelector("#collectionList").innerHTML = COLLECTION_GOALS.map(goal => {
     const progress = Logic.collectionGoalProgress(state, goal.id);
@@ -570,17 +579,24 @@ function renderJournal() {
     return `<button class="cosmetic-button" data-cosmetic="${cosmetic.id}" aria-pressed="${selected}" ${unlocked ? "" : "disabled"}><div><strong>${cosmetic.name}</strong><small>${cosmetic.description}</small></div><span>${selected ? "In use" : unlocked ? "Use" : "Locked"}</span></button>`;
   }).join("");
   document.querySelectorAll("#cosmeticList button[data-cosmetic]").forEach(button => button.addEventListener("click", () => selectCosmetic(button.dataset.cosmetic)));
-  document.querySelectorAll("[data-journal-story]").forEach(button => button.addEventListener("click", () => readJournalEntry("story", button.dataset.journalStory)));
-  document.querySelectorAll("[data-journal-recipe]").forEach(button => button.addEventListener("click", () => readJournalEntry("recipe", button.dataset.journalRecipe)));
+  document.querySelectorAll("[data-journal-story]").forEach(button => button.addEventListener("click", () => claimJournalEntry("story", button.dataset.journalStory)));
+  document.querySelectorAll("[data-journal-recipe]").forEach(button => button.addEventListener("click", () => claimJournalEntry("recipe", button.dataset.journalRecipe)));
+  document.querySelectorAll("[data-journal-achievement]").forEach(button => button.addEventListener("click", () => claimJournalEntry("achievement", button.dataset.journalAchievement)));
 }
 
-function readJournalEntry(kind, id) {
-  if (!Logic.markJournalRead(state, kind, id)) return;
+function claimJournalEntry(kind, id) {
+  const result = Logic.claimJournalReward(state, kind, id);
+  if (!result) return;
   const customerId = kind === "story" ? id.split(":")[0] : null;
-  sound.play("tap");
-  renderJournal();
-  if (customerId) document.querySelector(`[data-journal-customer="${customerId}"]`)?.setAttribute("open", "");
-  scheduleSave();
+  checkAchievements();
+  feedback(`Journal reward claimed! +${result.reward} coins`, { tone: "reward", soundName: "confirm", target: ".resource-bar" });
+  playCoinArrivals(result.reward);
+  renderAll();
+  if (customerId) {
+    document.querySelector("#friendsJournalSection").open = true;
+    document.querySelector(`[data-journal-customer="${customerId}"]`)?.setAttribute("open", "");
+    document.querySelector(`[data-journal-story-read="${id}"]`)?.focus({ preventScroll: true });
+  }
 }
 
 function selectCosmetic(cosmeticId) {
@@ -1047,8 +1063,8 @@ document.addEventListener("visibilitychange", () => {
 if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("service-worker.js").catch(error => console.warn("Offline mode unavailable.", error));
 
 reconcileOfflineProgress();
-renderAll();
 checkAchievements();
+renderAll();
 setInterval(tick, 1000);
 setTimeout(() => gameplaySaveWritesBlocked ? showFutureSaveGuard() : showTutorial(), 500);
 

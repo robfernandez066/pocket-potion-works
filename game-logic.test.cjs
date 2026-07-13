@@ -260,11 +260,49 @@ test("version-three and malformed saves zero new content keys without losing pri
 
 test("malformed journal state normalizes to known unique content ids", () => {
   const state = game.defaultState(NOW);
-  state.journal = { readStories: ["customer-0:1", "customer-0:1", "customer-99:3", null], readRecipes: ["tonic", "tonic", "unknown", {}] };
+  state.achievements = { firstBrew: NOW, orderFive: "invalid", unknown: NOW };
+  state.journal = { readStories: ["customer-0:1", "customer-0:1", "customer-99:3", null], readRecipes: ["tonic", "tonic", "unknown", {}], claimedAchievements: ["firstBrew", "firstBrew", "unknown", null] };
   const loaded = game.normalizeState(state, NOW);
-  assert.deepEqual(loaded.journal, { readStories: ["customer-0:1"], readRecipes: ["tonic"] });
+  assert.deepEqual(loaded.achievements, { firstBrew: NOW });
+  assert.deepEqual(loaded.journal, { readStories: ["customer-0:1"], readRecipes: ["tonic"], claimedAchievements: ["firstBrew"] });
   const recovered = game.normalizeState({ ...state, journal: "broken" }, NOW);
-  assert.deepEqual(recovered.journal, { readStories: [], readRecipes: [] });
+  assert.deepEqual(recovered.journal, { readStories: [], readRecipes: [], claimedAchievements: [] });
+});
+
+test("journal rewards are bounded, one-time, and clear their claimable counts", () => {
+  const state = game.defaultState(NOW);
+  state.customers["customer-0"] = { deliveries: 3, hearts: 1 };
+  state.discovery.brewed.tonic = 1;
+  state.achievements.firstBrew = NOW;
+  const before = { coins: state.coins, earned: state.stats.coinsEarned };
+  assert.deepEqual(game.journalClaimableCounts(state), { story: 1, recipe: 1, achievement: 1, total: 3 });
+  assert.deepEqual(game.claimJournalReward(state, "story", "customer-0:1"), { kind: "story", id: "customer-0:1", reward: 5 });
+  assert.equal(game.claimJournalReward(state, "story", "customer-0:1"), null);
+  assert.deepEqual(game.claimJournalReward(state, "recipe", "tonic"), { kind: "recipe", id: "tonic", reward: 5 });
+  assert.equal(game.claimJournalReward(state, "recipe", "tonic"), null);
+  assert.deepEqual(game.claimJournalReward(state, "achievement", "firstBrew"), { kind: "achievement", id: "firstBrew", reward: 10 });
+  assert.equal(game.claimJournalReward(state, "achievement", "firstBrew"), null);
+  assert.equal(game.claimJournalReward(state, "story", "customer-0:2"), null);
+  assert.equal(game.claimJournalReward(state, "recipe", "unknown"), null);
+  assert.equal(game.claimJournalReward(state, "achievement", "unknown"), null);
+  assert.deepEqual(game.journalClaimableCounts(state), { story: 0, recipe: 0, achievement: 0, total: 0 });
+  assert.equal(state.coins, before.coins + 20);
+  assert.equal(state.stats.coinsEarned, before.earned + 20);
+});
+
+test("the complete Journal has a fixed 320-coin lifetime reward ceiling", () => {
+  const state = game.defaultState(NOW);
+  for (let index = 0; index < game.CUSTOMERS.length; index += 1) state.customers[`customer-${index}`] = { deliveries: 9, hearts: 3 };
+  for (const recipe of game.RECIPES) state.discovery.brewed[recipe.id] = 1;
+  for (const achievement of game.ACHIEVEMENTS) state.achievements[achievement.id] = NOW;
+  const before = state.coins;
+  for (let customer = 0; customer < game.CUSTOMERS.length; customer += 1) {
+    for (let story = 1; story <= 3; story += 1) assert.ok(game.claimJournalReward(state, "story", `customer-${customer}:${story}`));
+  }
+  for (const recipe of game.RECIPES) assert.ok(game.claimJournalReward(state, "recipe", recipe.id));
+  for (const achievement of game.ACHIEVEMENTS) assert.ok(game.claimJournalReward(state, "achievement", achievement.id));
+  assert.equal(state.coins - before, 320);
+  assert.deepEqual(game.journalClaimableCounts(state), { story: 0, recipe: 0, achievement: 0, total: 0 });
 });
 
 test("prestige opens with the final recipe and preserves durable goals plus the daily boundary", () => {
@@ -272,7 +310,7 @@ test("prestige opens with the final recipe and preserves durable goals plus the 
   state.level = game.PRESTIGE_CONFIG.unlockLevel;
   state.stardust = 2; state.daily = { date: game.todayKey(NOW), orders: 5, claimed: true };
   state.mastery.tonic = 8; state.customers["customer-0"] = { deliveries: 4, hearts: 1 };
-  state.journal = { readStories: ["customer-0:1"], readRecipes: ["tonic"] };
+  state.journal = { readStories: ["customer-0:1"], readRecipes: ["tonic"], claimedAchievements: ["firstBrew"] };
   assert.ok(game.unlocksAtLevel(state.level).recipes.length > 0, "prestige level must also unlock content");
   assert.equal(game.prestigeReward(state), 3);
   const next = game.performPrestige(state, undefined, NOW + 1000);
@@ -407,7 +445,7 @@ test("structurally corrupted saves normalize without losing durable valid progre
     lastSeen: NOW + 999999,
   }), NOW).state;
   assert.equal(result.stardust, 9);
-  assert.deepEqual(result.achievements, { firstBrew: 1234, legacyBadge: 5678 });
+  assert.deepEqual(result.achievements, { firstBrew: 1234 });
   assert.equal(result.stats.brewed, 22); assert.equal(result.stats.prestiges, 2); assert.equal(result.stats.legacyCounter, 44);
   assert.equal(result.upgrades.garden, 8); assert.equal(result.brew, null); assert.equal(result.lastSeen, NOW);
 });
