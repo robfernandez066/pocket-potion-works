@@ -181,6 +181,7 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 .recipe-card.is-requested { border-color: rgba(91,67,123,.45); box-shadow: inset 4px 0 var(--purple); }
 .distant-recipes { margin: 4px 0 0; padding: 10px; text-align: center; color: var(--muted); font-size: 11px; }
 .recipe-card.is-locked { opacity: .65; filter: grayscale(.4); }
+.recipe-description { margin-top: 3px; line-height: 1.35; }
 .recipe-info strong, .recipe-info small { display: block; }.recipe-info small { margin-top: 3px; color: var(--muted); font-size: 10px; }.recipe-cost { margin-top: 5px; color: var(--purple); font-size: 10px; font-weight: 700; }
 .mastery-progress, .customer-trust, .upgrade-preview { color: var(--gold) !important; }
 .brew-button { min-width: 64px; min-height: 46px; padding: 0 13px; border: 0; border-radius: 14px; color: white; background: var(--purple); font-size: 12px; font-weight: 800; cursor: pointer; }

@@ -53,7 +53,7 @@ Exit gate: players have at least two meaningful goals beyond player level, and p
 - The optional daily goal keeps a monotonic saved local-date boundary: rollback or returning to the same high-water date cannot reissue it, while a later date restores ordinary missed-day play without a streak penalty. A fully offline client cannot prevent someone from repeatedly advancing the clock to brand-new future dates.
 - Three collection goals reuse approved mastery and prestige evidence: brew 10 potions, collect each recipe, and complete one rebirth. No large content set was added.
 - Critical screenshot chrome now uses inline SVG or CSS geometry for the brand, settings, market, resources, and four-tab navigation instead of platform-dependent glyphs.
-- Save schema v3 migrates v1/v2, preserves Task 8 progression, and is protected from overwrite by a frozen v2 reader during downlevel rollback.
+- Save schema v4 migrates v1/v2/v3, preserves earlier progression and Task 12 content, and is protected from overwrite by frozen v1/v2/v3 readers during downlevel rollback.
 
 The second brew slot remains deferred. Current evidence validates one cauldron plus bounded quick-brew; there is no separate pacing simulation showing that a second concurrent timer preserves ingredient demand, delivery cadence, or upgrade value.
 
@@ -61,7 +61,7 @@ Exit gate: owner playtests whether the rolling-chain cadence and small visual ch
 
 ## Completed - village stories and order variety
 
-Owner direction is to add more playable content before monetization or broader release work. The next bounded expansion deepens the twelve existing villagers and eight existing potions instead of extending timers, currencies, or the level curve.
+Owner direction is to add more playable content before monetization or broader release work. This bounded expansion deepened the twelve existing villagers and eight existing potions instead of extending timers, currencies, or the level curve.
 
 - Give every recurring customer three short story beats revealed by their existing trust hearts.
 - Add deterministic variety to each customer's order-request copy while preserving recipe requirements and rewards.
@@ -71,9 +71,21 @@ Owner direction is to add more playable content before monetization or broader r
 
 Exit gate: the village feels more authored and worth revisiting, while the core loop, level-7 rebirth timing, and economy remain unchanged.
 
+## Completed - expanded potion book
+
+Task 12 adds Frostmint and four new recipes across the existing level 4-7 progression. This is an optional content expansion inside the proven first-cycle level curve, not a new progression tier: starry rebirth remains available at level 7, no new currency or timer system was introduced, and the existing one-cauldron loop remains intact.
+
+- Deterministic seeds 7, 42, and 2026 reach level 7 in 2,635-2,655 seconds with 31 orders, inside the approved Task 8 envelope.
+- Frostmint and the four potions are integrated with Pantry targeting, passive/offline gathering, recipes, orders, mastery, discovery lore, and level-up presentation.
+- Mooncloth Shelves remains tied to the original eight-recipe sampler, so adding content cannot revoke the earned cosmetic.
+- Save schema v4 migrates v3 with zeroed new content and is protected from downlevel overwrite by a frozen v3 reader. Future v5 saves remain write-protected.
+- The full loop, all tabs, and Settings passed 390x844 and 360x740 browser QA without horizontal overflow or console errors.
+
+Exit gate: the new potions create meaningful additional choices within levels 4-7 without materially delaying rebirth, relocking existing rewards, or destabilizing the economy.
+
 ## Later
 
-- Additional recipes, ingredients, customers, achievements, prestige goals, or cosmetics only when playtests justify them.
+- Further recipes, ingredients, customers, achievements, prestige goals, or cosmetics only when playtests justify another bounded expansion.
 - Playtest the implemented effects/music sliders and three-track fades before adding more mix controls or music.
 
 ## Simulated monetization rules

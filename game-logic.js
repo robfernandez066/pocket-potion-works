@@ -5,7 +5,7 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 3;
+  const SAVE_VERSION = 4;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 30, amountPerCharge: 3 });
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
@@ -20,7 +20,7 @@
   const COSMETICS = Object.freeze([
     Object.freeze({ id: "midnight", name: "Midnight Workshop", description: "The original violet workbench." }),
     Object.freeze({ id: "fern", name: "Fern Window", description: "Unlocked by brewing 10 potions." }),
-    Object.freeze({ id: "mooncloth", name: "Mooncloth Shelves", description: "Unlocked by collecting every recipe." }),
+    Object.freeze({ id: "mooncloth", name: "Mooncloth Shelves", description: "Unlocked by collecting the original eight recipes." }),
     Object.freeze({ id: "starglass", name: "Starglass Keepsake", description: "Unlocked by your first starry rebirth." }),
     Object.freeze({ id: "guild", name: "Guild Ribbon", description: "Unlocked by completing one rolling request chain." }),
   ]);
@@ -30,6 +30,7 @@
     crystal: { name: "Starshard", icon: "♦", color: "#dfd9f0", unlock: 2 },
     mist: { name: "Mist Pearl", icon: "◌", color: "#d7e9ea", unlock: 3 },
     ember: { name: "Sun Ember", icon: "✹", color: "#f4dfbd", unlock: 4 },
+    mint: { name: "Frostmint", icon: "♢", color: "#d5ece5", unlock: 4 },
     lavender: { name: "Dream Lavender", icon: "❀", color: "#e7dbef", unlock: 5 },
   };
 
@@ -42,11 +43,17 @@
     { id: "heart", name: "Kindheart Cordial", icon: "♥", color: "#cc7f91", unlock: 5, seconds: 100, sell: 91, ingredients: { herb: 2, crystal: 1, lavender: 2 } },
     { id: "dream", name: "Dreamer's Draught", icon: "✦", color: "#c77d9b", unlock: 6, seconds: 112, sell: 118, ingredients: { mushroom: 3, crystal: 2, ember: 2 } },
     { id: "starlight", name: "Starlight Philter", icon: "☆", color: "#7569b4", unlock: 7, seconds: 125, sell: 156, ingredients: { mist: 2, ember: 2, lavender: 2 } },
+    { id: "lantern", name: "Lantern Sip", description: "A bright draught for twilight errands.", icon: "◇", color: "#d5a65c", unlock: 4, seconds: 88, sell: 72, ingredients: { herb: 2, crystal: 1, mint: 2 } },
+    { id: "quiet", name: "Quietbell Tea", description: "Tea for hushing a busy room.", icon: "♬", color: "#8ebbb0", unlock: 5, seconds: 100, sell: 91, ingredients: { mushroom: 2, lavender: 1, mint: 2 } },
+    { id: "way", name: "Wayfinder Cordial", description: "A cool cordial for finding the kindly road home.", icon: "⌖", color: "#6fa7a6", unlock: 6, seconds: 112, sell: 118, ingredients: { mushroom: 3, crystal: 2, mint: 2 } },
+    { id: "aurora", name: "Aurora Nectar", description: "A bright nectar for celebrations past moonrise.", icon: "✧", color: "#9474c8", unlock: 7, seconds: 125, sell: 156, ingredients: { mist: 2, ember: 2, mint: 2 } },
   ];
+
+  const SAMPLER_IDS = Object.freeze(["tonic", "clarity", "moon", "bloom", "sun", "heart", "dream", "starlight"]);
 
   const COLLECTION_GOALS = Object.freeze([
     Object.freeze({ id: "brewer", name: "Brewkeeper", target: 10, cosmeticId: "fern" }),
-    Object.freeze({ id: "sampler", name: "Potion Sampler", target: RECIPES.length, cosmeticId: "mooncloth" }),
+    Object.freeze({ id: "sampler", name: "Potion Sampler", target: SAMPLER_IDS.length, cosmeticId: "mooncloth" }),
     Object.freeze({ id: "keepsake", name: "First Star Keepsake", target: 1, cosmeticId: "starglass" }),
   ]);
 
@@ -97,6 +104,10 @@
     heart: "Kindheart Cordial warms most when poured for someone else.",
     dream: "This draught gathers gentle dreams and leaves troublesome ones at the door.",
     starlight: "The final philter reflects constellations that only patient alchemists can see.",
+    lantern: "A moonfair favorite for carrying lanterns home.",
+    quiet: "This tea helps small sounds settle softly.",
+    way: "This cordial remembers every welcoming doorstep.",
+    aurora: "This nectar keeps dawn colors for late celebrations.",
   });
 
   const ACHIEVEMENTS = [
@@ -116,6 +127,7 @@
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const int = (value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) => Math.min(max, Math.max(min, Math.floor(finite(value, fallback))));
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+  const recipeCounts = (source = {}, fallback = {}) => Object.fromEntries(RECIPES.map(({ id }) => [id, int(source[id], fallback[id])]));
 
   function todayKey(now = Date.now()) {
     const date = new Date(now);
@@ -125,14 +137,14 @@
   function defaultState(now = Date.now()) {
     return {
       version: SAVE_VERSION, coins: 30, xp: 0, level: 1, stardust: 0,
-      ingredients: { herb: 7, mushroom: 4, crystal: 0, mist: 0, ember: 0, lavender: 0 },
-      potions: Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0])),
+      ingredients: { herb: 7, mushroom: 4, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 },
+      potions: recipeCounts(),
       upgrades: Object.fromEntries(UPGRADES.map(upgrade => [upgrade.id, 0])),
       brew: null, orders: [], nextOrderId: 1,
       daily: { date: todayKey(now), orders: 0, claimed: false },
       gather: { charges: GATHER_CONFIG.maxCharges, lastRechargeAt: now, targetId: null },
-      discovery: { brewed: {}, delivered: {} },
-      mastery: Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0])),
+      discovery: { brewed: recipeCounts(), delivered: recipeCounts() },
+      mastery: recipeCounts(),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
       journal: { readStories: [], readRecipes: [] },
       weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
@@ -275,7 +287,7 @@
     state.level = int(input.level, 1, 1, 10000);
     state.stardust = int(input.stardust);
     state.ingredients = Object.fromEntries(Object.keys(INGREDIENTS).map(id => [id, int(isRecord(input.ingredients) ? input.ingredients[id] : 0)]));
-    state.potions = Object.fromEntries(RECIPES.map(recipe => [recipe.id, int(isRecord(input.potions) ? input.potions[recipe.id] : 0)]));
+    state.potions = recipeCounts(isRecord(input.potions) ? input.potions : {});
     state.upgrades = Object.fromEntries(UPGRADES.map(upgrade => [upgrade.id, int(isRecord(input.upgrades) ? input.upgrades[upgrade.id] : 0, 0, 0, upgrade.max)]));
     state.nextOrderId = int(input.nextOrderId, 1, 1);
     state.boostUntil = int(input.boostUntil);
@@ -298,9 +310,10 @@
       targetId: typeof sourceGather.targetId === "string" && INGREDIENTS[sourceGather.targetId]?.unlock <= state.level ? sourceGather.targetId : null,
     };
     const sourceDiscovery = isRecord(input.discovery) ? input.discovery : {};
+    const sourceBrewed = isRecord(sourceDiscovery.brewed) ? sourceDiscovery.brewed : {};
+    const sourceDelivered = isRecord(sourceDiscovery.delivered) ? sourceDiscovery.delivered : {};
     state.discovery = {
-      brewed: isRecord(sourceDiscovery.brewed) ? { ...sourceDiscovery.brewed } : {},
-      delivered: isRecord(sourceDiscovery.delivered) ? { ...sourceDiscovery.delivered } : {},
+      brewed: recipeCounts(sourceBrewed), delivered: recipeCounts(sourceDelivered),
     };
     const sourceCustomers = isRecord(input.customers) ? input.customers : {};
     state.customers = Object.fromEntries(CUSTOMERS.map((_, index) => {
@@ -314,7 +327,7 @@
       if (state.level >= 3) { state.discovery.brewed.clarity = 1; state.discovery.delivered.clarity = 1; }
     }
     const sourceMastery = isRecord(input.mastery) ? input.mastery : {};
-    state.mastery = Object.fromEntries(RECIPES.map(recipe => [recipe.id, int(sourceMastery[recipe.id], state.discovery.brewed[recipe.id])]));
+    state.mastery = recipeCounts(sourceMastery, state.discovery.brewed);
     const sourceJournal = isRecord(input.journal) ? input.journal : {};
     const validStoryIds = new Set(CUSTOMERS.flatMap((_, index) => [1, 2, 3].map(beat => `customer-${index}:${beat}`)));
     const validRecipeIds = new Set(RECIPES.map(recipe => recipe.id));
@@ -519,7 +532,7 @@
 
   function collectionGoalProgress(state, goalId) {
     if (goalId === "brewer") return { current: Math.min(10, int(state.stats?.brewed)), target: 10 };
-    if (goalId === "sampler") return { current: RECIPES.filter(recipe => int(state.mastery?.[recipe.id]) > 0).length, target: RECIPES.length };
+    if (goalId === "sampler") return { current: SAMPLER_IDS.filter(id => int(state.mastery?.[id]) > 0).length, target: SAMPLER_IDS.length };
     if (goalId === "keepsake") return { current: Math.min(1, int(state.stats?.prestiges)), target: 1 };
     return null;
   }
@@ -675,7 +688,7 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
