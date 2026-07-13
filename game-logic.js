@@ -201,16 +201,16 @@
     const recipe = recipeById(recipeId);
     if (state.brew) {
       const matching = state.brew.recipeId === recipeId;
-      if (state.brew.endsAt <= now) return tutorialQuest({ id: `${purpose}-collect`, step, status: "ready-to-collect", title: `Collect ${matching ? recipe.name : "the finished potion"}`, detail: "The brew is ready. Use the Collect button in the cauldron panel.", view: "workshop", targetSelector: "#collectBrewButton", buttonLabel: "Show Collect" });
-      return tutorialQuest({ id: `${purpose}-waiting`, step, status: "in-progress", title: `${recipeById(state.brew.recipeId).name} is brewing`, detail: matching ? "The cauldron is working. Return when the timer reaches zero." : `Finish the current brew before starting ${recipe.name}.`, view: "workshop", targetSelector: "#brewSlot", targetKind: "status", buttonLabel: "Show timer" });
+      if (state.brew.endsAt <= now) return tutorialQuest({ id: `${purpose}-collect`, step, status: "ready-to-collect", title: `Collect ${matching ? recipe.name : "the finished potion"}`, detail: "The brew is ready. Tap Collect.", view: "workshop", targetSelector: "#collectBrewButton", buttonLabel: "Show Collect" });
+      return tutorialQuest({ id: `${purpose}-waiting`, step, status: "in-progress", title: `${recipeById(state.brew.recipeId).name} is brewing`, detail: matching ? "Return when the timer reaches zero." : `Finish the current brew before starting ${recipe.name}.`, view: "workshop", targetSelector: "#brewSlot", targetKind: "status", buttonLabel: "Show timer" });
     }
     if (state.potions[recipeId] > 0) {
       const order = state.orders.find(item => item.recipeId === recipeId && state.potions[recipeId] >= item.quantity);
-      if (order) return tutorialQuest({ id: `${purpose}-deliver`, step: purpose === "clarity" ? 7 : step, status: "needs-delivery", title: `Deliver ${recipe.name}`, detail: "The matching order is ready in your Workshop. Deliver it without changing tabs.", view: "workshop", targetSelector: `[data-quick-deliver="${order.id}"]`, buttonLabel: "Show Deliver" });
+      if (order) return tutorialQuest({ id: `${purpose}-deliver`, step: purpose === "clarity" ? 7 : step, status: "needs-delivery", title: `Deliver ${recipe.name}`, detail: "The matching order is ready below. Tap Deliver.", view: "workshop", targetSelector: `[data-quick-deliver="${order.id}"]`, buttonLabel: "Show Deliver" });
     }
-    if (canAffordRecipe(state, recipe)) return tutorialQuest({ id: `${purpose}-start`, step, status: "available-to-start", title: `Brew ${recipe.name}`, detail: "Every required ingredient is ready. Use this recipe's Brew button.", view: "workshop", targetSelector: `[data-brew="${recipeId}"]`, buttonLabel: "Show Brew" });
+    if (canAffordRecipe(state, recipe)) return tutorialQuest({ id: `${purpose}-start`, step, status: "available-to-start", title: `Brew ${recipe.name}`, detail: "Ingredients ready. Tap Brew.", view: "workshop", targetSelector: `[data-brew="${recipeId}"]`, buttonLabel: "Show Brew" });
     const missing = Object.entries(recipe.ingredients).filter(([id, count]) => state.ingredients[id] < count).map(([id, count]) => `${count - state.ingredients[id]} ${INGREDIENTS[id].name}`).join(" and ");
-    return tutorialQuest({ id: `${purpose}-ingredients`, step, status: "insufficient-ingredients", title: `Gather for ${recipe.name}`, detail: `Still needed: ${missing}. Use a charged harvest.`, view: "workshop", targetSelector: "#gatherButton", buttonLabel: "Show Gather" });
+    return tutorialQuest({ id: `${purpose}-ingredients`, step, status: "insufficient-ingredients", title: `Gather for ${recipe.name}`, detail: `Need: ${missing}. Use a charged harvest.`, view: "workshop", targetSelector: "#gatherButton", buttonLabel: "Show Gather" });
   }
 
   function beginnerQuest(state, now = Date.now()) {
@@ -222,15 +222,15 @@
     const upgradesBought = Object.values(state.upgrades).reduce((sum, level) => sum + level, 0);
     if (!upgradesBought) {
       const affordable = UPGRADES.filter(upgrade => upgradeCost(state, upgrade) <= state.coins).sort((a, b) => upgradeCost(state, a) - upgradeCost(state, b))[0];
-      if (affordable) return tutorialQuest({ id: "first-upgrade-affordable", step: 4, status: "affordable-upgrade", title: `Buy ${affordable.name}`, detail: "You have enough coins. Use this upgrade's purchase button.", view: "upgrades", targetSelector: `[data-upgrade="${affordable.id}"]`, buttonLabel: "Show Upgrade" });
+      if (affordable) return tutorialQuest({ id: "first-upgrade-affordable", step: 4, status: "affordable-upgrade", title: `Buy ${affordable.name}`, detail: "You have enough coins. Tap Buy.", view: "upgrades", targetSelector: `[data-upgrade="${affordable.id}"]`, buttonLabel: "Show Upgrade" });
       const earnCoins = recipeTutorialState(state, "tonic", 3, "fund-upgrade", now);
       const cheapest = Math.min(...UPGRADES.map(upgrade => upgradeCost(state, upgrade)));
       return { ...earnCoins, blockedBy: "insufficient-coins", detail: `Need ${Math.max(0, cheapest - state.coins)} more coins for an upgrade. ${earnCoins.detail}` };
     }
     if (state.level < 2) return recipeTutorialState(state, "tonic", 4, "reach-level-two", now);
     if (state.ingredients.crystal < 1 && !state.brew && !state.potions.clarity) {
-      if (state.gather.targetId !== "crystal") return tutorialQuest({ id: "focus-starshard", step: 5, status: "choose-gather-target", title: "Focus on Starshard", detail: "Open the Pantry and choose Starshard so your next charged harvest finds exactly what you need.", view: "workshop", targetSelector: '[data-gather-target="crystal"]', buttonLabel: "Show Starshard" });
-      return tutorialQuest({ id: "gather-starshard", step: 5, status: "gather-new-ingredient", title: "Gather your first Starshard", detail: "Starshard is selected. Use one charged harvest.", view: "workshop", targetSelector: "#gatherButton", targetKind: "gather-and-pantry", buttonLabel: "Show Gather" });
+      if (state.gather.targetId !== "crystal") return tutorialQuest({ id: "focus-starshard", step: 5, status: "choose-gather-target", title: "Focus on Starshard", detail: "Open Pantry and select Starshard for your next charged harvest.", view: "workshop", targetSelector: '[data-gather-target="crystal"]', buttonLabel: "Show Starshard" });
+      return tutorialQuest({ id: "gather-starshard", step: 5, status: "gather-new-ingredient", title: "Gather your first Starshard", detail: "Starshard selected. Use a charged harvest.", view: "workshop", targetSelector: "#gatherButton", targetKind: "gather-and-pantry", buttonLabel: "Show Gather" });
     }
     return recipeTutorialState(state, "clarity", 6, "clarity", now);
   }
