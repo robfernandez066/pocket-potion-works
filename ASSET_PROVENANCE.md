@@ -35,9 +35,9 @@ The tracks are used only as part of Pocket Potion Works and must not be offered,
 
 ## Owner-generated Sprixen sprites
 
-- `assets/images/ingredients/frostmint.png` and the four files under `assets/images/potions/` are owner-generated 256x256 transparent PNG sprites created with Sprixen for Pocket Potion Works.
-- Lantern Sip was the visual reference for Quietbell Tea, Wayfinder Cordial, and Aurora Nectar. The approved static outputs are used; the rejected Aurora animation sheet is not stored or shipped.
-- The five sprites add 188,009 bytes to the offline installation shell and require no remote runtime service. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
+- `assets/images/ingredients/frostmint.png`, the four static potion files, and the optimized Aurora animation sheet are owner-generated transparent PNG sprite assets created with Sprixen for Pocket Potion Works.
+- Lantern Sip was the visual reference for Quietbell Tea, Wayfinder Cordial, and Aurora Nectar. The owner-provided Aurora cinematic sheet contained 96 frames at 256x256 each. The shipped `aurora-nectar-animated-12f.png` samples every eighth source frame and downsizes each frame to 128x128 without generative redrawing; the static Aurora sprite remains the reduced-motion and tiny shelf-chip fallback.
+- The six shipped image files add 354,664 bytes to the offline installation shell and require no remote runtime service. The 4 MB source sheet is retained only in the owner's ignored local source folder and is not shipped. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
 
 ## Unchanged pre-existing assets
 
