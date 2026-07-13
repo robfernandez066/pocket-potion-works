@@ -92,7 +92,7 @@ test("required cues exist and the engine suppresses rapid overlap", () => {
 
 test("provided files map to their intended game cues", () => {
   assert.equal(audio.SAMPLE_CUES.tap.src, "assets/audio/tap.ogg");
-  assert.equal(audio.sampleSettings("tap", () => .5).volume, .4);
+  assert.equal(audio.sampleSettings("tap", () => .5).volume, 1);
   assert.equal(audio.sampleSettings("tap", () => .5).playbackRate, 4);
   assert.equal(audio.sampleSettings("tap", () => .5).preservesPitch, false);
   assert.equal(audio.SAMPLE_CUES.gather.src, "assets/audio/gather.mp3");
@@ -104,6 +104,17 @@ test("provided files map to their intended game cues", () => {
   assert.equal(audio.SAMPLE_CUES.delivery.src, "assets/audio/confirm.mp3");
   assert.equal(audio.SAMPLE_CUES.levelUp.src, "assets/audio/levelup.ogg");
   assert.equal(audio.SAMPLE_CUES.coin.src, "assets/audio/coin.mp3");
+  for (const name of ["tap", "gather", "brewStart", "brewReady", "collect", "delivery", "levelUp"]) assert.equal(audio.SAMPLE_CUES[name].volume, 1, `${name} should use its full safe sample level`);
+});
+
+test("phone-safe synthesized fallbacks are loud enough to hear", () => {
+  const context = fakeContext();
+  const store = new audio.AudioPreferenceStore(storage());
+  const engine = new audio.SoundEngine(store, { contextFactory: () => context, audioFactory: () => null, now: () => 100 });
+  engine.activate();
+  assert.equal(engine.play("tap").source, "synth");
+  const peak = context.calls.find(call => call[0] === "linear")?.[1];
+  assert.ok(Math.abs(peak - .15) < 1e-9, `expected audible tap fallback, got ${peak}`);
 });
 
 test("each coin sample gets the requested live volume and playback-rate jitter", () => {
@@ -123,7 +134,7 @@ test("each coin sample gets the requested live volume and playback-rate jitter",
   engine.activate();
   assert.deepEqual(engine.play("coin", { bypassCooldown: true }), { played: true, source: "sample" });
   assert.equal(created[0].src, "assets/audio/coin.mp3");
-  assert.equal(created[0].volume, .2025);
+  assert.ok(Math.abs(created[0].volume - .37125) < 1e-9);
   assert.equal(created[0].playbackRate, 1.1);
 });
 

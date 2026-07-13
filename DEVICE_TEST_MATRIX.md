@@ -1,6 +1,6 @@
 # Device and lifecycle test matrix
 
-Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, twenty-two supplied static/utility Sprixen sprites plus the optimized Aurora animation sheet, bounded automatic gathering, first-time Journal rewards, daily Villager Special Requests, and service-worker cache `ppw-shell-v47`.
+Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, twenty-two supplied static/utility Sprixen sprites plus the optimized Aurora animation sheet, bounded automatic gathering, first-time Journal rewards, daily Villager Special Requests, and service-worker cache `ppw-shell-v48`.
 
 ## Required local/browser candidate gates
 
@@ -36,7 +36,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | Area | Status | Required procedure |
 | --- | --- | --- |
 | Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
-| PWA install/update | Owner check pending | Update an installed `ppw-shell-v46` game to `ppw-shell-v47`, confirm the in-app New update prompt appears, tap it to restart, and verify brewing bubbles appear on the phone without losing progress. Offline relaunch, eviction, and uninstall/reinstall remain separate release checks. |
+| PWA install/update | Owner check pending | Update an installed `ppw-shell-v47` game to `ppw-shell-v48`, confirm the in-app New update prompt appears, tap it to restart, and verify menu taps plus action effects are clearly audible at 100% without losing progress. Offline relaunch, eviction, and uninstall/reinstall remain separate release checks. |
 | Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
 | Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
 | Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |
