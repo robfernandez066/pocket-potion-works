@@ -146,7 +146,7 @@ function grantOfflineProgress(elapsed) {
   if (gained > 0) {
     setTimeout(() => openModal({
       icon: "☾", kicker: "WELCOME BACK", title: "The garden kept growing.",
-      body: `<p>While you were away, your helpers gathered <strong>${gained} ingredients</strong>.</p><p>Offline gathering is capped at four hours.</p>`,
+      body: `<p>Your helpers gathered <strong>${gained} ingredients</strong> while you were away. Offline progress is limited to 4 hours.</p>`,
       actions: [{ label: "Collect ingredients", primary: true }],
     }), 350);
   }
@@ -752,21 +752,21 @@ function toast(message, tone = "info") {
 
 function showMarket() {
   if (state.stats.orders < 1) {
-    openModal({ icon: "✦", kicker: "MOONLIGHT MARKET · LOCKED", title: "Complete one village order", body: "<p>The market opens after your first successful delivery. Follow First Steps to brew a Meadow Tonic, collect it, and deliver it from Orders.</p><p>No real ads or purchases are connected.</p>", actions: [{ label: "Got it", primary: true }] });
+    openModal({ icon: "✦", kicker: "MOONLIGHT MARKET · LOCKED", title: "Complete one village order", body: "<p>Complete your first order to open the market. Follow First Steps to brew, collect, and deliver a Meadow Tonic.</p><p>Offers are simulated.</p>", actions: [{ label: "Got it", primary: true }] });
     return;
   }
   const boostActive = Date.now() < state.boostUntil;
   const finishStatus = Logic.finishBrewAssistStatus(state);
   const finishCopy = finishStatus.available
-    ? "Simulated rewarded ad · removes 40% of remaining time · once per brew"
+    ? "Simulated ad · 40% less remaining time · once per brew"
     : finishStatus.reason === "already-used" ? "Already used for this brew"
       : finishStatus.reason === "too-close-to-ready" ? `Available with at least ${Logic.FINISH_BREW_CONFIG.minRemainingSeconds}s remaining`
         : finishStatus.reason === "brew-ready" ? "This brew is ready to collect" : "Start a longer brew to use this charm";
   openModal({ icon: "✦", kicker: "MOONLIGHT MARKET · PROTOTYPE", title: "Helpful little extras", body: `
-    <p>Monetization placements are simulated in this prototype. No ad network or billing system is connected.</p>
-    <div class="market-offer"><span>▶</span><div><strong>Prosperity charm</strong><small>${boostActive ? `Active · ${document.querySelector("#coinStatus").textContent}` : "Simulated rewarded ad · 2× order coins for 5 minutes"}</small></div></div>
+    <p>Offers are simulated. No ads or payments are connected.</p>
+    <div class="market-offer"><span>▶</span><div><strong>Prosperity charm</strong><small>${boostActive ? `Active · ${document.querySelector("#coinStatus").textContent}` : "Simulated ad · 2× order coins · 5 min"}</small></div></div>
     <div class="market-offer"><span>⚡</span><div><strong>Quick-brew charm</strong><small>${finishCopy}</small></div></div>
-    <div class="market-offer"><span>🎁</span><div><strong>Apprentice bundle</strong><small>One-time simulated purchase · 100 coins and 10 ingredients</small></div></div>`, actions: [
+    <div class="market-offer"><span>🎁</span><div><strong>Apprentice bundle</strong><small>Simulated purchase · 100 coins + 10 ingredients</small></div></div>`, actions: [
       { label: boostActive ? "Prosperity charm active" : "Simulate ad: 2× coins", primary: true, onClick: boostActive ? closeModal : activateBoost },
       ...(finishStatus.available ? [{ label: "Simulate ad: shorten brew", onClick: finishBrewAd }] : []),
       ...(!state.starterClaimed ? [{ label: "Simulate one-time bundle", onClick: claimStarter }] : []),
@@ -778,7 +778,7 @@ async function runSimulatedReward(placementId, grantReward, successMessage) {
   sound.play("tap");
   analytics.track("reward_attempt", { placementId });
   fakeRewardedAds.queueScenario("success");
-  toast("Simulated rewarded ad started. Reward is waiting for confirmation.");
+  toast("Simulating ad…");
   const result = await rewardedAds.requestReward({ placementId, grantReward });
   analytics.track("reward_result", { placementId, status: result.status });
   if (result.status === "success") feedback(successMessage, { tone: "reward", soundName: "reward", target: ".resource-bar" });
@@ -790,13 +790,13 @@ function activateBoost() {
   return runSimulatedReward("prosperity_charm", () => { state.boostUntil = Date.now() + 5 * 60 * 1000; }, "Prosperity charm active for 5 minutes!");
 }
 function finishBrewAd() {
-  return runSimulatedReward("finish_brew", () => Logic.applyFinishBrewAssist(state, Date.now()), "Quick-brew charm applied once. Remaining brew time was reduced by 40%.");
+  return runSimulatedReward("finish_brew", () => Logic.applyFinishBrewAssist(state, Date.now()), "Quick-brew applied. 40% less time remains.");
 }
 async function claimStarter() {
   closeModal();
   sound.play("tap");
   fakePurchases.queueScenario("success");
-  toast("Starting a simulated purchase. No billing system is connected.");
+  toast("Simulating purchase…");
   const result = await purchases.purchase("apprentice_bundle");
   const fulfillment = commerceFulfillment.reconcile();
   if (result.status === "success" && fulfillment.granted === 1) {
@@ -810,28 +810,28 @@ async function claimStarter() {
 function showSettings() {
   const effectsPercent = Math.round(audioPreferenceStore.effectsVolume() * 100);
   const musicPercent = Math.round(audioPreferenceStore.musicVolume() * 100);
-  const soundLine = `<p><strong>Sound:</strong> ${sound.enabled() ? "On" : "Off"} (starts on by default)</p>`;
-  openModal({ icon: "⚙", kicker: "SETTINGS & INFORMATION", title: "Workshop settings", body: `
+  const soundLine = `<p><strong>Sound:</strong> ${sound.enabled() ? "On" : "Off"}</p>`;
+  openModal({ icon: "⚙", kicker: "SETTINGS", title: "Workshop settings", body: `
     ${soundLine}
     <div class="volume-control"><label for="effectsVolume"><strong>Sound effects</strong><output data-volume-output="effects">${effectsPercent}%</output></label><input id="effectsVolume" data-volume-slider="effects" type="range" min="0" max="100" step="5" value="${effectsPercent}" /></div>
     <div class="volume-control"><label for="musicVolume"><strong>Music</strong><output data-volume-output="music">${musicPercent}%</output></label><input id="musicVolume" data-volume-slider="music" type="range" min="0" max="100" step="5" value="${musicPercent}" /></div>
-    <p><strong>Autosave:</strong> ${gameplaySaveWritesBlocked ? "Blocked to protect a newer save" : "On"}<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1 vertical slice</p>
-    <p><strong>Optional local analytics:</strong> ${consent.analyticsAllowed() ? "Allowed" : "Off"}. Events stay in memory, are schema-limited, and are never transmitted.</p>
-    <p>This prototype contains no real advertisements, purchases, analytics services, accounts, or gameplay-data transmission. The web host serves the app files on first load; progress stays in this browser.</p>`,
+    <p><strong>Autosave:</strong> ${gameplaySaveWritesBlocked ? "Blocked to protect a newer save" : "On"}<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1</p>
+    <p><strong>Local analytics:</strong> ${consent.analyticsAllowed() ? "On" : "Off"}. Nothing is sent.</p>
+    <p>No real ads or payments are connected. Progress stays in this browser.</p>`,
     actions: [
-      { label: `Sound: ${sound.enabled() ? "On - turn off" : "Off - turn on"}`, ariaPressed: sound.enabled(), onClick: () => {
+      { label: sound.enabled() ? "Turn sound off" : "Turn sound on", ariaPressed: sound.enabled(), onClick: () => {
         const enabled = sound.setEnabled(!sound.enabled());
         music.syncEnabled();
         if (enabled) { sound.activate(); music.activate(); sound.play("tap"); }
         closeModal();
-        toast(`Workshop sound turned ${enabled ? "on" : "off"}.`);
+        toast(`Sound ${enabled ? "on" : "off"}.`);
       } },
       { label: "Credits", onClick: showCredits },
       { label: "Save now", primary: true, onClick: () => { const saved = saveState(); closeModal(); toast(saved ? "Workshop saved." : "Newer save remains protected; this build did not write progress."); } },
-      { label: consent.analyticsAllowed() ? "Turn local analytics off" : "Allow local analytics", onClick: () => {
+      { label: consent.analyticsAllowed() ? "Turn analytics off" : "Turn analytics on", onClick: () => {
         consent.setAnalytics(!consent.analyticsAllowed());
         analytics.track("consent_changed", { analytics: consent.analyticsAllowed() ? "allowed" : "denied" });
-        closeModal(); toast(`Optional local analytics ${consent.analyticsAllowed() ? "allowed" : "turned off"}.`);
+        closeModal(); toast(`Local analytics ${consent.analyticsAllowed() ? "on" : "off"}.`);
       } },
     ],
   });
@@ -888,7 +888,7 @@ function showCredits() {
 }
 
 function confirmReset() {
-  openModal({ icon: "!", kicker: "RESET WORKSHOP", title: "Erase all progress?", body: "<p>This permanently clears your local save and restarts the tutorial. This cannot be undone.</p>", actions: [
+  openModal({ icon: "!", kicker: "RESET WORKSHOP", title: "Erase all progress?", body: "<p>This erases your local save and restarts the tutorial. It cannot be undone.</p>", actions: [
     { label: "Keep my workshop" },
     { label: "Erase and restart", primary: true, onClick: () => { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(UI_PREFS_KEY); gameplaySaveWritesBlocked = false; unsupportedSaveVersion = null; state = defaultState(); uiPrefs = { version: 1, pantryOpen: false, recipesOpen: false }; closeModal(); switchView("workshop"); renderAll(); showTutorial(); } },
   ] });
@@ -897,7 +897,7 @@ function confirmReset() {
 function showTutorial() {
   if (state.tutorialSeen) return;
   state.tutorialSeen = true;
-  openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your pantry already holds everything for a <strong>Meadow Tonic</strong>. Follow the First Steps card to brew, collect, deliver, and improve your workshop.</p><p>Charged harvests refill over time. After your first delivery, the garden also gathers while you are away without filling the entire pantry.</p>`, actions: [{ label: "Show my first step", primary: true }] });
+  openModal({ icon: "⚗", kicker: "WELCOME, ALCHEMIST", title: "A tiny shop with big potential", body: `<p>Your pantry has everything for a <strong>Meadow Tonic</strong>. Follow First Steps to brew, collect, deliver, and upgrade.</p><p>Charged harvests refill over time. After your first delivery, the garden gathers while you are away without filling your pantry.</p>`, actions: [{ label: "Show my first step", primary: true }] });
   scheduleSave();
 }
 
