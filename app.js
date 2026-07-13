@@ -94,6 +94,35 @@ let pendingTutorialTarget = null;
 let lastTutorialPromptKey = null;
 let announcedReadyBrew = null;
 let renderedBrewKey = null;
+const transientCompletions = { daily: false, weekly: false, special: null };
+const completionTimers = new Map();
+const completionTokens = new Map();
+let pendingDailyChooserToken = 0;
+
+function beginCompletionState(kind, detail = true, onHidden = null) {
+  const previous = completionTimers.get(kind) || [];
+  previous.forEach(clearTimeout);
+  const token = (completionTokens.get(kind) || 0) + 1;
+  completionTokens.set(kind, token);
+  transientCompletions[kind] = detail;
+  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete" }[kind];
+  const readableTimer = setTimeout(() => {
+    const node = document.querySelector(selector);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reducedMotion) node?.classList.add("is-collapsing");
+    const hideTimer = setTimeout(() => {
+      if (completionTokens.get(kind) !== token) return;
+      transientCompletions[kind] = kind === "special" ? null : false;
+      document.querySelector(selector)?.classList.remove("is-collapsing");
+      renderOrders();
+      renderWeekly();
+      completionTimers.delete(kind);
+      if (typeof onHidden === "function") onHidden();
+    }, reducedMotion ? 0 : Logic.COMPLETION_CARD_CONFIG.fadeMs);
+    completionTimers.set(kind, [hideTimer]);
+  }, Logic.COMPLETION_CARD_CONFIG.readableMs);
+  completionTimers.set(kind, [readableTimer]);
+}
 
 function saveState() {
   if (gameplaySaveWritesBlocked) return false;
@@ -465,19 +494,31 @@ function renderRecipes() {
 
 function renderOrders() {
   const dailyComplete = state.daily.orders >= 5;
-  document.querySelector("#dailyProgress").textContent = `${Math.min(state.daily.orders, 5)} / 5 orders${state.daily.claimed ? " · claimed" : ""}`;
+  const invitationAvailable = state.commissions.invitations < Logic.unfinishedCommissionCount(state);
+  const dailyCard = document.querySelector("#dailyCard");
+  dailyCard.hidden = state.daily.claimed && !transientCompletions.daily;
+  document.querySelector("#dailyProgress").textContent = state.daily.claimed && transientCompletions.daily ? "Daily reward claimed!" : `${Math.min(state.daily.orders, 5)} / 5 orders`;
+  document.querySelector("#dailyRewardLabel").textContent = state.daily.claimed && transientCompletions.daily ? "Collected" : "Reward";
+  document.querySelector("#dailyRewardCopy").textContent = state.daily.claimed && transientCompletions.daily
+    ? `50 coins + 1 stardust${transientCompletions.daily.invitationGranted ? transientCompletions.daily.savedForLater ? " + Villager Special Request invitation saved for later" : " + Villager Special Request" : ""}`
+    : invitationAvailable
+      ? state.commissions.selectedId ? "50 coins + 1 stardust + Villager Special Request invitation saved for later" : "50 coins + 1 stardust + Villager Special Request"
+      : `50 coins + 1 stardust${Logic.unfinishedCommissionCount(state) ? " · request invitation already saved" : " · keepsakes complete"}`;
   document.querySelector("#dailyBar").style.width = `${Math.min(100, state.daily.orders / 5 * 100)}%`;
   const dailyClaimButton = document.querySelector("#claimDailyButton");
   dailyClaimButton.hidden = !dailyComplete || state.daily.claimed;
   const commissionChoices = Logic.refreshCommissionChoices(state);
+  const invitations = state.commissions.invitations;
   const choiceCard = document.querySelector("#commissionChoices");
-  choiceCard.hidden = Boolean(state.commissions.selectedId) || commissionChoices.length === 0;
-  document.querySelector("#commissionChoiceList").innerHTML = commissionChoices.map(commission => {
-    const customer = CUSTOMERS[Number(commission.customerId.slice(9))];
-    const recipe = recipeById(commission.recipeId);
-    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}"><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><span><strong>${commission.title}</strong><small>${customer[0]} · ${recipe.name}</small></span><b>Choose</b></button>`;
-  }).join("");
-  document.querySelectorAll("[data-commission-choice]").forEach(button => button.addEventListener("click", () => chooseCommission(button.dataset.commissionChoice)));
+  choiceCard.hidden = invitations < 1;
+  const choiceButton = document.querySelector("#openCommissionChoicesButton");
+  const activeRequest = Boolean(state.commissions.selectedId);
+  choiceButton.disabled = activeRequest || commissionChoices.length === 0;
+  choiceButton.textContent = activeRequest ? "Finish your active request first" : commissionChoices.length ? "Choose a request" : "Unlock more potions to choose";
+  document.querySelector("#commissionChoiceSummary").textContent = `${invitations} invitation${invitations === 1 ? "" : "s"} saved. ${activeRequest ? "Finish the request on the board, then choose another." : "Choose a villager, build trust, and earn their named keepsake."}`;
+  const specialCompletion = document.querySelector("#specialRequestComplete");
+  specialCompletion.hidden = !transientCompletions.special;
+  specialCompletion.innerHTML = transientCompletions.special ? `<p class="eyebrow">VILLAGER SPECIAL REQUEST COMPLETE</p><h2>${transientCompletions.special.title}</h2><p>${transientCompletions.special.customer} gave you the <strong>${transientCompletions.special.keepsake}</strong>.</p>` : "";
   document.querySelector("#orderList").innerHTML = state.orders.map(order => {
     const recipe = recipeById(order.recipeId);
     const owned = state.potions[recipe.id];
@@ -488,7 +529,7 @@ function renderOrders() {
     const trust = customer.hearts >= CUSTOMER_CONFIG.maxHearts ? `${"♥".repeat(customer.hearts)} trusted friend` : `${"♥".repeat(customer.hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - customer.hearts)} · ${towardHeart}/${CUSTOMER_CONFIG.deliveriesPerHeart} toward next favor`;
     const commission = Logic.commissionById(order.commissionId);
     return `<article class="order-card ${commission ? "is-commission" : ""}">
-      ${commission ? `<div class="commission-ribbon">Signature commission · ${commission.title}</div>` : ""}
+      ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
       <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
       <div class="order-bottom"><div class="order-request"><span>${recipe.icon} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
     </article>`;
@@ -499,8 +540,27 @@ function renderOrders() {
 function chooseCommission(commissionId) {
   const order = Logic.selectSignatureCommission(state, commissionId);
   if (!order) return;
-  feedback("Signature commission pinned. Two ordinary requests remain open.", { tone: "reward", soundName: "confirm", target: "#orderList" });
+  closeModal();
+  feedback("Villager Special Request added. Two ordinary requests remain open.", { tone: "reward", soundName: "confirm", target: "#orderList" });
   renderAll();
+}
+
+function showSpecialRequestChooser({ automatic = false } = {}) {
+  if (!automatic) pendingDailyChooserToken += 1;
+  if (state.commissions.invitations < 1) return;
+  if (state.commissions.selectedId) {
+    openModal({ icon: "✦", kicker: "VILLAGER SPECIAL REQUEST", title: "Your invitation is saved", body: `<p>Finish the Villager Special Request on your noticeboard. Your unused invitation will still be here afterward.</p>`, actions: [{ label: "Got it", primary: true }] });
+    return;
+  }
+  const choices = Logic.refreshCommissionChoices(state);
+  const body = choices.length ? `<p>Choose exactly who you want to help. Their request uses one noticeboard slot, builds their trust, and awards the keepsake shown.</p><div class="commission-choice-list">${choices.map(commission => {
+    const customer = CUSTOMERS[Number(commission.customerId.slice(9))];
+    const recipe = recipeById(commission.recipeId);
+    const trust = state.customers[commission.customerId]?.hearts || 0;
+    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}"><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><span><strong>${customer[0]} · ${commission.title}</strong><small>Potion: ${recipe.name}</small><small>Trust: ${trust}/${CUSTOMER_CONFIG.maxHearts} hearts</small><small>Keepsake: ${commission.keepsake.name}</small></span><b>Choose request</b></button>`;
+  }).join("")}</div>` : `<p>No unfinished request matches a potion you know yet. Your invitation is saved until you unlock another potion.</p>`;
+  openModal({ icon: "✦", kicker: "VILLAGER SPECIAL REQUEST", title: "Choose who to help", body, actions: [{ label: "Choose later", primary: true }] });
+  document.querySelectorAll("[data-commission-choice]").forEach(button => button.addEventListener("click", () => chooseCommission(button.dataset.commissionChoice)));
 }
 
 function renderWeekly() {
@@ -508,6 +568,7 @@ function renderWeekly() {
   const status = Logic.weeklyChainStatus(state);
   const button = document.querySelector("#claimWeeklyButton");
   if (status.complete) {
+    card.hidden = !transientCompletions.weekly;
     card.classList.add("is-complete");
     document.querySelector("#weeklyTitle").textContent = "All rolling requests complete";
     document.querySelector("#weeklyPolicy").textContent = "You finished all three chains and claimed every coin parcel. There is no reset or missed-week penalty.";
@@ -517,6 +578,7 @@ function renderWeekly() {
     button.hidden = true;
     return;
   }
+  card.hidden = false;
   card.classList.remove("is-complete");
   const finalTarget = status.chain.thresholds.at(-1);
   document.querySelector("#weeklyTitle").textContent = status.chain.name;
@@ -583,7 +645,7 @@ function renderJournal() {
   document.querySelector("#keepsakeProgress").textContent = `${completedKeepsakes.size} / ${SIGNATURE_COMMISSIONS.length} collected · all twelve unlock the Heirloom Garland look.`;
   document.querySelector("#keepsakeList").innerHTML = SIGNATURE_COMMISSIONS.map(commission => {
     const collected = completedKeepsakes.has(commission.id);
-    return `<article class="keepsake-card ${collected ? "is-collected" : "is-locked"}"><span aria-hidden="true">${collected ? commission.keepsake.mark : "?"}</span><div><strong>${collected ? commission.keepsake.name : "Uncollected keepsake"}</strong><small>${collected ? commission.keepsake.description : `Help ${CUSTOMERS[Number(commission.customerId.slice(9))][0]} with a signature commission.`}</small></div></article>`;
+    return `<article class="keepsake-card ${collected ? "is-collected" : "is-locked"}"><span aria-hidden="true">${collected ? commission.keepsake.mark : "?"}</span><div><strong>${collected ? commission.keepsake.name : "Uncollected keepsake"}</strong><small>${collected ? commission.keepsake.description : `Help ${CUSTOMERS[Number(commission.customerId.slice(9))][0]} with a Villager Special Request.`}</small></div></article>`;
   }).join("");
   document.querySelector("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
     const earned = Number.isFinite(state.achievements[achievement.id]) && state.achievements[achievement.id] > 0;
@@ -632,6 +694,7 @@ function selectCosmetic(cosmeticId) {
 function claimWeekly() {
   const result = Logic.claimWeeklyStep(state);
   if (!result) return;
+  if (result.chainCompleted && Logic.weeklyChainStatus(state).complete) beginCompletionState("weekly");
   feedback(`${result.chainCompleted ? "Request chain complete" : "Request parcel claimed"}! +${result.reward} coins`, { tone: "reward", soundName: "reward", target: "#weeklyCard" });
   playCoinArrivals(result.reward);
   renderAll();
@@ -666,6 +729,7 @@ function fulfillOrder(orderId) {
   const viewBeforeAction = activeView();
   const result = window.PPWLogic.fulfillOrder(state, orderId);
   if (!result) return;
+  if (result.commission) beginCompletionState("special", { title: result.commission.title, customer: CUSTOMERS[Number(result.commission.customerId.slice(9))][0], keepsake: result.commission.keepsake.name });
   announceLevels(result.levels);
   checkAchievements();
   const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";
@@ -702,9 +766,19 @@ function buyUpgrade(id) {
 }
 
 function claimDaily() {
+  const invitationsBefore = state.commissions.invitations;
   if (!window.PPWLogic.claimDaily(state)) return;
+  const invitationGranted = state.commissions.invitations > invitationsBefore;
+  const savedForLater = invitationGranted && Boolean(state.commissions.selectedId);
+  const chooserToken = ++pendingDailyChooserToken;
+  const autoOpenChooser = invitationGranted ? () => {
+    if (chooserToken !== pendingDailyChooserToken || activeView() !== "orders" || !document.querySelector("#modalBackdrop").hidden) return;
+    pendingDailyChooserToken += 1;
+    showSpecialRequestChooser({ automatic: true });
+  } : null;
+  beginCompletionState("daily", { invitationGranted, savedForLater }, autoOpenChooser);
   checkAchievements();
-  toast("Daily goal complete! +50 coins and +1 stardust");
+  toast(`Daily goal complete! +50 coins and +1 stardust${invitationGranted ? " · special request earned" : ""}`);
   renderAll();
   playCoinArrivals(50);
 }
@@ -714,7 +788,7 @@ function prestigeReward() { return Logic.prestigeReward(state); }
 function confirmPrestige() {
   if (state.level < PRESTIGE_CONFIG.unlockLevel) return;
   const reward = prestigeReward();
-  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active signature commission.</p><p>Mastery, friendships, completed keepsakes, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth also leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
+  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active Villager Special Request.</p><p>Saved special-request invitations, friendships, completed keepsakes, mastery, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth also leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
     { label: "Not yet" },
     { label: `Rebirth for ${reward} stardust`, primary: true, onClick: () => performPrestige(reward) },
   ] });
@@ -1047,6 +1121,7 @@ document.querySelector("#tutorialBannerClose").addEventListener("click", hideTut
 document.querySelector("#refreshOrdersButton").addEventListener("click", refreshOrder);
 document.querySelector("#claimDailyButton").addEventListener("click", claimDaily);
 document.querySelector("#claimWeeklyButton").addEventListener("click", claimWeekly);
+document.querySelector("#openCommissionChoicesButton").addEventListener("click", showSpecialRequestChooser);
 document.querySelector("#prestigeButton").addEventListener("click", confirmPrestige);
 document.querySelector("#marketButton").addEventListener("click", showMarket);
 document.querySelector("#settingsButton").addEventListener("click", showSettings);

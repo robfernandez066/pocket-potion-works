@@ -128,11 +128,11 @@ function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200, use
     if (second % 5 === 0) {
       game.collectBrew(state, now);
       for (const order of [...state.orders]) game.fulfillOrder(state, order.id, now, random);
-      if (useCommissions && !state.commissions.selectedId) {
-        game.refreshCommissionChoices(state);
-        if (state.commissions.choices[0]) game.selectSignatureCommission(state, state.commissions.choices[0]);
-      }
       if (state.daily.orders >= 5) game.claimDaily(state);
+      if (useCommissions && !state.commissions.selectedId && state.commissions.invitations > 0) {
+        const choices = game.refreshCommissionChoices(state);
+        if (choices[0]) game.selectSignatureCommission(state, choices[0].id);
+      }
       const upgrade = chooseUpgrade(state, { buy: "priority" });
       if (upgrade) game.buyUpgrade(state, upgrade.id);
       if (!state.brew) {
@@ -371,7 +371,7 @@ for (const row of gatherCandidateRows) console.log(JSON.stringify(row));
 console.log(JSON.stringify({ targetedCrystal180s: targeted.ingredients.crystal, smartCrystal180s: smart.ingredients.crystal, storageCap: game.storageCap(nearCap), offlineSoftCap: game.totalIngredients(offlinePressure) }));
 console.log("Seeded first-cycle progression to level 7:");
 for (const row of progressionRows) console.log(JSON.stringify(row));
-console.log("Seeded first-cycle progression with signature commissions:");
+console.log("Seeded first-cycle progression with Villager Special Requests:");
 for (const row of commissionRows) console.log(JSON.stringify(row));
 console.log(`Seeded post-rebirth recovery to level 3 (daily-only reset baseline ${dailyOnlyRecoverySeconds}s, ${dailyOnlyRecoveryCoins} coins, ${dailyOnlyRecoveryUpgrades} upgrades):`);
 for (const row of candidateRows) console.log(JSON.stringify({ ...row, chosen: row.reward === chosenPrestige.reward }));

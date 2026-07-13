@@ -8,6 +8,7 @@ const v2Reader = require("./fixtures/rollback/game-save-reader-v2.cjs");
 const v3Reader = require("./fixtures/rollback/game-save-reader-v3.cjs");
 const v4Reader = require("./fixtures/rollback/game-save-reader-v4.cjs");
 const v5Reader = require("./fixtures/rollback/game-save-reader-v5.cjs");
+const v6Reader = require("./fixtures/rollback/game-save-reader-v6.cjs");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
 const fixture = name => fs.readFileSync(`fixtures/saves/${name}`, "utf8");
@@ -40,13 +41,13 @@ test("historical pre-release v1 fixture preserves durable progress, brew, and or
 });
 
 test("future-version fixture is detected and cannot be normalized for overwrite", () => {
-  const raw = fixture("future-version-v7.json");
+  const raw = fixture("future-version-v8.json");
   const result = game.parseSave(raw, NOW);
-  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 7 });
+  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 8 });
   assert.equal(game.shouldBlockSaveWrite(result), true);
   let stored = raw;
   if (!game.shouldBlockSaveWrite(result)) stored = JSON.stringify(result.state);
-  assert.equal(stored, raw, "v6 tooling must preserve the unsupported future save byte-for-byte");
+  assert.equal(stored, raw, "v7 tooling must preserve the unsupported future save byte-for-byte");
 });
 
 test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () => {
@@ -68,7 +69,7 @@ test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () =
   assert.deepEqual(reloaded.customers["customer-0"], { deliveries: 4, hearts: 1 });
 });
 
-test("Task 8 v2 migrates to current v6 and the frozen v2 reader blocks Task 9 v3", () => {
+test("Task 8 v2 migrates to current v7 and the frozen v2 reader blocks Task 9 v3", () => {
   const task8 = game.defaultState(NOW);
   task8.version = 2;
   delete task8.weekly;
@@ -76,7 +77,7 @@ test("Task 8 v2 migrates to current v6 and the frozen v2 reader blocks Task 9 v3
   task8.mastery.tonic = 8;
   task8.customers["customer-0"] = { deliveries: 4, hearts: 1 };
   const migrated = game.parseSave(JSON.stringify(task8), NOW).state;
-  assert.equal(migrated.version, 6);
+  assert.equal(migrated.version, 7);
   assert.deepEqual(migrated.weekly, { cycle: 0, progress: 0, claimedSteps: 0 });
   assert.deepEqual(migrated.customization, { selected: "midnight" });
   assert.equal(migrated.mastery.tonic, 8);
@@ -98,7 +99,7 @@ test("Task 8 v2 migrates to current v6 and the frozen v2 reader blocks Task 9 v3
   assert.equal(raw, JSON.stringify(task9), "the v3 save remains byte-for-byte available to the current reader");
 });
 
-test("current v6 and malformed saves retain their existing compatibility behavior", () => {
+test("current v7 and malformed saves retain their existing compatibility behavior", () => {
   const current = game.defaultState(NOW);
   current.stardust = 4;
   assert.equal(game.parseSave(JSON.stringify(current), NOW).state.stardust, 4);
@@ -122,7 +123,7 @@ test("pre-expansion version-three saves acquire safe zeroed content entries", ()
     delete priorV3.discovery.delivered[id];
   }
   const loaded = game.parseSave(JSON.stringify(priorV3), NOW).state;
-  assert.equal(loaded.version, 6);
+  assert.equal(loaded.version, 7);
   assert.equal(loaded.coins, 812);
   assert.equal(loaded.mastery.tonic, 15);
   assert.equal(loaded.discovery.delivered.tonic, 9);
@@ -167,7 +168,7 @@ test("version-four journal progress migrates without replaying read entries and 
   priorV4.journal = { readStories: ["customer-0:1"], readRecipes: ["tonic"] };
   priorV4.achievements = { firstBrew: NOW - 1000 };
   const migrated = game.parseSave(JSON.stringify(priorV4), NOW).state;
-  assert.equal(migrated.version, 6);
+  assert.equal(migrated.version, 7);
   assert.deepEqual(migrated.journal, { readStories: ["customer-0:1"], readRecipes: ["tonic"], claimedAchievements: [] });
   assert.deepEqual(game.journalClaimableCounts(migrated), { story: 0, recipe: 0, achievement: 1, total: 1 });
   assert.deepEqual(game.claimJournalReward(migrated, "achievement", "firstBrew"), { kind: "achievement", id: "firstBrew", reward: 10 });
@@ -197,7 +198,7 @@ test("the frozen v4 reader blocks and preserves a populated v5 journal save", ()
   assert.deepEqual(reloaded.journal.claimedAchievements, ["firstBrew"]);
 });
 
-test("a populated version-five save migrates to v6 with safe empty commission state", () => {
+test("a populated version-five save migrates to v7 with safe empty special-request state", () => {
   const priorV5 = game.defaultState(NOW);
   priorV5.version = 5;
   delete priorV5.commissions;
@@ -210,22 +211,23 @@ test("a populated version-five save migrates to v6 with safe empty commission st
   priorV5.journal.claimedAchievements = ["firstBrew"];
   priorV5.orders = [{ id: 41, customerId: "customer-5", customer: game.CUSTOMERS[5][0], recipeId: "quiet", quantity: 1, reward: 140, xp: 24 }];
   const migrated = game.parseSave(JSON.stringify(priorV5), NOW).state;
-  assert.equal(migrated.version, 6);
+  assert.equal(migrated.version, 7);
   assert.equal(migrated.coins, 735);
   assert.equal(migrated.ingredients.mint, 11);
   assert.equal(migrated.mastery.aurora, 4);
   assert.equal(migrated.discovery.delivered.quiet, 2);
   assert.deepEqual(migrated.customers["customer-5"], { deliveries: 7, hearts: 2 });
   assert.deepEqual(migrated.journal.claimedAchievements, ["firstBrew"]);
-  assert.deepEqual(migrated.commissions, { choices: [], selectedId: null, completedIds: [] });
+  assert.deepEqual(migrated.commissions, { invitations: 0, selectedId: null, completedIds: [] });
   assert.equal(migrated.orders[0].recipeId, "quiet");
 });
 
-test("valid v6 commission state round-trips while malformed relationships are rejected", () => {
+test("a populated v6 commission save migrates to v7 without inventing invitations", () => {
   const current = game.defaultState(NOW);
   current.level = 7;
   current.customers["customer-0"].deliveries = 2;
   current.customers["customer-1"].deliveries = 1;
+  current.version = 6;
   current.commissions = { choices: ["moss-rainpath"], selectedId: "mira-dawn", completedIds: ["juniper-encore"] };
   current.orders = [
     { id: 70, commissionId: "mira-dawn", customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 999999999, xp: 999999999 },
@@ -233,23 +235,24 @@ test("valid v6 commission state round-trips while malformed relationships are re
     { id: 72, customerId: "customer-4", customer: game.CUSTOMERS[4][0], recipeId: "sun", quantity: 1, reward: 110, xp: 23 },
   ];
   const reloaded = game.parseSave(JSON.stringify(current), NOW).state;
-  assert.deepEqual(reloaded.commissions, current.commissions);
+  assert.deepEqual(reloaded.commissions, { invitations: 0, selectedId: "mira-dawn", completedIds: ["juniper-encore"] });
   assert.equal(reloaded.orders.filter(game.isSignatureOrder).length, 1);
   assert.equal(reloaded.orders.filter(order => !game.isSignatureOrder(order)).length, 2);
   assert.deepEqual({ reward: reloaded.orders[0].reward, xp: reloaded.orders[0].xp }, { reward: 22, xp: 14 }, "a matched active commission must reconstruct canonical economics instead of trusting saved reward or XP");
 
   const malformed = structuredClone(current);
-  malformed.commissions = { choices: ["moss-rainpath", "moss-rainpath", "bad", "tink-trial"], selectedId: "mira-dawn", completedIds: ["mira-dawn", "juniper-encore", "juniper-encore", 9] };
+  malformed.commissions = { invitations: 9999, choices: ["moss-rainpath", "moss-rainpath", "bad", "tink-trial"], selectedId: "mira-dawn", completedIds: ["mira-dawn", "juniper-encore", "juniper-encore", 9] };
   malformed.orders.push({ id: 73, commissionId: "moss-rainpath", customerId: "customer-1", recipeId: "moon", quantity: 2, reward: 999999, xp: 999 });
   const recovered = game.parseSave(JSON.stringify(malformed), NOW).state;
   assert.deepEqual(recovered.commissions.completedIds, ["mira-dawn", "juniper-encore"]);
   assert.equal(recovered.commissions.selectedId, null);
-  assert.ok(recovered.commissions.choices.length <= 2);
+  assert.equal(recovered.commissions.invitations, 10);
   assert.equal(recovered.orders.filter(game.isSignatureOrder).length, 0);
 });
 
 test("the frozen v5 reader blocks and preserves a populated v6 commission save", () => {
   const current = game.defaultState(NOW);
+  current.version = 6;
   current.level = 7;
   current.customers["customer-0"].deliveries = 2;
   current.customers["customer-1"].deliveries = 1;
@@ -262,6 +265,23 @@ test("the frozen v5 reader blocks and preserves a populated v6 commission save",
   let stored = raw;
   if (!v5Reader.shouldBlockSaveWrite(downlevel)) stored = JSON.stringify(downlevel.state);
   assert.equal(stored, raw, "the v5 reader must preserve the v6 save byte-for-byte");
+  const reloaded = game.parseSave(stored, NOW).state;
+  assert.deepEqual(reloaded.commissions, { invitations: 0, selectedId: "mira-dawn", completedIds: ["juniper-encore"] });
+  assert.equal(reloaded.orders[0].commissionId, "mira-dawn");
+});
+
+test("current v7 invitations round-trip and the frozen v6 reader protects them", () => {
+  const current = game.defaultState(NOW);
+  current.level = 7;
+  current.commissions = { invitations: 4, selectedId: "mira-dawn", completedIds: ["juniper-encore"] };
+  current.orders = [{ id: 90, commissionId: "mira-dawn", customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 22, xp: 14 }];
+  const raw = JSON.stringify(current);
+  const downlevel = v6Reader.parseSave(raw);
+  assert.deepEqual(downlevel, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 7 });
+  assert.equal(v6Reader.shouldBlockSaveWrite(downlevel), true);
+  let stored = raw;
+  if (!v6Reader.shouldBlockSaveWrite(downlevel)) stored = JSON.stringify(downlevel.state);
+  assert.equal(stored, raw, "the v6 reader must preserve the v7 save byte-for-byte");
   const reloaded = game.parseSave(stored, NOW).state;
   assert.deepEqual(reloaded.commissions, current.commissions);
   assert.equal(reloaded.orders[0].commissionId, "mira-dawn");

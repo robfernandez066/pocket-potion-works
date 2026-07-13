@@ -78,25 +78,37 @@ Task 12 adds Frostmint and four new recipes across the existing level 4-7 progre
 - Deterministic seeds 7, 42, and 2026 reach level 7 in 2,635-2,655 seconds with 31 orders, inside the approved Task 8 envelope.
 - Frostmint and the four potions are integrated with Pantry targeting, passive/offline gathering, recipes, orders, mastery, discovery lore, and level-up presentation.
 - Mooncloth Shelves remains tied to the original eight-recipe sampler, so adding content cannot revoke the earned cosmetic.
-- Current save schema v6 migrates v4 Journal state, is protected from downlevel overwrite by frozen readers through v5, and keeps future v7 saves write-protected.
+- The Task 12 save boundary remains covered by its frozen v3 reader; the current schema is defined by the newest completed or in-development task below.
 - The full loop, all tabs, and Settings passed 390x844 and 360x740 browser QA without horizontal overflow or console errors.
 
 Exit gate: the new potions create meaningful additional choices within levels 4-7 without materially delaying rebirth, relocking existing rewards, or destabilizing the economy.
 
 ## Completed - signature villager commissions and keepsakes
 
-Task 13 turns existing friendships into twelve authored, one-time commissions without adding another economy or timer. Each villager's commission becomes eligible after one ordinary delivery and its assigned existing recipe unlocks. When several are eligible, the player chooses between at most two; the unchosen commission remains available and only one may occupy the normal three-slot Orders board at a time.
+Task 13 authored twelve one-time villager commissions, distinct keepsakes, and the Heirloom Garland without adding another economy or timer. Task 14 below supersedes its original random-order-gated discovery flow while retaining this content foundation and its delivery rules.
 
 - Signature commissions use normal order rewards, XP, trust, daily, rolling-request, achievement, and delivery rules. They add no bonus coins and cannot repeat.
 - Two ordinary order slots remain playable, so an ignored commission cannot block the core loop.
 - Each completed commission records one code-native keepsake in a compact, collapsed Journal collection.
 - Completing all twelve unlocks exactly one non-economic Workshop Look.
-- Completed keepsakes survive prestige. Pending and selected commissions persist across reload and offline time, while prestige may clear them with ordinary orders.
+- Completed keepsakes survive prestige; the current invitation and active-request persistence rules are defined by Task 14 below.
 - Save v6 migrates v1-v5 safely and adds frozen-v5 rollback plus future-v7 overwrite protection.
 - Across seeds 7, 42, and 2026, an always-choose-commissions strategy reached level 7 in 2,540-2,570 seconds with 32-33 total deliveries and 3-9 commissions completed. The unchanged baseline reached level 7 in 2,540-2,660 seconds with 31-32 deliveries; lifetime coin generation stayed inside the checked 12% guardrail.
 - Browser acceptance completed the gather, brew, collect, ordinary delivery, upgrade, commission choice, reload, signature delivery, and keepsake path. The Orders board and collapsed or expanded keepsake collection had no horizontal overflow or console errors at 390x844 and 360x740.
 
 Exit gate: friendships create authored playable goals and a clear collection payoff while deterministic evidence keeps first-cycle level-7 pacing and the existing economy materially unchanged.
+
+## Completed - daily Villager Special Requests and compact completion states
+
+Task 14 connects the existing five-delivery daily reward to one saved Villager Special Request invitation. Claiming still pays 50 coins and 1 stardust exactly once, then lets the player deliberately choose any unfinished villager request whose potion is unlocked. This replaces random-order-gated commission discovery and the permanent chooser card with a dismissible, reopenable player-facing flow.
+
+- Earned invitations persist and may be saved for later, but remain bounded by unfinished keepsakes and never allow more than one active special request.
+- The chooser explains the requested potion, current villager trust, and named keepsake before selection; two ordinary Orders slots remain available.
+- Claimed daily goals, the fully completed rolling request chain, and delivered special requests show their final state briefly, then fade and collapse so the Orders screen does not retain dead space.
+- Save v7 migrates v1-v6, adds frozen-v6 rollback protection, and keeps future-v8 saves write-protected. Automated reward, targeting, persistence, malformed-save, and reduced-motion timing coverage passes.
+- Browser acceptance completed the real fifth delivery, daily claim, three-second claimed hold, delayed targeted chooser, request selection, reload persistence, special-request delivery, three-second keepsake completion, gather, and upgrade path. Orders and Journal had no horizontal overflow or console warnings/errors at 390x844 and 360x740.
+
+Exit gate: daily play creates an understandable, intentional path toward villager trust and keepsakes while completed panels leave the active Orders screen promptly.
 
 ## Later
 
