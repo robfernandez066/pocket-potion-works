@@ -54,6 +54,11 @@
     return 9;
   }
 
+  function effectsOutputGain(volume) {
+    const level = Math.max(0, Math.min(1, Number(volume) || 0));
+    return level * (2 - level);
+  }
+
   function normalizeAudioPreference(input) {
     if (input?.version === 1 && typeof input.enabled === "boolean") return { ...DEFAULT_AUDIO_PREFERENCE, enabled: input.enabled };
     if (!input || input.version !== AUDIO_PREFERENCE_VERSION || typeof input.enabled !== "boolean") return { ...DEFAULT_AUDIO_PREFERENCE };
@@ -169,7 +174,7 @@
           oscillator.frequency.setValueAtTime(frequency, cursor);
           oscillator.connect(gain);
           gain.gain.setValueAtTime(0, cursor);
-          gain.gain.linearRampToValueAtTime(volume * this.effectsVolume(), cursor + .008);
+          gain.gain.linearRampToValueAtTime(volume * effectsOutputGain(this.effectsVolume()), cursor + .008);
           gain.gain.exponentialRampToValueAtTime(.0001, cursor + duration);
           oscillator.start(cursor);
           oscillator.stop(cursor + duration + .01);
@@ -189,7 +194,7 @@
         const sample = this.audioFactory(settings.src);
         if (!sample) return this.playSequence(name);
         sample.preload = "auto";
-        sample.volume = settings.volume * this.effectsVolume();
+        sample.volume = settings.volume * effectsOutputGain(this.effectsVolume());
         sample.playbackRate = settings.playbackRate;
         sample.preservesPitch = settings.preservesPitch;
         if ("mozPreservesPitch" in sample) sample.mozPreservesPitch = settings.preservesPitch;
@@ -391,7 +396,7 @@
   }
 
   return Object.freeze({
-    AUDIO_PREFERENCE_VERSION, AUDIO_PREFERENCE_KEY, DEFAULT_AUDIO_PREFERENCE, MUSIC_TRACKS, SEQUENCES, SAMPLE_CUES, sampleSettings, coinChimeCount,
+    AUDIO_PREFERENCE_VERSION, AUDIO_PREFERENCE_KEY, DEFAULT_AUDIO_PREFERENCE, MUSIC_TRACKS, SEQUENCES, SAMPLE_CUES, sampleSettings, coinChimeCount, effectsOutputGain,
     normalizeAudioPreference, parseAudioPreference, AudioPreferenceStore, SoundEngine, MusicEngine,
   });
 });
