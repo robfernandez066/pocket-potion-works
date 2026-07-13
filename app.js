@@ -6,8 +6,11 @@ const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
 const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, SIGNATURE_COMMISSIONS, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
-const POTION_SPRITES = new Set(["lantern", "quiet", "way", "aurora"]);
+const INGREDIENT_SPRITES = new Set(["herb", "mushroom", "crystal", "mist", "ember", "mint", "lavender"]);
+const POTION_SPRITES = new Set(RECIPES.map(recipe => recipe.id));
+const ingredientSpriteAttr = id => INGREDIENT_SPRITES.has(id) ? ` data-ingredient-sprite="${id}"` : "";
 const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
+const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionSpriteAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
 const platformStore = new Platform.PlatformStateStore(localStorage);
 const consent = new Platform.ConsentManager(platformStore);
 const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
@@ -197,7 +200,7 @@ function generateOrder() {
 }
 
 function ingredientCostText(recipe) {
-  return Object.entries(recipe.ingredients).map(([id, count]) => `${INGREDIENTS[id].icon} ${count}`).join("  ");
+  return Object.entries(recipe.ingredients).map(([id, count]) => `<span class="ingredient-cost-item"><span class="ingredient-cost-icon"${ingredientSpriteAttr(id)} aria-hidden="true">${INGREDIENTS[id].icon}</span>${count}</span>`).join("");
 }
 
 function canAffordRecipe(recipe) {
@@ -327,7 +330,7 @@ function renderIngredients() {
     const locked = item.unlock > state.level;
     const selected = state.gather.targetId === id;
     return `<button class="ingredient-card ${selected ? "is-selected" : ""}" type="button" style="--ingredient-bg:${item.color}" ${locked ? "disabled" : `data-gather-target="${id}" aria-pressed="${selected}"`}>
-      <span class="ingredient-icon"${id === "mint" && !locked ? ` data-sprite="frostmint"` : ""}>${locked ? "?" : item.icon}</span>
+      <span class="ingredient-icon"${locked ? "" : ingredientSpriteAttr(id)}>${locked ? "?" : item.icon}</span>
       <strong>${locked ? `Level ${item.unlock}` : formatNumber(state.ingredients[id])}</strong>
       <small>${locked ? "Locked" : item.name}</small>
     </button>`;
@@ -347,7 +350,7 @@ function showPantryCleanup() {
   const choices = Object.entries(INGREDIENTS).filter(([id, item]) => item.unlock <= state.level && state.ingredients[id] > 0);
   openModal({
     icon: "⌄", kicker: "PANTRY", title: "Clear some space",
-    body: choices.length ? `<p>Choose an ingredient to discard. Discarded ingredients earn no coins.</p><div class="discard-grid">${choices.map(([id, item]) => `<button data-discard-choice="${id}"><span>${item.icon}</span><strong>${item.name}</strong><small>${state.ingredients[id]} stored</small></button>`).join("")}</div>` : "<p>Your Pantry has nothing available to discard.</p>",
+    body: choices.length ? `<p>Choose an ingredient to discard. Discarded ingredients earn no coins.</p><div class="discard-grid">${choices.map(([id, item]) => `<button data-discard-choice="${id}"><span class="ingredient-discard-icon"${ingredientSpriteAttr(id)}>${item.icon}</span><strong>${item.name}</strong><small>${state.ingredients[id]} stored</small></button>`).join("")}</div>` : "<p>Your Pantry has nothing available to discard.</p>",
     actions: [{ label: "Back", primary: true }],
   });
   document.querySelectorAll("[data-discard-choice]").forEach(button => button.addEventListener("click", () => showDiscardIngredient(button.dataset.discardChoice)));
@@ -385,7 +388,7 @@ function renderReadyDeliverStrip() {
   strip.hidden = ready.length === 0;
   strip.innerHTML = ready.length ? `<div><span class="eyebrow">READY TO DELIVER</span><strong>${ready.length} order${ready.length === 1 ? "" : "s"} waiting</strong></div><div class="ready-deliver-actions">${ready.slice(0, 2).map(order => {
     const recipe = recipeById(order.recipeId);
-    return `<button data-quick-deliver="${order.id}">${recipe.icon} Deliver ${recipe.name} · +${orderReward(order)}</button>`;
+    return `<button data-quick-deliver="${order.id}">${potionSpriteMarkup(recipe)}<span>Deliver ${recipe.name} · +${orderReward(order)}</span></button>`;
   }).join("")}</div>` : "";
   strip.querySelectorAll("[data-quick-deliver]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.quickDeliver))));
 }
@@ -531,7 +534,7 @@ function renderOrders() {
     return `<article class="order-card ${commission ? "is-commission" : ""}">
       ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
       <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
-      <div class="order-bottom"><div class="order-request"><span>${recipe.icon} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
+      <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
     </article>`;
   }).join("");
   document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.order))));
@@ -557,7 +560,7 @@ function showSpecialRequestChooser({ automatic = false } = {}) {
     const customer = CUSTOMERS[Number(commission.customerId.slice(9))];
     const recipe = recipeById(commission.recipeId);
     const trust = state.customers[commission.customerId]?.hearts || 0;
-    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}"><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><span><strong>${customer[0]} · ${commission.title}</strong><small>Potion: ${recipe.name}</small><small>Trust: ${trust}/${CUSTOMER_CONFIG.maxHearts} hearts</small><small>Keepsake: ${commission.keepsake.name}</small></span><b>Choose request</b></button>`;
+    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}"><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><span><strong>${customer[0]} · ${commission.title}</strong><small class="commission-potion-line">${potionSpriteMarkup(recipe)} Potion: ${recipe.name}</small><small>Trust: ${trust}/${CUSTOMER_CONFIG.maxHearts} hearts</small><small>Keepsake: ${commission.keepsake.name}</small></span><b>Choose request</b></button>`;
   }).join("")}</div>` : `<p>No unfinished request matches a potion you know yet. Your invitation is saved until you unlock another potion.</p>`;
   openModal({ icon: "✦", kicker: "VILLAGER SPECIAL REQUEST", title: "Choose who to help", body, actions: [{ label: "Choose later", primary: true }] });
   document.querySelectorAll("[data-commission-choice]").forEach(button => button.addEventListener("click", () => chooseCommission(button.dataset.commissionChoice)));
@@ -837,6 +840,7 @@ function updateBrewShortcut(now = Date.now()) {
   const shortcut = document.querySelector("#brewShortcut");
   if (!state.brew) {
     shortcut.hidden = true;
+    delete shortcut.dataset.sprite;
     document.body.classList.remove("brew-shortcut-visible");
     return;
   }
@@ -846,7 +850,9 @@ function updateBrewShortcut(now = Date.now()) {
   const remaining = Math.max(0, state.brew.endsAt - now);
   const recipe = recipeById(state.brew.recipeId);
   shortcut.hidden = slotVisible;
-  shortcut.textContent = remaining <= 0 ? `${recipe.icon} ${recipe.name} ready · Collect` : `${recipe.icon} ${recipe.name} · ${Math.ceil(remaining / 1000)}s`;
+  shortcut.dataset.sprite = recipe.id;
+  shortcut.textContent = remaining <= 0 ? `${recipe.name} ready · Collect` : `${recipe.name} · ${Math.ceil(remaining / 1000)}s`;
+  shortcut.setAttribute("aria-label", shortcut.textContent);
   document.body.classList.toggle("brew-shortcut-visible", !slotVisible);
 }
 

@@ -9,14 +9,52 @@ const automatedOnly = process.argv.includes("--automated-only");
 
 const runtimeFiles = ["index.html", "style.css", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
 const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
-const imageAssets = ["assets/images/ingredients/frostmint.png", "assets/images/potions/aurora-nectar.png", "assets/images/potions/aurora-nectar-animated-12f.png", "assets/images/potions/lantern-sip.png", "assets/images/potions/quietbell-tea.png", "assets/images/potions/wayfinder-cordial.png"];
+const imageAssets = [
+  "assets/images/ingredients/dewleaf.png",
+  "assets/images/ingredients/dream-lavender.png",
+  "assets/images/ingredients/frostmint.png",
+  "assets/images/ingredients/mist-pearl.png",
+  "assets/images/ingredients/mooshroom.png",
+  "assets/images/ingredients/starshard.png",
+  "assets/images/ingredients/sun-ember.png",
+  "assets/images/misc/gather-satchel.png",
+  "assets/images/misc/workshop-cat.png",
+  "assets/images/misc/workshop-cauldron.png",
+  "assets/images/potions/aurora-nectar.png",
+  "assets/images/potions/aurora-nectar-animated-12f.png",
+  "assets/images/potions/bottled-sunrise.png",
+  "assets/images/potions/clarity-elixir.png",
+  "assets/images/potions/cloudbloom-tea.png",
+  "assets/images/potions/dreamers-draught.png",
+  "assets/images/potions/kindheart-cordial.png",
+  "assets/images/potions/lantern-sip.png",
+  "assets/images/potions/meadow-tonic.png",
+  "assets/images/potions/moonmilk.png",
+  "assets/images/potions/quietbell-tea.png",
+  "assets/images/potions/starlight-philter.png",
+  "assets/images/potions/wayfinder-cordial.png"
+];
 const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
 assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
 for (const file of streamedAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
-for (const file of imageAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing approved sprite: ${file}`);
+assert.ok(pagesWorkflow.includes("cp -r assets/images _site/assets/"), "GitHub Pages must copy the complete local image library");
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
 for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v8.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs", "fixtures/rollback/game-save-reader-v4.cjs", "fixtures/rollback/game-save-reader-v5.cjs", "fixtures/rollback/game-save-reader-v6.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
+
+const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+for (const file of imageAssets) {
+  const png = fs.readFileSync(file);
+  assert.ok(png.subarray(0, 8).equals(pngSignature), `${file} is not a valid PNG file`);
+  const width = png.readUInt32BE(16);
+  const height = png.readUInt32BE(20);
+  if (file.endsWith("aurora-nectar-animated-12f.png")) {
+    assert.deepEqual([width, height], [1536, 128], "Aurora animation must remain a 12-frame 128x128 horizontal sheet");
+  } else {
+    assert.equal(width, height, `${file} must be square`);
+    assert.ok([128, 256].includes(width), `${file} must be 128x128 or 256x256`);
+  }
+}
 
 const text = Object.fromEntries(runtimeFiles.map(file => [file, fs.readFileSync(file, "utf8")]));
 for (const file of imageAssets) assert.ok(text["style.css"].includes(file), `approved sprite is not wired into the stylesheet: ${file}`);
@@ -71,7 +109,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 7/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v40`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v43`/);
 assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
 assert.match(text["app.js"], /permanently increasing order coins/);
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");
