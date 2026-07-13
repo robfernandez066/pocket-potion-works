@@ -207,11 +207,11 @@ test("Frostmint participates in smart passive and offline gathering after unlock
   const state = game.defaultState(NOW);
   state.level = 4;
   state.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
-  assert.equal(game.addRandomIngredients(state, 1, () => .999999), 1);
+  state.stats.orders = 1;
+  assert.equal(game.grantPassiveIngredients(state, 1, () => .999999), 1);
   assert.equal(state.ingredients.mint, 1);
   state.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
-  state.stats.orders = 1;
-  assert.equal(game.grantOfflineIngredients(state, 10, () => .999999), 1);
+  assert.equal(game.grantOfflineIngredients(state, 31, () => .999999), 1);
   assert.equal(state.ingredients.mint, 1);
 });
 
@@ -461,9 +461,20 @@ test("offline ingredients wait for the first delivery and preserve harvest space
   assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 0);
   assert.equal(game.totalIngredients(state), 11);
   state.stats.orders = 1;
-  assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 34);
-  assert.equal(game.totalIngredients(state), Math.floor(game.storageCap(state) * .75));
+  assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 25);
+  assert.equal(game.totalIngredients(state), game.passiveStorageCap(state));
   assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 0);
+});
+
+test("automatic gathering is slow, waits for a delivery, and never fills manual harvest space", () => {
+  const state = game.defaultState(NOW);
+  assert.equal(Math.round(game.gatherRate(state) * 600) / 10, 4.8);
+  assert.equal(game.grantPassiveIngredients(state, 100, () => 0), 0);
+  state.stats.orders = 1;
+  assert.equal(game.grantPassiveIngredients(state, 100, () => 0), game.passiveStorageCap(state) - 11);
+  assert.equal(game.totalIngredients(state), game.passiveStorageCap(state));
+  assert.equal(game.grantPassiveIngredients(state, 1, () => 0), 0);
+  assert.equal(game.chargedGather(state, NOW, () => 0).added, game.GATHER_CONFIG.amountPerCharge);
 });
 
 test("charged gathering can intentionally target an unlocked ingredient", () => {
@@ -478,6 +489,19 @@ test("charged gathering can intentionally target an unlocked ingredient", () => 
   assert.equal(state.gather.targetId, "crystal");
   assert.equal(game.setGatherTarget(state, null), true);
   assert.equal(state.gather.targetId, null);
+});
+
+test("discarding ingredients safely clears stock and an unwanted harvest target", () => {
+  const state = game.defaultState(NOW);
+  state.level = 4;
+  state.ingredients.mint = 12;
+  assert.equal(game.setGatherTarget(state, "mint"), true);
+  assert.equal(game.discardIngredient(state, "mint", 5), 5);
+  assert.equal(state.ingredients.mint, 7);
+  assert.equal(state.gather.targetId, null);
+  assert.equal(game.discardIngredient(state, "mint", 99), 7);
+  assert.equal(game.discardIngredient(state, "mint", 1), 0);
+  assert.equal(game.discardIngredient(state, "unknown", 1), 0);
 });
 
 test("gather target migrates safely and rejects locked or unknown values", () => {

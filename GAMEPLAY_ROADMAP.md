@@ -19,7 +19,7 @@ Task 6 shipped a dismissible, timed tutorial handoff; touch-readable Market lock
 
 Task 7 implementation is ready for owner feel-testing. Three charged harvests now recharge every 30 seconds and yield 3 base items. The checked-in candidate comparison models 69 charged items per ten minutes, between the 15-second small-yield option (86) and 60-second large-yield option (65); existing first-session milestone simulations still pass. Players may keep Smart mix or target an unlocked Pantry ingredient. A targeted 180-second scarcity run produced 27 Starshards versus 9 from Smart mix.
 
-Offline gathering begins after the first delivered order and stops at 75% of storage capacity. This preserves the four-hour idle benefit without starting or returning players at a full pantry that blocks targeted harvests.
+Owner level-4 playtesting found automatic gathering kept the Pantry full. Live and offline gathering now begin after the first delivered order, use an approximately 5-items-per-minute base rate, and stop at 60% of storage capacity. Charged targeted harvests retain access to the full Pantry, and Clear space lets players intentionally discard 1, 5, or all of an unwanted ingredient without earning coins.
 
 ### Gathering redesign
 

@@ -54,7 +54,7 @@ function simulate(profile, seed, seconds) {
     passiveBank += game.gatherRate(state);
     if (passiveBank >= 1) {
       const whole = Math.floor(passiveBank);
-      game.addRandomIngredients(state, whole, random);
+      game.grantPassiveIngredients(state, whole, random);
       passiveBank -= whole;
     }
     if (second % 3 === 0) game.chargedGather(state, now, random);
