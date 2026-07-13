@@ -127,9 +127,9 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 .workshop-scene[data-cosmetic="dawnthread"] { background: radial-gradient(circle at 50% 28%, rgba(250,202,105,.22), transparent 32%), linear-gradient(#30253f 0 61%, #76533d 61% 65%, #261c29 65%); box-shadow: inset 0 0 58px rgba(242,171,99,.2); }
 .dawnthread-banner { display: none; position: absolute; z-index: 2; left: 18px; top: 15px; width: 58px; height: 32px; border: 2px solid #f1c36f; border-radius: 5px 5px 14px 14px; background: linear-gradient(135deg, #723f82 0 42%, #f0ad62 43% 58%, #813e68 59%); box-shadow: 0 3px 9px rgba(0,0,0,.34); clip-path: polygon(0 0,100% 0,92% 78%,50% 100%,8% 78%); }
 .workshop-scene.has-dawnthread .dawnthread-banner { display: block; }
-.bubble { position: absolute; z-index: 2; width: 12px; height: 12px; border: 2px solid #d4ffe1; border-radius: 50%; animation: bubble 2.2s infinite ease-out; }
-.b1 { left: 30px; top: -15px; }.b2 { left: 72px; top: -24px; animation-delay: .7s; }.b3 { left: 91px; top: -10px; animation-delay: 1.2s; width: 8px; height: 8px; }
-@keyframes bubble { to { transform: translateY(-35px) scale(.4); opacity: 0; } }
+.bubble { position: absolute; z-index: 2; width: 12px; height: 12px; border: 2px solid #d4ffe1; border-radius: 50%; background: color-mix(in srgb, var(--brew-color, #81c49a) 34%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--brew-color, #81c49a) 72%, transparent); animation: bubble 2.2s infinite ease-out both; }
+.b1 { left: 41px; top: 37px; }.b2 { left: 70px; top: 32px; animation-delay: -.7s; }.b3 { left: 91px; top: 39px; animation-delay: -1.2s; width: 8px; height: 8px; }
+@keyframes bubble { 0% { transform: translateY(0) scale(.62); opacity: 0; } 18% { opacity: .96; } 78% { opacity: .76; } 100% { transform: translateY(-58px) scale(.35); opacity: 0; } }
 .cat { position: absolute; right: 26px; bottom: 34px; width: 72px; height: 80px; background: url("assets/images/misc/workshop-cat.png") center / 170% no-repeat; filter: drop-shadow(0 8px 7px rgba(23,15,29,.32)); }
 .scene-copy { position: absolute; left: 18px; right: 18px; bottom: 13px; display: flex; justify-content: space-between; gap: 8px; color: white; text-shadow: 0 1px 4px #35242d; }
 .scene-copy span { font-size: 12px; font-weight: 800; }.scene-copy small { font-size: 10px; }
@@ -310,7 +310,12 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 @media (max-width: 360px) { .view { padding-inline: 13px; }.resource-bar { padding-inline: 10px; }.ingredient-grid { gap: 6px; }.ingredient-card { padding-inline: 4px; }.ingredient-card small, .recipe-info small, .recipe-cost { font-size: 11px; }.beginner-quest, .commission-choices { grid-template-columns: 1fr; }.beginner-quest button, .commission-choices .primary-button { width: 100%; }.recipe-card { grid-template-columns: 43px 1fr; gap: 8px; padding: 10px 8px; }.recipe-card .brew-button { grid-column: 1 / -1; width: 100%; }.order-top { grid-template-columns: 40px 1fr auto; padding-inline: 10px; }.order-bottom { align-items: flex-start; flex-wrap: wrap; }.order-bottom .fulfill-button { margin-left: auto; }.upgrade-card { grid-template-columns: 46px 1fr auto; gap: 8px; padding: 11px 8px; }.upgrade-icon { width: 44px; height: 44px; }.upgrade-button { min-width: 64px; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  .bubble, .tap-particle { display: none !important; }
+  .tap-particle { display: none !important; }
+  .workshop-scene:not(.is-idle) .bubble { display: block !important; animation: none !important; opacity: .82; }
+  .workshop-scene.is-idle .bubble { display: none !important; }
+  .workshop-scene:not(.is-idle) .b1 { transform: translateY(-11px) scale(.8); }
+  .workshop-scene:not(.is-idle) .b2 { transform: translateY(-25px) scale(.66); }
+  .workshop-scene:not(.is-idle) .b3 { transform: translateY(-8px) scale(.9); }
   .potion-bottle[data-sprite="aurora"] { animation: none !important; background-position: var(--aurora-start) 50%; }
   .feedback-brew, .feedback-collect, .feedback-delivery, .feedback-upgrade, .feedback-gather, .feedback-ready, .feedback-level, .feedback-reward { animation: none !important; }
 }
