@@ -109,7 +109,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 8/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v44`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v45`/);
 assert.match(text["index.html"], /id="updateBanner"[^>]+aria-label="New update available\. Tap here to restart\."/);
 assert.match(text["index.html"], /id="updateAnnouncement"[^>]+role="status"[^>]+aria-live="polite"/);
 assert.match(text["app.js"], /addEventListener\("controllerchange", showUpdate\)/);
