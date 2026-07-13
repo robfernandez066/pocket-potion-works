@@ -97,7 +97,7 @@ let pendingTutorialTarget = null;
 let lastTutorialPromptKey = null;
 let announcedReadyBrew = null;
 let renderedBrewKey = null;
-const transientCompletions = { daily: false, weekly: false, special: null };
+const transientCompletions = { daily: false, weekly: false, special: null, afterStars: null };
 const completionTimers = new Map();
 const completionTokens = new Map();
 let pendingDailyChooserToken = 0;
@@ -108,14 +108,14 @@ function beginCompletionState(kind, detail = true, onHidden = null) {
   const token = (completionTokens.get(kind) || 0) + 1;
   completionTokens.set(kind, token);
   transientCompletions[kind] = detail;
-  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete" }[kind];
+  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete", afterStars: "#afterStarsCard" }[kind];
   const readableTimer = setTimeout(() => {
     const node = document.querySelector(selector);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!reducedMotion) node?.classList.add("is-collapsing");
     const hideTimer = setTimeout(() => {
       if (completionTokens.get(kind) !== token) return;
-      transientCompletions[kind] = kind === "special" ? null : false;
+      transientCompletions[kind] = kind === "special" || kind === "afterStars" ? null : false;
       document.querySelector(selector)?.classList.remove("is-collapsing");
       renderOrders();
       renderWeekly();
@@ -247,6 +247,7 @@ function renderWorkshopLook() {
   scene.dataset.cosmetic = decoration.selected;
   scene.classList.toggle("has-keepsake", decoration.keepsake);
   scene.classList.toggle("has-guild-ribbon", decoration.ribbon);
+  scene.classList.toggle("has-dawnthread", decoration.dawnthread);
 }
 
 function renderBoostStatus(now = Date.now()) {
@@ -516,9 +517,25 @@ function renderOrders() {
   choiceCard.hidden = invitations < 1;
   const choiceButton = document.querySelector("#openCommissionChoicesButton");
   const activeRequest = Boolean(state.commissions.selectedId);
-  choiceButton.disabled = activeRequest || commissionChoices.length === 0;
-  choiceButton.textContent = activeRequest ? "Finish your active request first" : commissionChoices.length ? "Choose a request" : "Unlock more potions to choose";
-  document.querySelector("#commissionChoiceSummary").textContent = `${invitations} invitation${invitations === 1 ? "" : "s"} saved. ${activeRequest ? "Finish the request on the board, then choose another." : "Choose a villager, build trust, and earn their named keepsake."}`;
+  const afterStars = Logic.afterStarsStatus(state);
+  const questOrderActive = state.orders.some(Logic.isAfterStarsOrder);
+  choiceButton.disabled = activeRequest || questOrderActive || commissionChoices.length === 0;
+  choiceButton.textContent = questOrderActive ? "Finish the starborn errand first" : activeRequest ? "Finish your active request first" : commissionChoices.length ? "Choose a request" : "Unlock more potions to choose";
+  document.querySelector("#commissionChoiceSummary").textContent = `${invitations} invitation${invitations === 1 ? "" : "s"} saved. ${questOrderActive ? "Complete the After the Stars errand first; your invitation stays saved." : activeRequest ? "Finish the request on the board, then choose another." : "Choose a villager, build trust, and earn their named keepsake."}`;
+  const afterStarsCard = document.querySelector("#afterStarsCard");
+  const finalQuestState = transientCompletions.afterStars;
+  afterStarsCard.hidden = !afterStars.active || afterStars.complete && !finalQuestState;
+  if (finalQuestState) {
+    document.querySelector("#afterStarsTitle").textContent = "Dawnthread Workshop unlocked";
+    document.querySelector("#afterStarsProgress").textContent = "4 / 4";
+    document.querySelector("#afterStarsDetail").textContent = "The four errands are complete. You can use the new Workshop Look from the Journal.";
+  } else if (afterStars.active && !afterStars.complete) {
+    document.querySelector("#afterStarsTitle").textContent = afterStars.current.title;
+    document.querySelector("#afterStarsProgress").textContent = `${afterStars.step + 1} / ${afterStars.total}`;
+    document.querySelector("#afterStarsDetail").textContent = afterStars.recipeLocked
+      ? `Next: reach level ${afterStars.recipe.unlock} to rediscover ${afterStars.recipe.name}.`
+      : questOrderActive ? `${CUSTOMERS[Number(afterStars.current.customerId.slice(9))][0]} is waiting for one ${afterStars.recipe.name}.` : "This starborn errand will appear when the reserved request slot is free.";
+  }
   const specialCompletion = document.querySelector("#specialRequestComplete");
   specialCompletion.hidden = !transientCompletions.special;
   specialCompletion.innerHTML = transientCompletions.special ? `<p class="eyebrow">VILLAGER SPECIAL REQUEST COMPLETE</p><h2>${transientCompletions.special.title}</h2><p>${transientCompletions.special.customer} gave you the <strong>${transientCompletions.special.keepsake}</strong>.</p>` : "";
@@ -531,7 +548,9 @@ function renderOrders() {
     const reward = orderReward(order);
     const trust = customer.hearts >= CUSTOMER_CONFIG.maxHearts ? `${"♥".repeat(customer.hearts)} trusted friend` : `${"♥".repeat(customer.hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - customer.hearts)} · ${towardHeart}/${CUSTOMER_CONFIG.deliveriesPerHeart} toward next favor`;
     const commission = Logic.commissionById(order.commissionId);
-    return `<article class="order-card ${commission ? "is-commission" : ""}">
+    const questStep = Logic.isAfterStarsOrder(order) ? Logic.AFTER_STARS_STEPS[order.afterStarsStep] : null;
+    const questRibbon = questStep ? `<div class="commission-ribbon">After the Stars · ${questStep.title}</div>` : "";
+    return `<article class="order-card ${commission ? "is-commission" : questStep ? "is-after-stars" : ""}">${questRibbon}
       ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
       <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
       <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
@@ -551,6 +570,10 @@ function chooseCommission(commissionId) {
 function showSpecialRequestChooser({ automatic = false } = {}) {
   if (!automatic) pendingDailyChooserToken += 1;
   if (state.commissions.invitations < 1) return;
+  if (state.orders.some(Logic.isAfterStarsOrder)) {
+    openModal({ icon: "✦", kicker: "AFTER THE STARS", title: "A starborn errand comes first", body: `<p>Complete the After the Stars request on your noticeboard first. Your Villager Special Request invitation remains saved.</p>`, actions: [{ label: "Got it", primary: true }] });
+    return;
+  }
   if (state.commissions.selectedId) {
     openModal({ icon: "✦", kicker: "VILLAGER SPECIAL REQUEST", title: "Your invitation is saved", body: `<p>Finish the Villager Special Request on your noticeboard. Your unused invitation will still be here afterward.</p>`, actions: [{ label: "Got it", primary: true }] });
     return;
@@ -733,6 +756,7 @@ function fulfillOrder(orderId) {
   const result = window.PPWLogic.fulfillOrder(state, orderId);
   if (!result) return;
   if (result.commission) beginCompletionState("special", { title: result.commission.title, customer: CUSTOMERS[Number(result.commission.customerId.slice(9))][0], keepsake: result.commission.keepsake.name });
+  if (result.afterStars?.complete) beginCompletionState("afterStars", result.afterStars);
   announceLevels(result.levels);
   checkAchievements();
   const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";
@@ -1166,7 +1190,47 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("service-worker.js").catch(error => console.warn("Offline mode unavailable.", error));
+function setupServiceWorkerUpdates() {
+  if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+  let hasController = Boolean(navigator.serviceWorker.controller);
+  const banner = document.querySelector("#updateBanner");
+  let updateReady = false;
+  let lastUpdateCheckAt = 0;
+  let registration = null;
+
+  const showUpdate = () => {
+    if (!hasController) {
+      hasController = true;
+      return;
+    }
+    if (updateReady) return;
+    updateReady = true;
+    banner.hidden = false;
+    document.body.classList.add("update-ready");
+    document.querySelector("#updateAnnouncement").textContent = "A new game update is available. Tap the restart button to use it.";
+  };
+  const checkForUpdate = (force = false) => {
+    if (!registration || updateReady || (!force && Date.now() - lastUpdateCheckAt < 15 * 60 * 1000)) return;
+    lastUpdateCheckAt = Date.now();
+    registration.update().catch(() => { lastUpdateCheckAt = 0; });
+  };
+
+  navigator.serviceWorker.addEventListener("controllerchange", showUpdate);
+  banner.addEventListener("click", () => {
+    banner.disabled = true;
+    banner.querySelector("small").textContent = "Restarting...";
+    location.reload();
+  });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkForUpdate(); });
+  window.addEventListener("online", () => checkForUpdate(true));
+
+  navigator.serviceWorker.register("service-worker.js").then(result => {
+    registration = result;
+    checkForUpdate();
+  }).catch(error => console.warn("Offline mode unavailable.", error));
+}
+
+setupServiceWorkerUpdates();
 
 reconcileOfflineProgress();
 checkAchievements();

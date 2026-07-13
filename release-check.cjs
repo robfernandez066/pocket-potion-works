@@ -40,7 +40,7 @@ const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
 for (const file of streamedAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
 assert.ok(pagesWorkflow.includes("cp -r assets/images _site/assets/"), "GitHub Pages must copy the complete local image library");
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
-for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v8.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs", "fixtures/rollback/game-save-reader-v4.cjs", "fixtures/rollback/game-save-reader-v5.cjs", "fixtures/rollback/game-save-reader-v6.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
+for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v9.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs", "fixtures/rollback/game-save-reader-v4.cjs", "fixtures/rollback/game-save-reader-v5.cjs", "fixtures/rollback/game-save-reader-v6.cjs", "fixtures/rollback/game-save-reader-v7.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 for (const file of imageAssets) {
@@ -108,8 +108,13 @@ const allReleaseFiles = fs.readdirSync(".").filter(file => fs.statSync(file).isF
 const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
-assert.match(text["game-logic.js"], /const SAVE_VERSION = 7/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v43`/);
+assert.match(text["game-logic.js"], /const SAVE_VERSION = 8/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v44`/);
+assert.match(text["index.html"], /id="updateBanner"[^>]+aria-label="New update available\. Tap here to restart\."/);
+assert.match(text["index.html"], /id="updateAnnouncement"[^>]+role="status"[^>]+aria-live="polite"/);
+assert.match(text["app.js"], /addEventListener\("controllerchange", showUpdate\)/);
+assert.match(text["app.js"], /registration\.update\(\)/);
+assert.match(text["app.js"], /location\.reload\(\)/);
 assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
 assert.match(text["app.js"], /permanently increasing order coins/);
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");

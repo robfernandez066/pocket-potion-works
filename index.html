@@ -61,6 +61,7 @@
               <span class="prestige-keepsake" aria-hidden="true"></span>
               <span class="guild-ribbon" aria-hidden="true"></span>
               <span class="heirloom-garland" aria-hidden="true"></span>
+              <span class="dawnthread-banner" aria-hidden="true"></span>
               <div class="scene-copy"><span id="workshopStatus">The kettle is warm</span><small id="incomeRate">Gathering 1.0 ingredient/sec</small></div>
             </div>
             <button class="gather-button" id="gatherButton"><span class="gather-satchel" aria-hidden="true">☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>
@@ -95,6 +96,11 @@
             <div class="weekly-track"><span id="weeklyBar"></span></div>
             <div class="weekly-status"><span id="weeklyProgress">0 of 2 deliveries</span><strong id="weeklyReward">Parcel 1: 10 coins</strong></div>
             <button class="primary-button" id="claimWeeklyButton" hidden>Claim request parcel</button>
+          </article>
+          <article class="after-stars-card" id="afterStarsCard" role="status" aria-live="polite" hidden>
+            <p class="eyebrow">AFTER THE STARS</p>
+            <div class="after-stars-heading"><h2 id="afterStarsTitle">The Oven Remembers</h2><strong id="afterStarsProgress">1 / 4</strong></div>
+            <p id="afterStarsDetail">Mira is waiting for one Meadow Tonic.</p>
           </article>
           <section class="commission-choices" id="commissionChoices" aria-labelledby="commissionChoicesTitle" hidden>
             <div><p class="eyebrow">VILLAGER SPECIAL REQUEST</p><h2 id="commissionChoicesTitle">A villager request is waiting</h2><p id="commissionChoiceSummary">Choose who to help and which keepsake to earn.</p></div>
@@ -147,8 +153,13 @@
         <button class="nav-button" data-nav="journal"><span class="nav-shape nav-book" aria-hidden="true"></span><small>Journal</small><b class="notification-dot" id="journalDot" aria-hidden="true" hidden></b></button>
       </nav>
       <button class="brew-shortcut" id="brewShortcut" hidden>Return to cauldron</button>
+      <button class="update-banner" id="updateBanner" type="button" aria-label="New update available. Tap here to restart." hidden>
+        <span><strong>New update</strong><small>Tap here to restart</small></span>
+        <b aria-hidden="true">Restart</b>
+      </button>
     </div>
 
+    <div class="sr-only" id="updateAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="toast-region" id="toastRegion" aria-live="polite"></div>
 
     <div class="modal-backdrop" id="modalBackdrop" hidden>

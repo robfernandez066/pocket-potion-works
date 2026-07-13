@@ -1,6 +1,6 @@
 # Device and lifecycle test matrix
 
-Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, twenty-two supplied static/utility Sprixen sprites plus the optimized Aurora animation sheet, bounded automatic gathering, first-time Journal rewards, daily Villager Special Requests, and service-worker cache `ppw-shell-v43`.
+Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, twenty-two supplied static/utility Sprixen sprites plus the optimized Aurora animation sheet, bounded automatic gathering, first-time Journal rewards, daily Villager Special Requests, and service-worker cache `ppw-shell-v44`.
 
 ## Required local/browser candidate gates
 
@@ -22,7 +22,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | --- | --- | --- |
 | Core loop and transactions | Pass | Deterministic gather -> brew -> collect -> deliver -> upgrade tests. |
 | Economy and content | Pass | Twelve seeded ten-minute simulations and unlock/order invariants. |
-| Save and rollback compatibility | Pass | Historical v1-v6 migrate to current v7; unsupported future v8 and frozen-v1-v6 downlevel overwrite protection pass. |
+| Save and rollback compatibility | Pass | Historical v1-v7 migrate to current v8; unsupported future v9 and frozen-v1-v7 downlevel overwrite protection pass. |
 | Journal rewards | Pass | Stories and bottle notes grant 5 coins once, achievements grant 10 once, invalid/repeated claims are rejected, and claim state survives migration and rebirth. |
 | Offline retention/customization | Pass | Three calendar-independent rolling chains, capped claims, durable collection cosmetics, and economy-neutral selection tests. |
 | Lifecycle/offline progress | Pass | Background suppression, one resume credit, four-hour cap, and future-time zero credit. |
@@ -36,7 +36,7 @@ Automated evidence and real browser/device evidence are separate. The active can
 | Area | Status | Required procedure |
 | --- | --- | --- |
 | Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
-| PWA install/update | Untested | Install, standalone launch, update from the previous candidate `ppw-shell-v42` to `ppw-shell-v43`, offline relaunch, streamed-music behavior, eviction, uninstall/reinstall. |
+| PWA install/update | Untested | Install, standalone launch, update from the previous candidate `ppw-shell-v43` to `ppw-shell-v44`, confirm the in-app New update prompt appears, tap it to restart, then test offline relaunch, streamed-music behavior, eviction, and uninstall/reinstall. |
 | Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
 | Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
 | Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |

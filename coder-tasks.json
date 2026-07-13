@@ -158,5 +158,24 @@
       "Focused tests cover idempotency, invitation targeting and caps, active-request interactions, persistence, migration, reduced-motion behavior, and completion-card visibility",
       "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
     ]
+  },
+  {
+    "id": 15,
+    "status": "next",
+    "title": "After the Stars post-rebirth questline",
+    "model": "Use a fresh gpt-5.6-terra coding context with high reasoning; do not use the highest-cost model",
+    "freshChat": true,
+    "prompt": "Add one authored, one-time four-step post-rebirth questline called After the Stars. It must remain completely dormant until the player has completed their first Starry Rebirth. Use only existing villagers, recipes, ingredients, trust, Orders, delivery logic, and ordinary rewards: Mira requests Meadow Tonic for The Oven Remembers; Postmaster Pip requests Clarity Elixir for A New Route; Fern requests Cloudbloom Tea for Roots After Starlight; Rowan requests Bottled Sunrise for The Dawnthread Hem. Steps unlock sequentially when their existing recipes are available, request one bottle, and use the normal delivery pipeline with no bonus coins, XP, trust, daily, rolling-chain, discovery, achievement, or other payout beyond what an ordinary one-bottle order already grants. The final delivery unlocks exactly one reversible, code-native, non-economic Workshop Look named Dawnthread Workshop. Quest orders and Villager Special Requests must share the existing single reserved order slot, never coexist, never consume invitations, and always preserve two ordinary order slots. If another special request is active, the quest waits; if the quest is active, saved invitations remain and the chooser clearly explains the starborn errand must be completed first. Deterministically restore a missing eligible quest order and canonicalize forged saved villager, recipe, quantity, reward, and XP data from authored configuration. Persist a bounded step index from zero through four across reload, offline time, date changes, clock rollback, and later rebirths. Later rebirths may clear the active order but must leave the same step pending; completed progress and the cosmetic remain. Advance save v7 to v8 with safe v1-v7 migration, frozen-v7 rollback protection, malformed-state normalization, and future-v9 overwrite protection. Add a compact Orders tracker labeled AFTER THE STARS with step progress, current request, or the next recipe unlock; hide it before the first rebirth and collapse it permanently after a brief accessible final completion state. Use deterministic simulations to prove first-cycle outputs are unchanged and post-rebirth pacing remains bounded. Do not add monetization, currencies, ingredients, potions, villagers, levels, timers, external art, dependencies, a second cauldron, repeatable rewards, first-cycle behavior changes, or archive access.",
+    "acceptance": [
+      "Exactly four authored ordered steps use Mira, Pip, Fern, and Rowan with the specified existing potions; the quest is invisible and inactive before the first rebirth",
+      "Steps cannot skip or repeat, recipe locks clearly identify the next action, and final completion is idempotent",
+      "Quest orders and Villager Special Requests share one reserved slot, never coexist or consume each other's state, and always preserve two ordinary orders",
+      "All quest deliveries use canonical ordinary one-bottle rewards and the existing fulfillment pipeline with no additional per-step payout",
+      "Forged or malformed saved quest orders are canonicalized, missing eligible orders restore deterministically, and later rebirths preserve the same pending step",
+      "Progress and the reversible Dawnthread Workshop look survive reload, offline time, date rollback, and later rebirths without changing any economy calculation",
+      "Save v8 migrates v1-v7 safely, includes frozen-v7 rollback protection, bounds malformed quest state, and protects future-v9 saves from overwrite",
+      "First-cycle seeded outputs remain unchanged; a post-rebirth control comparison proves no deadlock, two ordinary slots throughout, and bounded level-4 timing and lifetime coins",
+      "npm.cmd run check passes and browser QA covers rebirth, recipe gating, special-slot contention, reload, final delivery, and cosmetic selection at 390x844 and 360x740 without overflow or console errors"
+    ]
   }
 ]

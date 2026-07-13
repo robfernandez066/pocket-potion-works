@@ -110,6 +110,18 @@ Task 14 connects the existing five-delivery daily reward to one saved Villager S
 
 Exit gate: daily play creates an understandable, intentional path toward villager trust and keepsakes while completed panels leave the active Orders screen promptly.
 
+## Next - After the Stars post-rebirth questline
+
+Task 15 adds one bounded four-step village questline after the player's first Starry Rebirth. It reuses existing villagers, recipes, ingredients, and the normal delivery pipeline rather than extending the first-cycle level curve.
+
+- Mira, Postmaster Pip, Fern, and Rowan each provide one sequential starborn errand using an existing level 1-4 potion.
+- The quest shares the single reserved Orders slot with Villager Special Requests, never consumes invitations, and always leaves two ordinary orders playable.
+- Each delivery grants only its canonical ordinary reward. Completing all four unlocks the non-economic Dawnthread Workshop look.
+- Progress survives reload, offline time, clock changes, and later rebirths. Save v8 migration and deterministic restoration protect malformed or missing quest orders.
+- First-cycle simulations must remain unchanged, and post-rebirth comparison gates must show no deadlock or material recovery distortion.
+
+Exit gate: the first rebirth has an authored follow-up purpose and visible cosmetic payoff without adding a currency, another timer, another cauldron, or first-cycle pressure.
+
 ## Later
 
 - Further recipes, ingredients, customers, achievements, prestige goals, or cosmetics only when playtests justify another bounded expansion.
