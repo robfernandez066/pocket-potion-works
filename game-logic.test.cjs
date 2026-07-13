@@ -494,20 +494,21 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   state.stats.prestiges = 1;
   state.weekly.cycle = 1;
   state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(commission => commission.id);
+  state.afterStars.step = game.AFTER_STARS_STEPS.length;
   const visualStates = {};
   for (const cosmetic of game.COSMETICS) {
     assert.equal(game.selectCosmetic(state, cosmetic.id), true);
     visualStates[cosmetic.id] = game.workshopDecorationState(state);
   }
-  assert.deepEqual(visualStates.midnight, { selected: "midnight", keepsake: false, ribbon: false });
-  assert.deepEqual(visualStates.starglass, { selected: "starglass", keepsake: true, ribbon: false });
-  assert.deepEqual(visualStates.guild, { selected: "guild", keepsake: false, ribbon: true });
+  assert.deepEqual(visualStates.midnight, { selected: "midnight", keepsake: false, ribbon: false, dawnthread: false });
+  assert.deepEqual(visualStates.starglass, { selected: "starglass", keepsake: true, ribbon: false, dawnthread: false });
+  assert.deepEqual(visualStates.guild, { selected: "guild", keepsake: false, ribbon: true, dawnthread: false });
   assert.equal(new Set(Object.values(visualStates).map(visual => JSON.stringify(visual))).size, game.COSMETICS.length, "each advertised selection yields a distinct reversible visual state");
   assert.equal(game.selectCosmetic(state, "midnight"), true);
   assert.equal(game.selectCosmetic(state, "midnight"), false, "selecting the current look is a no-op");
   const reloaded = game.normalizeState(state, NOW);
   assert.equal(reloaded.customization.selected, "midnight");
-  assert.ok(game.COSMETICS.length <= 6);
+  assert.ok(game.COSMETICS.length <= 7);
 });
 
 test("upgrade previews expose exact current and next effects across three paths", () => {
@@ -734,6 +735,118 @@ test("cross-view tutorial prompts only when the next target changes views", () =
     key: "collect->deliver", title: "Deliver", detail: "Use Deliver", view: "orders", targetSelector: '[data-order="1"]', targetKind: "control",
   });
   assert.equal(game.tutorialTransitionPrompt(before, null, "workshop"), null);
+});
+
+test("After the Stars is a dormant ordered four-step post-rebirth quest", () => {
+  assert.deepEqual(game.AFTER_STARS_STEPS.map(step => [step.customerId, step.recipeId, step.title]), [
+    ["customer-0", "tonic", "The Oven Remembers"],
+    ["customer-3", "clarity", "A New Route"],
+    ["customer-6", "bloom", "Roots After Starlight"],
+    ["customer-9", "sun", "The Dawnthread Hem"],
+  ]);
+  const firstCycle = game.defaultState(NOW);
+  firstCycle.level = 7;
+  game.ensureOrders(firstCycle, () => 0);
+  assert.equal(game.afterStarsStatus(firstCycle).active, false);
+  assert.equal(firstCycle.orders.some(game.isAfterStarsOrder), false);
+  assert.equal(game.cosmeticUnlocked(firstCycle, "dawnthread"), false);
+
+  const state = game.defaultState(NOW);
+  state.stats.prestiges = 1;
+  game.ensureOrders(state, () => 0);
+  assert.equal(state.orders.filter(game.isAfterStarsOrder).length, 1);
+  assert.equal(state.orders.filter(order => !game.isReservedOrder(order)).length, 2);
+  for (let stepIndex = 0; stepIndex < game.AFTER_STARS_STEPS.length; stepIndex += 1) {
+    const authored = game.AFTER_STARS_STEPS[stepIndex];
+    const recipe = game.recipeById(authored.recipeId);
+    state.level = Math.max(state.level, recipe.unlock);
+    game.ensureOrders(state, () => 0);
+    const order = state.orders.find(game.isAfterStarsOrder);
+    assert.equal(order.afterStarsStep, stepIndex);
+    assert.deepEqual({ customerId: order.customerId, recipeId: order.recipeId, quantity: order.quantity, reward: order.reward, xp: order.xp }, {
+      customerId: authored.customerId, recipeId: authored.recipeId, quantity: 1,
+      reward: Math.round(recipe.sell * 1.55), xp: Math.round(11 + recipe.unlock * 3),
+    });
+    state.potions[recipe.id] = 1;
+    const before = { orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered[recipe.id] };
+    const result = game.fulfillOrder(state, order.id, NOW + stepIndex * 1000, () => 0);
+    assert.equal(result.afterStars.step, stepIndex);
+    assert.equal(state.afterStars.step, stepIndex + 1);
+    assert.deepEqual({ orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered[recipe.id] }, {
+      orders: before.orders + 1, daily: before.daily + 1, weekly: before.weekly + 1, delivered: before.delivered + 1,
+    });
+    assert.ok(state.orders.filter(order => !game.isReservedOrder(order)).length >= 2);
+    assert.equal(game.fulfillOrder(state, order.id, NOW, () => 0), null, "a delivered quest step cannot repeat");
+  }
+  assert.equal(game.afterStarsStatus(state).complete, true);
+  assert.equal(state.orders.some(game.isAfterStarsOrder), false);
+  assert.equal(game.cosmeticUnlocked(state, "dawnthread"), true);
+  assert.equal(game.selectCosmetic(state, "dawnthread"), true);
+  assert.equal(game.selectCosmetic(state, "midnight"), true, "the final look remains reversible");
+});
+
+test("After the Stars shares the reserved slot and canonicalizes missing or forged orders", () => {
+  const specialFirst = game.defaultState(NOW);
+  specialFirst.level = 4;
+  specialFirst.commissions.invitations = 1;
+  game.ensureOrders(specialFirst, () => 0);
+  assert.ok(game.selectSignatureCommission(specialFirst, "mira-dawn"));
+  specialFirst.stats.prestiges = 1;
+  game.ensureOrders(specialFirst, () => 0);
+  assert.equal(specialFirst.orders.filter(game.isSignatureOrder).length, 1);
+  assert.equal(specialFirst.orders.filter(game.isAfterStarsOrder).length, 0);
+  assert.equal(specialFirst.orders.filter(order => !game.isReservedOrder(order)).length, 2);
+  assert.equal(specialFirst.commissions.invitations, 0);
+
+  const questFirst = game.defaultState(NOW);
+  questFirst.level = 4;
+  questFirst.stats.prestiges = 1;
+  questFirst.commissions.invitations = 2;
+  game.ensureOrders(questFirst, () => 0);
+  assert.equal(game.selectSignatureCommission(questFirst, "moss-rainpath"), null);
+  assert.equal(questFirst.commissions.invitations, 2, "a quest order never consumes saved invitations");
+
+  const forged = game.defaultState(NOW);
+  forged.level = 4;
+  forged.stats.prestiges = 1;
+  forged.afterStars = { step: 0 };
+  forged.orders = [{ id: 77, afterStarsStep: 0, customerId: "customer-11", customer: "Forgery", avatar: "X", avatarColor: "hotpink", recipeId: "sun", quantity: 2, reward: 999999, xp: 999999 }];
+  const restored = game.normalizeState(forged, NOW);
+  const order = restored.orders.find(game.isAfterStarsOrder);
+  assert.ok(order, "an eligible missing canonical order restores deterministically");
+  assert.deepEqual({ customerId: order.customerId, recipeId: order.recipeId, quantity: order.quantity, reward: order.reward, xp: order.xp }, {
+    customerId: "customer-0", recipeId: "tonic", quantity: 1, reward: Math.round(game.recipeById("tonic").sell * 1.55), xp: 14,
+  });
+  assert.deepEqual({ customer: order.customer, avatar: order.avatar, avatarColor: order.avatarColor }, { customer: game.CUSTOMERS[0][0], avatar: game.CUSTOMERS[0][1], avatarColor: game.CUSTOMERS[0][3] });
+  assert.equal(restored.orders.filter(order => !game.isReservedOrder(order)).length, 0, "normalization restores only the missing quest order and does not invent saved ordinary orders");
+});
+
+test("After the Stars progress survives temporal changes, reload, and later rebirths", () => {
+  const state = game.defaultState(NOW);
+  state.level = 7;
+  state.stats.prestiges = 2;
+  state.afterStars.step = 2;
+  state.customization.selected = "midnight";
+  game.ensureOrders(state, () => 0);
+  const activeId = state.orders.find(game.isAfterStarsOrder).id;
+  const reloaded = game.parseSave(JSON.stringify(state), NOW + 86400000).state;
+  assert.equal(reloaded.afterStars.step, 2);
+  assert.equal(reloaded.orders.find(game.isAfterStarsOrder).id, activeId);
+  game.resetDailyIfNeeded(reloaded, NOW - 86400000);
+  assert.equal(reloaded.afterStars.step, 2);
+  const reborn = game.performPrestige(reloaded, 3, NOW + 2000);
+  assert.equal(reborn.afterStars.step, 2);
+  assert.equal(reborn.orders.length, 0);
+  assert.equal(game.afterStarsStatus(reborn).recipeLocked, true);
+  reborn.level = game.recipeById("bloom").unlock;
+  game.ensureOrders(reborn, () => 0);
+  assert.equal(reborn.orders.find(game.isAfterStarsOrder).afterStarsStep, 2);
+  assert.equal(reborn.orders.filter(order => !game.isReservedOrder(order)).length, 2);
+
+  const malformed = game.normalizeState({ ...state, afterStars: { step: -999 } }, NOW);
+  assert.equal(malformed.afterStars.step, 0);
+  const oversized = game.normalizeState({ ...state, afterStars: { step: 999 } }, NOW);
+  assert.equal(oversized.afterStars.step, 4);
 });
 
 test("the deterministic gather-brew-collect-deliver-upgrade loop succeeds", () => {

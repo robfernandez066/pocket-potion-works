@@ -5,7 +5,7 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWLogic = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionLogic() {
-  const SAVE_VERSION = 7;
+  const SAVE_VERSION = 8;
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const BASE_PASSIVE_RATE = .08;
   const PASSIVE_STORAGE_RATIO = .6;
@@ -28,6 +28,7 @@
     Object.freeze({ id: "starglass", name: "Starglass Keepsake", description: "Unlocked by your first starry rebirth." }),
     Object.freeze({ id: "guild", name: "Guild Ribbon", description: "Unlocked by completing one rolling request chain." }),
     Object.freeze({ id: "heirloom", name: "Heirloom Garland", description: "Unlocked by collecting all twelve villager keepsakes." }),
+    Object.freeze({ id: "dawnthread", name: "Dawnthread Workshop", description: "Unlocked by completing After the Stars." }),
   ]);
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
@@ -116,6 +117,13 @@
     Object.freeze({ id: "bea-feast", customerId: "customer-11", recipeId: "starlight", title: "The Last Honey Feast", request: "A starlit bottle for the feast's final jar of honey.", keepsake: Object.freeze({ mark: "HS", name: "Honeycomb Seal", description: "Bea's seal for a season shared sweetly." }) }),
   ]);
 
+  const AFTER_STARS_STEPS = Object.freeze([
+    Object.freeze({ id: "oven-remembers", title: "The Oven Remembers", customerId: "customer-0", recipeId: "tonic", request: "A meadow tonic for the first oven lit beneath the changed stars." }),
+    Object.freeze({ id: "new-route", title: "A New Route", customerId: "customer-3", recipeId: "clarity", request: "A clarity elixir for mapping a post road through the starborn morning." }),
+    Object.freeze({ id: "roots-after-starlight", title: "Roots After Starlight", customerId: "customer-6", recipeId: "bloom", request: "Cloudbloom tea to help the garden remember its roots after starlight." }),
+    Object.freeze({ id: "dawnthread-hem", title: "The Dawnthread Hem", customerId: "customer-9", recipeId: "sun", request: "Bottled sunrise for the final golden hem of a dawnthread banner." }),
+  ]);
+
   const RECIPE_LORE = Object.freeze({
     tonic: "A meadow remedy first brewed for gardeners who forgot to stop for lunch.",
     clarity: "Its square shimmer is said to put wandering thoughts back on the same path.",
@@ -168,6 +176,7 @@
       mastery: recipeCounts(),
       customers: Object.fromEntries(CUSTOMERS.map((_, index) => [`customer-${index}`, { deliveries: 0, hearts: 0 }])),
       commissions: { invitations: 0, selectedId: null, completedIds: [] },
+      afterStars: { step: 0 },
       journal: { readStories: [], readRecipes: [], claimedAchievements: [] },
       weekly: { cycle: 0, progress: 0, claimedSteps: 0 },
       customization: { selected: "midnight" },
@@ -190,6 +199,12 @@
   }
   function commissionById(id) { return SIGNATURE_COMMISSIONS.find(commission => commission.id === id); }
   function isSignatureOrder(order) { return Boolean(commissionById(order?.commissionId)); }
+  function afterStarsStepByIndex(index) { return AFTER_STARS_STEPS[int(index, 0, 0, AFTER_STARS_STEPS.length - 1)]; }
+  function isAfterStarsOrder(order) {
+    const index = Number(order?.afterStarsStep);
+    return Number.isInteger(index) && index >= 0 && index < AFTER_STARS_STEPS.length;
+  }
+  function isReservedOrder(order) { return isSignatureOrder(order) || isAfterStarsOrder(order); }
   function signatureOrderEconomics(commission) {
     const recipe = recipeById(commission?.recipeId);
     return recipe ? { reward: Math.round(recipe.sell * 1.55), xp: Math.round(11 + recipe.unlock * 3) } : null;
@@ -209,8 +224,8 @@
   }
   function selectSignatureCommission(state, commissionId) {
     const commission = commissionById(commissionId);
-    if (!commission || int(state?.commissions?.invitations) < 1 || state.commissions.selectedId || !commissionEligible(state, commission)) return null;
-    const ordinary = state.orders.filter(order => !isSignatureOrder(order))
+    if (!commission || int(state?.commissions?.invitations) < 1 || state.commissions.selectedId || state.orders.some(isAfterStarsOrder) || !commissionEligible(state, commission)) return null;
+    const ordinary = state.orders.filter(order => !isReservedOrder(order))
       .sort((a, b) => recipeById(b.recipeId).unlock - recipeById(a.recipeId).unlock || a.id - b.id).slice(0, 2);
     const recipe = recipeById(commission.recipeId);
     const economics = signatureOrderEconomics(commission);
@@ -225,6 +240,40 @@
     state.commissions.invitations = Math.max(0, int(state.commissions.invitations) - 1);
     state.orders = [order, ...ordinary];
     ensureOrders(state);
+    return order;
+  }
+
+  function afterStarsStatus(state) {
+    const active = int(state?.stats?.prestiges) > 0;
+    const step = active ? int(state?.afterStars?.step, 0, 0, AFTER_STARS_STEPS.length) : 0;
+    if (!active) return { active: false, complete: false, step: 0, total: AFTER_STARS_STEPS.length, current: null, recipeLocked: false };
+    if (step >= AFTER_STARS_STEPS.length) return { active: true, complete: true, step, total: AFTER_STARS_STEPS.length, current: null, recipeLocked: false };
+    const current = AFTER_STARS_STEPS[step];
+    const recipe = recipeById(current.recipeId);
+    return { active: true, complete: false, step, total: AFTER_STARS_STEPS.length, current, recipe, recipeLocked: recipe.unlock > int(state?.level, 1, 1), orderActive: state?.orders?.some(order => isAfterStarsOrder(order) && order.afterStarsStep === step) === true };
+  }
+
+  function createAfterStarsOrder(state, stepIndex = state.afterStars.step) {
+    const step = AFTER_STARS_STEPS[stepIndex];
+    if (!step) return null;
+    const recipe = recipeById(step.recipeId);
+    const economics = signatureOrderEconomics(step);
+    const customerIndex = customerIndexFromId(step.customerId);
+    const customer = CUSTOMERS[customerIndex];
+    return {
+      id: state.nextOrderId++, afterStarsStep: stepIndex, customerId: step.customerId, customer: customer[0], avatar: customer[1],
+      note: step.request, avatarColor: customer[3], recipeId: recipe.id, quantity: 1, reward: economics.reward, xp: economics.xp,
+    };
+  }
+
+  function ensureAfterStarsOrder(state) {
+    const status = afterStarsStatus(state);
+    if (!status.active || status.complete || status.recipeLocked || state.orders.some(isSignatureOrder)) return null;
+    const current = state.orders.find(isAfterStarsOrder);
+    if (current?.afterStarsStep === status.step) return current;
+    const ordinary = state.orders.filter(order => !isReservedOrder(order)).slice(0, 2);
+    const order = createAfterStarsOrder(state, status.step);
+    state.orders = [order, ...ordinary];
     return order;
   }
   function customerOrderLine(customerId, orderId, recipeId, quantity = 1) {
@@ -398,6 +447,8 @@
     const sourceStats = isRecord(input.stats) ? input.stats : {};
     state.stats = { ...sourceStats };
     for (const id of Object.keys(fresh.stats)) state.stats[id] = int(sourceStats[id]);
+    const sourceAfterStars = isRecord(input.afterStars) ? input.afterStars : {};
+    state.afterStars = { step: state.stats.prestiges > 0 ? int(sourceAfterStars.step, 0, 0, AFTER_STARS_STEPS.length) : 0 };
     const sourceDaily = isRecord(input.daily) ? input.daily : {};
     state.daily = {
       date: typeof sourceDaily.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sourceDaily.date) ? sourceDaily.date : todayKey(now),
@@ -469,14 +520,17 @@
       if (!order || seenIds.has(order.id)) return false;
       seenIds.add(order.id); return true;
     });
-    const selectedOrder = normalizedOrders.find(order => isSignatureOrder(order));
-    if (!selectedOrder) state.commissions.selectedId = null;
-    state.orders = selectedOrder ? [selectedOrder, ...normalizedOrders.filter(order => !isSignatureOrder(order)).slice(0, 2)] : normalizedOrders.filter(order => !isSignatureOrder(order)).slice(0, 3);
+    const selectedSignature = normalizedOrders.find(order => isSignatureOrder(order));
+    const selectedQuest = normalizedOrders.find(order => isAfterStarsOrder(order) && order.afterStarsStep === state.afterStars.step);
+    const selectedOrder = selectedSignature || selectedQuest;
+    if (!selectedSignature) state.commissions.selectedId = null;
+    state.orders = selectedOrder ? [selectedOrder, ...normalizedOrders.filter(order => !isReservedOrder(order)).slice(0, 2)] : normalizedOrders.filter(order => !isReservedOrder(order)).slice(0, 3);
     state.nextOrderId = Math.max(state.nextOrderId, ...state.orders.map(order => order.id + 1), 1);
     while (state.xp >= xpNeeded(state.level)) {
       state.xp -= xpNeeded(state.level);
       state.level += 1;
     }
+    ensureAfterStarsOrder(state);
     enforceStorageCap(state);
     return state;
   }
@@ -491,18 +545,24 @@
     const commission = requestedCommission && state.commissions.selectedId === requestedCommission.id && !state.commissions.completedIds.includes(requestedCommission.id)
       && requestedCommission.recipeId === recipe.id && customerIdFromOrder(order) === requestedCommission.customerId ? requestedCommission : null;
     if (requestedCommission && !commission) return null;
-    const customerId = commission?.customerId || customerIdFromOrder(order);
+    const requestedQuestIndex = Number(order.afterStarsStep);
+    const questStep = Number.isInteger(requestedQuestIndex) && requestedQuestIndex === state.afterStars.step && state.stats.prestiges > 0
+      ? AFTER_STARS_STEPS[requestedQuestIndex] : null;
+    if (Number.isFinite(requestedQuestIndex) && !questStep) return null;
+    if (questStep && (questStep.recipeId !== recipe.id || state.commissions.selectedId)) return null;
+    const customerId = commission?.customerId || questStep?.customerId || customerIdFromOrder(order);
     const customerIndex = customerIndexFromId(customerId);
     const quantity = int(order.quantity, 1, 1, 2);
-    const signatureEconomics = commission ? signatureOrderEconomics(commission) : null;
+    const reservedEconomics = commission ? signatureOrderEconomics(commission) : questStep ? signatureOrderEconomics(questStep) : null;
     return {
       id, customerId, customer: CUSTOMERS[customerIndex][0],
-      avatar: typeof order.avatar === "string" ? order.avatar.slice(0, 8) : CUSTOMERS[0][1],
-      note: commission?.request || customerOrderLine(customerId, id, recipe.id, quantity),
-      avatarColor: typeof order.avatarColor === "string" ? order.avatarColor.slice(0, 30) : CUSTOMERS[0][3],
-      recipeId: recipe.id, quantity: commission ? 1 : quantity,
-      reward: signatureEconomics?.reward ?? int(order.reward, recipe.sell, 1), xp: signatureEconomics?.xp ?? int(order.xp, 12, 1),
+      avatar: commission || questStep ? CUSTOMERS[customerIndex][1] : typeof order.avatar === "string" ? order.avatar.slice(0, 8) : CUSTOMERS[customerIndex][1],
+      note: commission?.request || questStep?.request || customerOrderLine(customerId, id, recipe.id, quantity),
+      avatarColor: commission || questStep ? CUSTOMERS[customerIndex][3] : typeof order.avatarColor === "string" ? order.avatarColor.slice(0, 30) : CUSTOMERS[customerIndex][3],
+      recipeId: recipe.id, quantity: commission || questStep ? 1 : quantity,
+      reward: reservedEconomics?.reward ?? int(order.reward, recipe.sell, 1), xp: reservedEconomics?.xp ?? int(order.xp, 12, 1),
       ...(commission ? { commissionId: commission.id } : {}),
+      ...(questStep ? { afterStarsStep: requestedQuestIndex } : {}),
     };
   }
 
@@ -597,10 +657,11 @@
   }
 
   function ensureOrders(state, random = Math.random) {
-    const signature = state.orders.find(order => isSignatureOrder(order));
-    const ordinary = state.orders.filter(order => !isSignatureOrder(order)).slice(0, signature ? 2 : 3);
-    state.orders = signature ? [signature, ...ordinary] : ordinary;
-    while (state.orders.filter(order => !isSignatureOrder(order)).length < (signature ? 2 : 3)) state.orders.push(generateOrder(state, random));
+    ensureAfterStarsOrder(state);
+    const reserved = state.orders.find(order => isReservedOrder(order));
+    const ordinary = state.orders.filter(order => !isReservedOrder(order)).slice(0, reserved ? 2 : 3);
+    state.orders = reserved ? [reserved, ...ordinary] : ordinary;
+    while (state.orders.filter(order => !isReservedOrder(order)).length < (reserved ? 2 : 3)) state.orders.push(generateOrder(state, random));
     refreshCommissionChoices(state);
   }
 
@@ -623,15 +684,17 @@
     recordWeeklyDelivery(state);
     state.discovery.delivered[order.recipeId] = int(state.discovery.delivered[order.recipeId]) + order.quantity;
     const completedCommission = commissionById(order.commissionId);
+    const completedQuestStep = isAfterStarsOrder(order) && order.afterStarsStep === state.afterStars.step ? AFTER_STARS_STEPS[order.afterStarsStep] : null;
     if (completedCommission && !state.commissions.completedIds.includes(completedCommission.id)) {
       state.commissions.completedIds.push(completedCommission.id);
       state.commissions.selectedId = null;
       state.commissions.invitations = Math.min(int(state.commissions.invitations), unfinishedCommissionCount(state));
     }
+    if (completedQuestStep) state.afterStars.step = Math.min(AFTER_STARS_STEPS.length, state.afterStars.step + 1);
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
     ensureOrders(state, random);
-    return { reward, levels, customerBonus, customerProgress: { ...progress }, commission: completedCommission || null };
+    return { reward, levels, customerBonus, customerProgress: { ...progress }, commission: completedCommission || null, afterStars: completedQuestStep ? { step: order.afterStarsStep, title: completedQuestStep.title, complete: state.afterStars.step >= AFTER_STARS_STEPS.length } : null };
   }
 
   function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.9, state.upgrades[upgrade.id])); }
@@ -680,6 +743,7 @@
   function cosmeticUnlocked(state, cosmeticId) {
     if (cosmeticId === "midnight") return true;
     if (cosmeticId === "guild") return int(state.weekly?.cycle) > 0;
+    if (cosmeticId === "dawnthread") return int(state.afterStars?.step, 0, 0, AFTER_STARS_STEPS.length) >= AFTER_STARS_STEPS.length && int(state.stats?.prestiges) > 0;
     const goal = COLLECTION_GOALS.find(item => item.cosmeticId === cosmeticId);
     const progress = goal && collectionGoalProgress(state, goal.id);
     return Boolean(progress && progress.current >= progress.target);
@@ -694,7 +758,7 @@
 
   function workshopDecorationState(state) {
     const selected = cosmeticUnlocked(state, state.customization?.selected) ? state.customization.selected : "midnight";
-    return { selected, keepsake: selected === "starglass", ribbon: selected === "guild" };
+    return { selected, keepsake: selected === "starglass", ribbon: selected === "guild", dawnthread: selected === "dawnthread" };
   }
 
   function weeklyChainStatus(state) {
@@ -740,6 +804,7 @@
     next.mastery = { ...state.mastery };
     next.customers = Object.fromEntries(Object.entries(state.customers).map(([id, progress]) => [id, { ...progress }]));
     next.commissions = { invitations: Math.min(int(state.commissions.invitations), unfinishedCommissionCount(state)), selectedId: null, completedIds: [...state.commissions.completedIds] };
+    next.afterStars = { step: int(state.afterStars?.step, 0, 0, AFTER_STARS_STEPS.length) };
     next.journal = { readStories: [...state.journal.readStories], readRecipes: [...state.journal.readRecipes], claimedAchievements: [...state.journal.claimedAchievements] };
     next.weekly = { ...state.weekly };
     next.customization = { ...state.customization };
@@ -750,7 +815,7 @@
   }
 
   function refreshOrder(state, random = Math.random) {
-    const index = state.orders.findIndex(order => !isSignatureOrder(order));
+    const index = state.orders.findIndex(order => !isReservedOrder(order));
     if (state.coins < 15 || index < 0) return false;
     state.coins -= 15; state.orders.splice(index, 1); ensureOrders(state, random); return true;
   }
@@ -844,11 +909,11 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
-    generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
+    generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });
