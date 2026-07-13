@@ -954,8 +954,13 @@ function tick() {
   if (Date.now() > state.boostUntil && state.boostUntil !== 0) { state.boostUntil = 0; renderAll(); }
 }
 
-document.addEventListener("pointerdown", () => { sound.activate(); music.activate(); }, { passive: true });
-document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { sound.activate(); music.activate(); } });
+function activateAudioFromGesture() {
+  music.activate();
+  sound.activate();
+}
+document.addEventListener("touchend", activateAudioFromGesture, { passive: true });
+document.addEventListener("click", activateAudioFromGesture, { passive: true });
+document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") activateAudioFromGesture(); });
 document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => { sound.play("tap"); switchView(button.dataset.nav); }));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
 document.querySelector("#smartGatherTarget").addEventListener("click", () => selectGatherTarget(null));
