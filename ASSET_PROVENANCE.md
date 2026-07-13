@@ -33,6 +33,12 @@ The tracks are used only as part of Pocket Potion Works and must not be offered,
 
 - The charcoal-black and purple interface theme is implemented entirely in local CSS. It adds no image, font, library, or remote runtime dependency.
 
+## Owner-generated Sprixen sprites
+
+- `assets/images/ingredients/frostmint.png` and the four files under `assets/images/potions/` are owner-generated 256x256 transparent PNG sprites created with Sprixen for Pocket Potion Works.
+- Lantern Sip was the visual reference for Quietbell Tea, Wayfinder Cordial, and Aurora Nectar. The approved static outputs are used; the rejected Aurora animation sheet is not stored or shipped.
+- The five sprites add 188,009 bytes to the offline installation shell and require no remote runtime service. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
+
 ## Unchanged pre-existing assets
 
 - `icon.svg` is the existing local Pocket Potion Works application icon and was not modified in Task 4.

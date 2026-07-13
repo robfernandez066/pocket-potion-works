@@ -52,14 +52,14 @@ function fetchEvent(url, mode = "same-origin") {
 }
 
 (async () => {
-  stores.set("ppw-shell-v32", new Map());
+  stores.set("ppw-shell-v33", new Map());
   const install = lifecycleEvent();
   listeners.install(install);
   await install.done();
-  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v32");
-  assert.equal(activeCache, "ppw-shell-v33", "install must rotate the navigation-icon fix shell cache");
+  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v33");
+  assert.equal(activeCache, "ppw-shell-v34", "install must rotate the approved sprite shell cache");
   const shell = stores.get(activeCache);
-  for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
+  for (const file of ["./", "./index.html", "./style.css", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg", "./assets/images/ingredients/frostmint.png", "./assets/images/potions/aurora-nectar.png", "./assets/images/potions/lantern-sip.png", "./assets/images/potions/quietbell-tea.png", "./assets/images/potions/wayfinder-cordial.png"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
 
   const activate = lifecycleEvent();
   listeners.activate(activate);
