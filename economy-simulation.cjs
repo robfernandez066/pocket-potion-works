@@ -333,13 +333,21 @@ for (const seed of progressionSeeds) {
     recoveryRows.push({ seed, reward, ...recovery, dailyOnlySeconds: dailyOnly.seconds, dailyOnlyCoins: dailyOnly.coins, dailyOnlyUpgrades: dailyOnly.upgrades, stardust: reborn.stardust });
   }
 }
-const expectedFirstCycle = {
-  7: { seconds: 2660, orders: 31, coinsEarned: 6171 },
-  42: { seconds: 2640, orders: 31, coinsEarned: 5701 },
-  2026: { seconds: 2540, orders: 32, coinsEarned: 5906 },
+const firstCycleBaselines = {
+  7: { seconds: 2660, orders: 31 },
+  42: { seconds: 2640, orders: 31 },
+  2026: { seconds: 2540, orders: 32 },
+};
+const requestMixFirstCycle = {
+  7: { seconds: 2690, orders: 30, coinsEarned: 6223 },
+  42: { seconds: 2565, orders: 31, coinsEarned: 6041 },
+  2026: { seconds: 2575, orders: 31, coinsEarned: 5688 },
 };
 for (const row of progressionRows) {
-  assert.deepEqual({ seconds: row.seconds, orders: row.orders, coinsEarned: row.coinsEarned }, expectedFirstCycle[row.seed], `seed ${row.seed}: dormant quest must leave first-cycle output unchanged`);
+  const baseline = firstCycleBaselines[row.seed];
+  assert.deepEqual({ seconds: row.seconds, orders: row.orders, coinsEarned: row.coinsEarned }, requestMixFirstCycle[row.seed], `seed ${row.seed}: Request Mix first-cycle output changed unexpectedly`);
+  assert.ok(Math.abs(row.seconds - baseline.seconds) <= baseline.seconds * .05, `seed ${row.seed}: Request Mix changed first-cycle timing by more than five percent (${row.seconds}s vs ${baseline.seconds}s)`);
+  assert.ok(Math.abs(row.orders - baseline.orders) <= 1, `seed ${row.seed}: Request Mix changed first-cycle order cadence by more than one (${row.orders} vs ${baseline.orders})`);
 }
 
 const afterStarsRows = progressionSeeds.map(seed => {

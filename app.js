@@ -289,8 +289,8 @@ function renderGatherButton() {
   const charges = state.gather.charges;
   const target = state.gather.targetId ? INGREDIENTS[state.gather.targetId] : null;
   button.disabled = charges < 1 || totalIngredients() >= storageCap();
-  button.querySelector("strong").textContent = charges > 0 ? `${target ? `Gather ${target.name}` : "Gather smart mix"} · ${charges}/${Logic.GATHER_CONFIG.maxCharges}` : "Garden recharging";
-  button.querySelector("small").textContent = charges > 0 ? `Charged harvest · +${manualGatherAmount()} ${target ? target.name : "needed items"}` : `One charge every ${Logic.GATHER_CONFIG.rechargeSeconds} seconds`;
+  button.querySelector("strong").textContent = charges > 0 ? `${target ? `Gather ${target.name}` : "Gather Request Mix"} · ${charges}/${Logic.GATHER_CONFIG.maxCharges}` : "Garden recharging";
+  button.querySelector("small").textContent = charges > 0 ? `Charged harvest · +${manualGatherAmount()} ${target ? `exact ${target.name}` : "random items weighted toward active requests"}` : `One charge every ${Logic.GATHER_CONFIG.rechargeSeconds} seconds`;
 }
 
 function renderBeginnerQuest() {
@@ -361,14 +361,14 @@ function renderIngredients() {
     </button>`;
   }).join("");
   document.querySelectorAll("[data-gather-target]").forEach(button => button.addEventListener("click", () => selectGatherTarget(button.dataset.gatherTarget)));
-  document.querySelector("#smartGatherTarget").setAttribute("aria-pressed", String(state.gather.targetId === null));
+  document.querySelector("#requestGatherTarget").setAttribute("aria-pressed", String(state.gather.targetId === null));
 }
 
 function selectGatherTarget(targetId) {
   if (!Logic.setGatherTarget(state, targetId)) return;
   renderAll();
   const item = targetId ? INGREDIENTS[targetId] : null;
-  toast(item ? `${item.name} selected for charged harvests.` : "Smart mix will prioritize useful ingredients.");
+  toast(item ? `${item.name} selected for exact charged harvests.` : "Request Mix favors missing ingredients but stays random.");
 }
 
 function showPantryCleanup() {
@@ -1188,7 +1188,7 @@ document.addEventListener("click", activateAudioFromGesture, { passive: true });
 document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") activateAudioFromGesture(); });
 document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => { sound.play("tap"); switchView(button.dataset.nav); }));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
-document.querySelector("#smartGatherTarget").addEventListener("click", () => selectGatherTarget(null));
+document.querySelector("#requestGatherTarget").addEventListener("click", () => selectGatherTarget(null));
 document.querySelector("#pantryDisclosure").addEventListener("click", () => setDisclosure("pantry", !uiPrefs.pantryOpen));
 document.querySelector("#recipeDisclosure").addEventListener("click", () => setDisclosure("recipes", !uiPrefs.recipesOpen));
 document.querySelector("#brewShortcut").addEventListener("click", goToBrewSlot);

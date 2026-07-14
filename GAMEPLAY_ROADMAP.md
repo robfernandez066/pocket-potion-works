@@ -25,16 +25,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Mira's first trust heart now produces one brief inline authored delivery payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and remains a one-villager pilot until natural owner play establishes that it improves delivery feel.
 - Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
 - All eight achievements now unlock on the action that satisfies them while remaining manual one-time Journal claims. Lifetime coins now prospectively include every non-purchased gameplay coin grant while excluding starting coins, spending, and bundle currency.
-- The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. Treat these fixed-seed results as comparison baselines, not exact invariants: an RNG-affecting experiment may vary by up to 5% in completion time and one order per seed without retuning values. Larger movement requires owner review before adoption.
+- Untargeted charged gathering is now Request Mix: every unlocked ingredient remains possible, while active-request deficits receive a small capped weight after bottled potions and Pantry stock are considered. Exact ingredient targeting, passive gathering, and offline gathering remain unchanged.
+- With Request Mix, the current seeded first cycle reaches level 7 in 2,565-2,690 seconds with 30-31 orders. Treat fixed-seed results as comparison baselines, not exact invariants: an RNG-affecting experiment may vary by up to 5% in completion time and one order per seed without retuning values. Larger movement requires owner review before adoption.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 22 need-aware Request Mix gathering pilot
+## Now - Task 23 mastery collection endpoint
 
-Tasks 15 through 21 are complete. Task 22 is the only released implementation task.
+Tasks 15 through 22 are complete. Task 23 is the only released implementation task.
 
-Rename untargeted charged gathering from Smart Mix to Request Mix and describe it honestly as random items weighted toward active requests. Give every unlocked ingredient a base chance, then add a small capped weight for ingredient deficits across active requested potions after accounting for bottled potions and Pantry stock. Recompute between rolls so the weighting responds to what was just gathered. Preserve exact ingredient targeting as the reliable alternative.
+Give the existing three-rank mastery system one permanent collection endpoint. The Journal should count how many of all twelve recipes have reached mastery rank 3 and unlock one reversible, economy-neutral Masterwork Alcove Workshop Look when all twelve are complete.
 
-Apply this weighting only to untargeted charged harvests. Passive and offline gathering remain unchanged. Preserve current charges, recharge, yield, storage, save version, rewards, and progression values. Compare seeds 7, 42, and 2026 with their Task 21 baselines; each may vary by at most 5% in completion time and one order without retuning values.
+Derive progress entirely from existing mastery counts. Add no claim step, currency, reward amount, timer, recurrence, saved field, migration, or save-version change. Mastery already persists through Starry Rebirth, so the endpoint must remain durable and automatically recognize valid existing progress.
 
 ## Confirmed economy risks requiring design and simulation
 
@@ -50,7 +51,6 @@ Apply this weighting only to untargeted charged harvests. Passive and offline ga
 ## Unselected content candidates
 
 - A future permanent village-chapter pilot must use approximately three-to-five normal one-bottle deliveries, define unlock timing and reserved-slot arbitration, preserve two ordinary orders, coexist explicitly with Villager Special Requests and After the Stars, grant an economy-neutral reward, and leave invitations untouched unless separately approved.
-- A bounded mastery collection endpoint may reuse existing mastery and Journal or collection surfaces with an economy-neutral reward.
 
 Do not extend the level curve, add a second cauldron, introduce another recurring system, or produce new raster or audio packs without evidence and an explicit runtime-budget decision.
 

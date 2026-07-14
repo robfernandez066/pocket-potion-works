@@ -916,6 +916,41 @@
     return added;
   }
 
+  function requestMixPool(state) {
+    const available = unlockedIngredients(state);
+    const outstanding = Object.fromEntries(RECIPES.map(recipe => [recipe.id, 0]));
+    for (const order of Array.isArray(state?.orders) ? state.orders : []) {
+      if (!isRecord(order)) continue;
+      const recipe = recipeById(order.recipeId);
+      if (!recipe || recipe.unlock > state.level) continue;
+      const quantity = int(order.quantity, 0, 0, 2);
+      if (!quantity) continue;
+      outstanding[recipe.id] += quantity;
+    }
+    const required = Object.fromEntries(available.map(id => [id, 0]));
+    for (const recipe of RECIPES) {
+      const bottlesNeeded = Math.max(0, outstanding[recipe.id] - int(state?.potions?.[recipe.id]));
+      if (!bottlesNeeded) continue;
+      for (const [id, count] of Object.entries(recipe.ingredients)) required[id] += bottlesNeeded * count;
+    }
+    const pool = [...available];
+    for (const id of available) {
+      const missing = Math.max(0, required[id] - int(state?.ingredients?.[id]));
+      for (let extra = 0; extra < Math.min(3, missing); extra += 1) pool.push(id);
+    }
+    return pool;
+  }
+
+  function addRequestMixIngredients(state, amount, random = Math.random) {
+    let added = 0;
+    for (let i = 0; i < int(amount) && totalIngredients(state) < storageCap(state); i += 1) {
+      const pool = requestMixPool(state);
+      const id = pool[Math.floor(clamp(random(), 0, .999999) * pool.length)];
+      state.ingredients[id] += 1; added += 1;
+    }
+    return added;
+  }
+
   function grantPassiveIngredients(state, amount, random = Math.random) {
     if (state.stats.orders < 1) return 0;
     return addRandomIngredients(state, amount, random, passiveStorageCap(state));
@@ -946,7 +981,7 @@
     if (targetId && INGREDIENTS[targetId]?.unlock <= state.level) {
       added = Math.min(amount, Math.max(0, storageCap(state) - totalIngredients(state)));
       state.ingredients[targetId] += added;
-    } else added = addRandomIngredients(state, amount, random);
+    } else added = addRequestMixIngredients(state, amount, random);
     if (added > 0) state.stats.taps = Math.min(SAVE_LIMITS.counter, int(state.stats?.taps, 0, 0, SAVE_LIMITS.counter) + 1);
     return withAchievements({ added, targetId: targetId || null, charges: state.gather.charges, waitMs: GATHER_CONFIG.rechargeSeconds * 1000 }, added > 0 ? evaluateAchievements(state, now) : []);
   }
@@ -984,6 +1019,6 @@
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
-    resetDailyIfNeeded, foregroundDailyTransition, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
+    resetDailyIfNeeded, foregroundDailyTransition, addRandomIngredients, requestMixPool, addRequestMixIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

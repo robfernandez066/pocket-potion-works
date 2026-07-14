@@ -1012,6 +1012,99 @@ test("automatic gathering is slow, waits for a delivery, and never fills manual 
   assert.equal(game.chargedGather(state, NOW, () => 0).added, game.GATHER_CONFIG.amountPerCharge);
 });
 
+test("Request Mix gives one active request deficit a capped random weight", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  state.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  state.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
+  const pool = game.requestMixPool(state);
+  assert.equal(pool.filter(id => id === "herb").length, 4);
+  assert.equal(pool.filter(id => id === "crystal").length, 2);
+  assert.equal(pool.filter(id => id === "mushroom").length, 1);
+});
+
+test("Request Mix aggregates duplicate requests and allocates bottled potions by recipe", () => {
+  const state = game.defaultState(NOW);
+  state.level = 3;
+  state.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  state.potions = { ...state.potions, clarity: 1, moon: 1 };
+  state.orders = [
+    { id: 1, recipeId: "clarity", quantity: 1 },
+    { id: 2, recipeId: "clarity", quantity: 2 },
+    { id: 3, recipeId: "moon", quantity: 1 },
+    { id: 4, recipeId: "tonic", quantity: 1 },
+  ];
+  const pool = game.requestMixPool(state);
+  assert.equal(pool.filter(id => id === "herb").length, 4);
+  assert.equal(pool.filter(id => id === "crystal").length, 3);
+  assert.equal(pool.filter(id => id === "mushroom").length, 2);
+  assert.equal(pool.filter(id => id === "mist").length, 1);
+});
+
+test("Request Mix subtracts Pantry stock before adding deficit weight", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  state.ingredients = { herb: 2, mushroom: 0, crystal: 1, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  state.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
+  const pool = game.requestMixPool(state);
+  assert.equal(pool.filter(id => id === "herb").length, 2);
+  assert.equal(pool.filter(id => id === "crystal").length, 1);
+  assert.equal(pool.filter(id => id === "mushroom").length, 1);
+});
+
+test("Request Mix ignores locked and malformed orders and falls back uniformly without a deficit", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  state.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  state.orders = [null, { id: 1, recipeId: "bloom", quantity: 1 }, { id: 2, recipeId: "unknown", quantity: 1 }, { id: 3, recipeId: "clarity", quantity: 0 }];
+  assert.deepEqual(game.requestMixPool(state), ["herb", "mushroom", "crystal"]);
+  state.orders = [{ id: 4, recipeId: "clarity", quantity: 1 }];
+  state.potions.clarity = 1;
+  assert.deepEqual(game.requestMixPool(state), ["herb", "mushroom", "crystal"]);
+});
+
+test("Request Mix uses deterministic weighted boundaries and recomputes between rolls", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  state.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  state.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
+  assert.deepEqual(game.requestMixPool(state), ["herb", "mushroom", "crystal", "herb", "herb", "herb", "crystal"]);
+  const draws = [2 / 7, .999999];
+  assert.equal(game.addRequestMixIngredients(state, 2, () => draws.shift()), 2);
+  assert.deepEqual(state.ingredients, { herb: 1, mushroom: 0, crystal: 1, mist: 0, ember: 0, mint: 0, lavender: 0 });
+});
+
+test("Request Mix respects storage while exact targeting remains unchanged", () => {
+  const state = game.defaultState(NOW);
+  state.level = 2;
+  state.ingredients = { herb: game.storageCap(state) - 1, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  state.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
+  assert.equal(game.chargedGather(state, NOW, () => 0).added, 1);
+  assert.equal(game.totalIngredients(state), game.storageCap(state));
+  const targeted = game.defaultState(NOW);
+  targeted.level = 2;
+  game.setGatherTarget(targeted, "crystal");
+  assert.equal(game.chargedGather(targeted, NOW, () => 0).targetId, "crystal");
+  assert.equal(targeted.ingredients.crystal, game.GATHER_CONFIG.amountPerCharge);
+});
+
+test("passive and offline gathering stay on their uniform random path", () => {
+  const passive = game.defaultState(NOW);
+  passive.level = 2;
+  passive.stats.orders = 1;
+  passive.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  passive.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
+  assert.equal(game.grantPassiveIngredients(passive, 1, () => .5), 1);
+  assert.deepEqual(passive.ingredients, { herb: 0, mushroom: 1, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 });
+  const offline = game.defaultState(NOW);
+  offline.level = 2;
+  offline.stats.orders = 1;
+  offline.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  offline.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
+  assert.equal(game.grantOfflineIngredients(offline, 20, () => .5), 1);
+  assert.deepEqual(offline.ingredients, { herb: 0, mushroom: 1, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 });
+});
+
 test("charged gathering can intentionally target an unlocked ingredient", () => {
   const state = game.defaultState(NOW);
   state.level = 2;
