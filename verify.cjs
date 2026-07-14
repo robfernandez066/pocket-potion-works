@@ -13,6 +13,9 @@ if (!combined.includes("Pocket Potion Works") || !combined.includes("pocket-poti
 const html = fs.readFileSync("index.html", "utf8");
 const normalizedHtml = html.replace(/\r\n/g, "\n");
 const app = fs.readFileSync("app.js", "utf8");
+if (!app.includes("already been added to the Pantry")) throw new Error("Welcome Back must state that offline ingredients were already added to the Pantry.");
+if (!app.includes('label: "Back to workshop", primary: true')) throw new Error("Welcome Back must use a non-claiming return action.");
+if (app.includes('label: "Collect ingredients"')) throw new Error("Welcome Back must not offer a second ingredient collection step.");
 if (!html.includes('<script src="game-logic.js"></script>')) throw new Error("Pure game logic must load before the browser adapter.");
 if (!html.includes('<script src="platform-adapters.js"></script>')) throw new Error("Platform adapters must load before the browser adapter.");
 if (!html.includes('<script src="audio-feedback.js"></script>')) throw new Error("Audio helpers must load before the browser adapter.");

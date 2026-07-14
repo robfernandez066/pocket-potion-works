@@ -198,8 +198,8 @@ function grantOfflineProgress(elapsed) {
   if (gained > 0) {
     setTimeout(() => openModal({
       icon: "☾", kicker: "WELCOME BACK", title: "The garden kept growing.",
-      body: `<p>Your helpers gathered <strong>${gained} ingredients</strong> while you were away. Offline progress is limited to 4 hours.</p>`,
-      actions: [{ label: "Collect ingredients", primary: true }],
+      body: `<p>Your helpers gathered <strong>${gained} ingredients</strong> while you were away, and they have already been added to the Pantry. Offline progress is limited to 4 hours.</p>`,
+      actions: [{ label: "Back to workshop", primary: true }],
     }), 350);
   }
 }

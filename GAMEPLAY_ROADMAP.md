@@ -20,16 +20,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
 - Gameplay saves use schema v8 with v1-v7 migration, future-v9 overwrite protection, and frozen-reader rollback coverage.
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
+- Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 17 truthful Welcome Back recap
+## Now - awaiting the next bounded scope
 
-Tasks 15 and 16 are complete. Task 17 is the only released implementation task.
-
-The Welcome Back modal currently grants offline ingredients before it appears but labels its dismiss action `Collect ingredients`. Replace that claim-like wording with a truthful recap that says the ingredients were already added to the Pantry and uses a non-claiming return action. Preserve all offline timing, first-delivery, four-hour cap, Pantry soft-cap, and save behavior.
-
-Do not combine this copy-and-contract correction with idle tuning, another reward step, delayed claiming, mobile hierarchy, narrative, content, release, or monetization work.
+Tasks 15 through 17 are complete. No implementation task is currently released. Every remaining candidate stays unselected until the owner signals that the PM should release the next bounded scope.
 
 ## Unselected correctness candidates
 
