@@ -1021,6 +1021,90 @@ test("the first post-level order includes a newly unlocked recipe", () => {
   assert.equal(game.generateOrder(state, () => 0).recipeId, "clarity");
 });
 
+test("ordinary order boards use distinct known villagers and replacements avoid visible customers", () => {
+  const fresh = game.defaultState(NOW);
+  game.ensureOrders(fresh, () => 0);
+  const freshCustomers = fresh.orders.map(order => order.customerId);
+  assert.equal(freshCustomers.length, 3);
+  assert.equal(new Set(freshCustomers).size, 3);
+  assert.ok(freshCustomers.every(id => /^customer-(?:[0-9]|1[01])$/.test(id)));
+
+  const replacement = game.defaultState(NOW);
+  replacement.orders = [
+    { id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic" },
+    { id: 2, customerId: "customer-1", customer: game.CUSTOMERS[1][0], recipeId: "tonic" },
+  ];
+  replacement.nextOrderId = 3;
+  const next = game.generateOrder(replacement, () => 0);
+  assert.equal(next.customerId, "customer-2");
+  assert.ok(!replacement.orders.some(order => order.customerId === next.customerId));
+});
+
+test("ordinary customer selection avoids reserved villagers without changing their order", () => {
+  const state = game.defaultState(NOW);
+  const reserved = { id: 1, afterStarsStep: 0, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic" };
+  state.orders = [reserved];
+  state.nextOrderId = 2;
+  const generated = game.generateOrder(state, () => 0);
+  assert.equal(generated.customerId, "customer-1");
+  assert.equal(state.orders[0], reserved);
+  assert.equal(state.orders[0].customerId, "customer-0");
+});
+
+test("ordinary customer selection gives every eligible villager base weight and heart-ready villagers total weight three", () => {
+  const state = game.defaultState(NOW);
+  state.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic" }];
+  let pool = game.ordinaryOrderCustomerPool(state);
+  for (let index = 1; index < game.CUSTOMERS.length; index += 1) assert.equal(pool.filter(id => id === `customer-${index}`).length, 1);
+  assert.equal(pool.includes("customer-0"), false);
+
+  state.orders = [];
+  state.customers["customer-2"] = { deliveries: 2, hearts: 0 };
+  pool = game.ordinaryOrderCustomerPool(state);
+  assert.equal(pool.filter(id => id === "customer-2").length, 3);
+  for (let index = 0; index < game.CUSTOMERS.length; index += 1) {
+    if (index !== 2) assert.equal(pool.filter(id => id === `customer-${index}`).length, 1);
+  }
+  state.customers["customer-2"] = { deliveries: 3, hearts: 1 };
+  state.customers["customer-3"] = { deliveries: 8, hearts: 2 };
+  state.customers["customer-4"] = { deliveries: 9, hearts: 3 };
+  state.customers["customer-5"] = { deliveries: 11, hearts: 3 };
+  pool = game.ordinaryOrderCustomerPool(state);
+  assert.equal(pool.filter(id => id === "customer-2").length, 1, "other delivery counts have only base weight");
+  assert.equal(pool.filter(id => id === "customer-3").length, 3, "the next unearned heart gets exactly two extra entries");
+  assert.equal(pool.filter(id => id === "customer-4").length, 1, "max-heart villagers get no extra weight");
+  assert.equal(pool.filter(id => id === "customer-5").length, 1, "extra deliveries after max hearts get no extra weight");
+});
+
+test("ordinary customer selection uses deterministic weighted boundaries and one customer draw", () => {
+  const generatedFor = customerDraw => {
+    const state = game.defaultState(NOW);
+    state.customers["customer-0"] = { deliveries: 2, hearts: 0 };
+    const draws = [0, customerDraw, 0];
+    const order = game.generateOrder(state, () => draws.shift());
+    assert.equal(draws.length, 0, "level-one generation keeps one customer draw before the existing reward draw");
+    return order;
+  };
+  assert.equal(generatedFor(0).customerId, "customer-0");
+  assert.equal(generatedFor(3 / 14 - Number.EPSILON).customerId, "customer-0");
+  assert.equal(generatedFor(3 / 14).customerId, "customer-1");
+  assert.equal(generatedFor(.999999).customerId, "customer-11");
+});
+
+test("ordinary customer selection safely falls back for malformed and fully represented boards", () => {
+  const malformed = game.defaultState(NOW);
+  malformed.orders = [{ id: 1, customerId: "not-a-villager", customer: game.CUSTOMERS[0][0], recipeId: "tonic" }];
+  malformed.customers = null;
+  assert.deepEqual(game.ordinaryOrderCustomerPool(malformed), game.CUSTOMERS.map((_, index) => `customer-${index}`));
+  assert.equal(game.generateOrder(malformed, () => 0).customerId, "customer-0");
+
+  const forged = game.defaultState(NOW);
+  forged.orders = game.CUSTOMERS.map((customer, index) => ({ id: index + 1, customerId: `customer-${index}`, customer: customer[0], recipeId: "tonic" }));
+  forged.nextOrderId = game.CUSTOMERS.length + 1;
+  assert.equal(game.ordinaryOrderCustomerPool(forged).length, game.CUSTOMERS.length);
+  assert.equal(game.generateOrder(forged, () => 0).customerId, "customer-0");
+});
+
 test("charged gathering limits bursts and recharges forgivingly", () => {
   const state = game.defaultState(NOW);
   assert.equal(game.chargedGather(state, NOW, () => 0).added, game.GATHER_CONFIG.amountPerCharge);

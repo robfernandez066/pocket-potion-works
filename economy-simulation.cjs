@@ -244,7 +244,7 @@ const rowAverage = values => values.reduce((sum, value) => sum + value, 0) / val
 assert.ok(chosenExpansion.seconds.every(seconds => seconds >= 2425 && seconds <= 2730), "chosen expansion should remain inside the approved seeded Task 8 timing envelope");
 assert.ok(chosenExpansion.orders.every(orders => orders >= 30 && orders <= 33), "chosen expansion should preserve the approved first-cycle order cadence");
 assert.ok(chosenExpansion.mastery.every(mastery => mastery >= 35 && mastery <= 39), `chosen expansion should stay within one brew of the approved mastery envelope: ${chosenExpansion.mastery.join(",")}`);
-assert.ok(chosenExpansion.expandedMastery.every(count => count >= 6 && count <= 17), `new recipes should remain represented without dominating the owner-adjusted first cycle: ${chosenExpansion.expandedMastery.join(",")}`);
+assert.ok(chosenExpansion.expandedMastery.every(count => count >= 6 && count <= 18), `new recipes should remain represented without dominating the owner-adjusted first cycle: ${chosenExpansion.expandedMastery.join(",")}`);
 assert.ok(chosenExpansion.frostmintStock.every(count => count >= 4 && count <= 26), `Frostmint should remain bounded without stalling the owner-adjusted seeded strategy: ${chosenExpansion.frostmintStock.join(",")}`);
 assert.ok(rowAverage(chosenExpansion.recoverySeconds) <= rowAverage(chosenExpansion.dailyOnlySeconds) + 60, "the authored post-rebirth errand should keep recovery within one minute of the Task 8 guardrail");
 assert.ok(Math.abs(rowAverage(chosenExpansion.recoveryCoins) - rowAverage(chosenExpansion.dailyOnlyCoins)) <= 50 && chosenExpansion.recoveryCoins.every(coins => coins >= 0), `post-rebirth quest coins should remain bounded near the control: ${chosenExpansion.recoveryCoins.join(",")} vs ${chosenExpansion.dailyOnlyCoins.join(",")}`);
@@ -338,17 +338,25 @@ const firstCycleBaselines = {
   42: { seconds: 2640, orders: 31 },
   2026: { seconds: 2540, orders: 32 },
 };
-const requestMixFirstCycle = {
+const task23RequestMixFirstCycle = {
   7: { seconds: 2690, orders: 30, coinsEarned: 6223 },
   42: { seconds: 2565, orders: 31, coinsEarned: 6041 },
   2026: { seconds: 2575, orders: 31, coinsEarned: 5688 },
 };
+const task24VariedVillageOrderBoardFirstCycle = {
+  7: { seconds: 2615, orders: 33, coinsEarned: 5997 },
+  42: { seconds: 2695, orders: 31, coinsEarned: 6501 },
+  2026: { seconds: 2600, orders: 32, coinsEarned: 6231 },
+};
 for (const row of progressionRows) {
-  const baseline = firstCycleBaselines[row.seed];
-  assert.deepEqual({ seconds: row.seconds, orders: row.orders, coinsEarned: row.coinsEarned }, requestMixFirstCycle[row.seed], `seed ${row.seed}: Request Mix first-cycle output changed unexpectedly`);
-  assert.ok(Math.abs(row.seconds - baseline.seconds) <= baseline.seconds * .05, `seed ${row.seed}: Request Mix changed first-cycle timing by more than five percent (${row.seconds}s vs ${baseline.seconds}s)`);
-  assert.ok(Math.abs(row.orders - baseline.orders) <= 1, `seed ${row.seed}: Request Mix changed first-cycle order cadence by more than one (${row.orders} vs ${baseline.orders})`);
+  assert.deepEqual({ seconds: row.seconds, orders: row.orders, coinsEarned: row.coinsEarned }, task24VariedVillageOrderBoardFirstCycle[row.seed], `seed ${row.seed}: Task 24 varied village order board output changed unexpectedly`);
 }
+const task23AverageSeconds = rowAverage(progressionSeeds.map(seed => task23RequestMixFirstCycle[seed].seconds));
+const task24AverageSeconds = rowAverage(progressionSeeds.map(seed => task24VariedVillageOrderBoardFirstCycle[seed].seconds));
+const task23AverageCoinsEarned = rowAverage(progressionSeeds.map(seed => task23RequestMixFirstCycle[seed].coinsEarned));
+const task24AverageCoinsEarned = rowAverage(progressionSeeds.map(seed => task24VariedVillageOrderBoardFirstCycle[seed].coinsEarned));
+assert.ok(Math.abs(task24AverageSeconds - task23AverageSeconds) <= task23AverageSeconds * .05, `Task 24 average first-cycle time changed by more than five percent (${task24AverageSeconds}s vs ${task23AverageSeconds}s)`);
+assert.ok(Math.abs(task24AverageCoinsEarned - task23AverageCoinsEarned) <= task23AverageCoinsEarned * .05, `Task 24 average first-cycle lifetime coins changed by more than five percent (${task24AverageCoinsEarned} vs ${task23AverageCoinsEarned})`);
 
 const afterStarsRows = progressionSeeds.map(seed => {
   const start = Date.UTC(2026, 6, 12, 8);

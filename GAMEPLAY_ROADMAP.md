@@ -14,7 +14,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 
 - Seven ingredients, twelve recipes across levels 1-7, one cauldron, three-rank recipe mastery, five upgrades, and level-7 Starry Rebirth.
 - Twelve recurring villagers with trust, 36 story beats, one-time Villager Special Requests, twelve keepsakes, and bounded first-read Journal rewards.
-- Three charged harvests recharge every 30 seconds and yield 3 base items. A targeted charged harvest guarantees the selected unlocked ingredient for that harvest; it does not guarantee completion of a recipe or order. Smart Mix remains substantially random. Passive gathering starts after the first delivery at about 5 items per minute; offline gathering uses a slower rate, stops at 60% of Pantry capacity, and retains a four-hour elapsed-time safety cap.
+- Three charged harvests recharge every 30 seconds and yield 3 base items. A targeted charged harvest guarantees the selected unlocked ingredient for that harvest; it does not guarantee completion of a recipe or order. Request Mix remains substantially random. Passive gathering starts after the first delivery at about 5 items per minute; offline gathering uses a slower rate, stops at 60% of Pantry capacity, and retains a four-hour elapsed-time safety cap.
 - Daily goals do not use streaks. Rolling request chains do not expire. All recurring and one-time rewards are bounded.
 - Eight reversible, economy-neutral Workshop Looks include the original look plus seven earned looks. Twelvefold Mastery derives completion from all twelve recipes at mastery rank 3 and unlocks the Masterwork Alcove without a claim or economy reward.
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
@@ -26,16 +26,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
 - All eight achievements now unlock on the action that satisfies them while remaining manual one-time Journal claims. Lifetime coins now prospectively include every non-purchased gameplay coin grant while excluding starting coins, spending, and bundle currency.
 - Untargeted charged gathering is now Request Mix: every unlocked ingredient remains possible, while active-request deficits receive a small capped weight after bottled potions and Pantry stock are considered. Exact ingredient targeting, passive gathering, and offline gathering remain unchanged.
-- With Request Mix, the current seeded first cycle reaches level 7 in 2,565-2,690 seconds with 30-31 orders. Treat fixed-seed results as comparison baselines, not exact invariants: an RNG-affecting experiment may vary by up to 5% in completion time and one order per seed without retuning values. Larger movement requires owner review before adoption.
+- Ordinary order boards now avoid villagers already visible when alternatives remain. Every eligible villager stays possible, while someone one delivery from an unearned trust heart receives a small capped weight. Reserved orders, trust rules, and saved state remain unchanged.
+- The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 24 varied village order board
+## Now - Task 25 meaningful-choice measurement
 
-Tasks 15 through 23 are complete. Task 24 is the only released implementation task.
+Tasks 15 through 24 are complete. Task 25 is the only released execution task.
 
-Make the visible order board present a broader mix of villagers while modestly surfacing trust-heart moments already close to completion. New ordinary orders should avoid villagers already represented on the current board whenever alternatives exist. Among remaining villagers, everyone keeps a base chance while a villager exactly one delivery from an unearned trust heart receives a small capped weight.
+Measure, without tuning, whether the four same-level potion pairs and five existing upgrades create meaningfully different choices in realistic active and idle-return scenarios. The evidence must separate ingredient availability, order completion, cycle timing, coins, and storage pressure so the next task can select at most one bounded improvement rather than changing the whole economy at once.
 
-Do not alter reserved Villager Special Request or After the Stars customers, trust thresholds, favors, story rewards, order recipes, quantities, values, or saved state. The purpose is to expose existing authored content and give the player clearer order choices, not to add a new relationship system.
+Do not change gameplay values, UI, saves, runtime assets, release gates, or cache identity in this measurement task. Its output is evidence for PM review, not automatic authorization to retune a recipe or upgrade.
 
 ## Confirmed economy risks requiring design and simulation
 
@@ -44,7 +45,7 @@ Do not alter reserved Villager Special Request or After the Stars customers, tru
 
 ## Near-term existing-loop and playtest candidates
 
-- **Meaningful choice:** after the varied-board pilot, evaluate identical same-level recipe timer/value pairs and linear upgrades. Do not introduce branches, loadouts, currencies, or another recurring system.
+- **Meaningful choice:** use Task 25 evidence to choose at most one bounded recipe-pair or upgrade-path pilot. Do not introduce branches, loadouts, currencies, or another recurring system.
 - **Mobile action hierarchy:** measure the full path to ordinary-order delivery at 390x844 and 360x740 before prescribing a redesign. Distinguish onboarding, an ordinary order not ready, an ordinary order ready, Daily Goal completion, and Rolling Request completion; account for the existing Workshop ready-delivery shortcut.
 - **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
 

@@ -209,6 +209,28 @@
   function customerIndexFromId(customerId) {
     return typeof customerId === "string" && /^customer-(?:[0-9]|1[01])$/.test(customerId) ? Number(customerId.slice(9)) : 0;
   }
+  function knownCustomerId(order) {
+    if (typeof order?.customerId === "string") return /^customer-(?:[0-9]|1[01])$/.test(order.customerId) ? order.customerId : null;
+    if (typeof order?.customer === "string") {
+      const index = CUSTOMERS.findIndex(customer => customer[0] === order.customer);
+      if (index >= 0) return `customer-${index}`;
+    }
+    return null;
+  }
+  function ordinaryOrderCustomerPool(state) {
+    const knownIds = CUSTOMERS.map((_, index) => `customer-${index}`);
+    const visibleOrders = Array.isArray(state?.orders) ? state.orders : null;
+    const represented = visibleOrders && visibleOrders.map(knownCustomerId);
+    const eligible = represented && represented.every(Boolean) ? knownIds.filter(id => !represented.includes(id)) : [];
+    const candidates = eligible.length ? eligible : knownIds;
+    return candidates.flatMap(id => {
+      const progress = state?.customers?.[id];
+      const deliveries = Number.isSafeInteger(progress?.deliveries) && progress.deliveries >= 0 ? progress.deliveries : null;
+      const heartReady = deliveries !== null && deliveries % CUSTOMER_CONFIG.deliveriesPerHeart === CUSTOMER_CONFIG.deliveriesPerHeart - 1
+        && Math.floor(deliveries / CUSTOMER_CONFIG.deliveriesPerHeart) < CUSTOMER_CONFIG.maxHearts;
+      return Array(heartReady ? 3 : 1).fill(id);
+    });
+  }
   function commissionById(id) { return SIGNATURE_COMMISSIONS.find(commission => commission.id === id); }
   function isSignatureOrder(order) { return Boolean(commissionById(order?.commissionId)); }
   function findAvailableOrderId(usedIds, preferredId = 1) {
@@ -220,7 +242,7 @@
     return null;
   }
   function nextSafeOrderId(state) {
-    const usedIds = new Set(state.orders.map(order => order.id));
+    const usedIds = new Set((Array.isArray(state?.orders) ? state.orders : []).map(order => order?.id));
     const id = findAvailableOrderId(usedIds, state.nextOrderId);
     if (id === null) return null;
     state.nextOrderId = id === SAVE_LIMITS.counter ? 1 : id + 1;
@@ -699,16 +721,18 @@
   function generateOrder(state, random = Math.random) {
     const availableRecipes = RECIPES.filter(recipe => recipe.unlock <= state.level);
     const newestRecipes = availableRecipes.filter(recipe => recipe.unlock === state.level);
-    const boardHasNewest = state.orders.some(order => recipeById(order.recipeId)?.unlock === state.level);
+    const boardHasNewest = (Array.isArray(state.orders) ? state.orders : []).some(order => recipeById(order?.recipeId)?.unlock === state.level);
     const pool = newestRecipes.length && state.level > 1 && (!boardHasNewest || random() < .55) ? newestRecipes : availableRecipes;
     const recipe = pool[Math.floor(clamp(random(), 0, .999999) * pool.length)];
     const quantity = state.level >= 4 && random() > .68 ? 2 : 1;
-    const customerIndex = Math.floor(clamp(random(), 0, .999999) * CUSTOMERS.length);
+    const customerPool = ordinaryOrderCustomerPool(state);
+    const customerId = customerPool[Math.floor(clamp(random(), 0, .999999) * customerPool.length)];
+    const customerIndex = customerIndexFromId(customerId);
     const customer = CUSTOMERS[customerIndex];
     const orderId = nextSafeOrderId(state);
     if (orderId === null) return null;
     return {
-      id: orderId, customerId: `customer-${customerIndex}`, customer: customer[0], avatar: customer[1], note: customerOrderLine(`customer-${customerIndex}`, orderId, recipe.id, quantity), avatarColor: customer[3],
+      id: orderId, customerId, customer: customer[0], avatar: customer[1], note: customerOrderLine(customerId, orderId, recipe.id, quantity), avatarColor: customer[3],
       recipeId: recipe.id, quantity,
       reward: Math.round(recipe.sell * quantity * (1.45 + random() * .25)),
       xp: Math.round(8 + recipe.unlock * 3 + quantity * 3),
@@ -1018,7 +1042,7 @@
 
   return Object.freeze({
     SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, DELIVERY_NARRATIVE_PILOTS, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS, SAVE_LIMITS,
-    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, evaluateAchievements, grantGameplayCoins, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
+    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, evaluateAchievements, grantGameplayCoins, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded, ordinaryOrderCustomerPool,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
