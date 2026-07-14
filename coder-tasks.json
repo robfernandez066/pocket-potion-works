@@ -105,7 +105,7 @@
   },
   {
     "id": 19,
-    "status": "next",
+    "status": "complete",
     "title": "Mira first-heart narrative delivery pilot",
     "model": "5.6 Terra with Medium effort",
     "freshChat": true,
@@ -120,6 +120,26 @@
       "Deterministic tests cover the exact transition, post-rebirth eligibility, non-trigger paths, no replay, and shared fulfillment results",
       "npm.cmd run check passes",
       "Both delivery paths pass at 390x844 and 360x740 with no horizontal overflow or console warnings or errors",
+      "The coder reports changed files, assumptions, validation, deferred findings, and one PASS, FAIL, or BLOCKED status"
+    ]
+  },
+  {
+    "id": 20,
+    "status": "next",
+    "title": "Hostile save normalization and invalid active-brew recovery",
+    "model": "5.6 Tera with High effort",
+    "freshChat": true,
+    "prompt": "Task #20\n\nWork in:\n\nC:\\Users\\robbi\\Documents\\Projects\\newgame\n\nDo not read archive/.\n\nRun npm.cmd run handoff and confirm it prints Task 20. Work only on Task 20.\n\nObjective: Make current and migratable local-save normalization safe against hostile numeric values and reject a saved active brew whose known recipe is above the normalized saved player level. Preserve legitimate progress and all existing compatibility guarantees.\n\nInspect first: AGENTS.md, GAMEPLAY_ROADMAP.md, game-logic.js, game-logic.test.cjs, save-compatibility.test.cjs, release-lifecycle.test.cjs, economy-simulation.cjs, package.json, active save fixtures and frozen readers directly required for validation, and only other active files directly required by this task.\n\nRequired behavior: Treat every numeric field read from a save as untrusted, including numeric strings, negatives, fractions, non-finite-like strings, extremely large exponential values, Number.MAX_VALUE, and Number.MAX_SAFE_INTEGER. Normalize gameplay counters and values used by arithmetic or UI into finite, nonnegative safe integers with explicit domain-appropriate caps. Preserve existing smaller valid values and established caps. Level must remain between 1 and 10000. XP normalization must terminate in bounded work, never raise level above 10000, and finish in a canonical range below the XP requirement for the resulting level; preserve the existing reasonable multi-level-overflow behavior and remainder. Do not introduce an unbounded per-XP loop. Keep timestamps bounded by their existing rules.\n\nFor active brews, accept only a structurally valid known recipe whose unlock level is at or below the normalized saved level. Preserve a valid unlocked brew's recipe, timing, duration, and bounded assist use exactly as current normalization does. If the recipe is known but locked above the saved level, clear only the active brew. Do not raise level, unlock content, refund ingredients, grant a potion, mark discovery or mastery, award XP or currency, or reset unrelated progress. Preserve the existing safe rejection of unknown or malformed brews.\n\nKeep future-version blocking byte-preserving and distinct from recoverable current or older saves. Preserve v1-v7 migration, frozen-reader rollback protection, save schema v8, storage-failure behavior, the four-hour offline cap, and deterministic gameplay/economy behavior. Prefer a small shared normalization boundary and focused tests; do not create a second save parser or broad recovery system. If runtime files change, advance the service-worker cache identity exactly once and make only the factual matching identity updates required by existing automated gates.\n\nExplicitly out of scope: No storage acquisition/read/write/remove redesign; no manual-save or reset changes; no new warning modal or recovery UI; no achievement timing or lifetime-coin accounting change; no Daily Goal, idle-return, Stardust formula, order reward, recipe, upgrade, progression-envelope, gathering, narrative, Journal, After the Stars, tutorial, monetization, account, cloud-save, analytics, native-platform, or broader release work. Do not edit AGENTS.md, GAMEPLAY_ROADMAP.md, coder-tasks.json, README.md, release/readiness prose, or archive/. Do not commit or push. Do not start another task.\n\nAcceptance checks: Deterministic adversarial tests cover the hostile numeric forms above across representative scalar counters and nested ingredient, potion, mastery, customer, order, daily, weekly, gather, stats, and brew fields. Normalization completes promptly, returns only finite safe bounded values, does not throw, and preserves valid neighboring progress. Reasonable XP overflow still crosses levels and preserves its remainder; extreme XP cannot hang or exceed level 10000. A known above-level active brew is cleared without any compensation or unrelated mutation. A valid unlocked active brew round-trips unchanged, including a completed-but-uncollected brew. Unknown and malformed brews remain safely rejected. Current v8 saves, v1-v7 migration, future-v9 overwrite protection, frozen-reader rollback checks, simulations, and the gather -> brew -> collect -> deliver -> upgrade loop remain unchanged. Save version stays 8 and no new dependency or saved field is added.\n\nValidation: Run npm.cmd run check. In the browser, load a temporary adversarial current-version save without shipping a debug control, confirm the game opens responsively, then exercise gather -> brew -> collect -> deliver -> upgrade. At 390x844 verify safe recovery from an above-level active brew; at 360x740 verify a valid unlocked brew survives reload and can be collected. Confirm no horizontal overflow and no browser console warnings or errors attributable to normalization. Remove temporary QA state before final validation.\n\nFinish with exactly one overall status: PASS, FAIL, or BLOCKED, followed by Summary, Changed files, Validation evidence, Assumptions, and Deferred or out-of-scope findings.",
+    "acceptance": [
+      "Hostile numeric save values normalize promptly into finite nonnegative safe bounded values",
+      "Level never exceeds 10000 and XP normalization is bounded while preserving reasonable overflow semantics",
+      "A known above-level active brew is cleared without compensation or unrelated progress loss",
+      "A valid unlocked active brew round-trips unchanged and remains collectible when ready",
+      "Unknown and malformed brews retain safe rejection behavior",
+      "Current saves, v1-v7 migration, future-version blocking, and frozen-reader rollback protection pass",
+      "Save version 8, gameplay values, simulations, storage behavior, and the core loop remain unchanged",
+      "npm.cmd run check passes",
+      "Recovery and valid-brew reload pass at 390x844 and 360x740 with no overflow or console warnings or errors",
       "The coder reports changed files, assumptions, validation, deferred findings, and one PASS, FAIL, or BLOCKED status"
     ]
   }

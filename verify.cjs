@@ -26,6 +26,8 @@ const dynamicIds = new Set(["collectBrewButton"]);
 const absentIds = [...new Set(queriedIds.filter(id => !ids.has(id) && !dynamicIds.has(id)))];
 if (absentIds.length) throw new Error(`JavaScript references absent HTML IDs: ${absentIds.join(", ")}`);
 if (!html.includes('id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"')) throw new Error("Brew transitions require one stable atomic live status node.");
+for (const id of ["workshopNarrativeDelivery", "ordersNarrativeDelivery"]) if (!html.includes(`id="${id}" role="status" aria-live="polite" aria-atomic="true"`)) throw new Error("Narrative delivery surfaces require stable atomic live status nodes.");
+if (!app.includes('fulfillOrder(Number(button.dataset.quickDeliver), "workshop")') || !app.includes('fulfillOrder(Number(button.dataset.order), "orders")')) throw new Error("Narrative delivery must retain its originating surface.");
 if (app.includes('class="active-brew" aria-live=')) throw new Error("The per-second brew countdown must remain outside live regions.");
 
 JSON.parse(fs.readFileSync("manifest.webmanifest", "utf8"));

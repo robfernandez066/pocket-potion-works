@@ -110,7 +110,7 @@ let pendingTutorialTarget = null;
 let lastTutorialPromptKey = null;
 let announcedReadyBrew = null;
 let renderedBrewKey = null;
-const transientCompletions = { daily: false, weekly: false, special: null, afterStars: null };
+const transientCompletions = { daily: false, weekly: false, special: null, afterStars: null, narrativeWorkshop: null, narrativeOrders: null };
 const completionTimers = new Map();
 const completionTokens = new Map();
 let pendingDailyChooserToken = 0;
@@ -121,17 +121,18 @@ function beginCompletionState(kind, detail = true, onHidden = null) {
   const token = (completionTokens.get(kind) || 0) + 1;
   completionTokens.set(kind, token);
   transientCompletions[kind] = detail;
-  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete", afterStars: "#afterStarsCard" }[kind];
+  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete", afterStars: "#afterStarsCard", narrativeWorkshop: "#workshopNarrativeDelivery", narrativeOrders: "#ordersNarrativeDelivery" }[kind];
   const readableTimer = setTimeout(() => {
     const node = document.querySelector(selector);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!reducedMotion) node?.classList.add("is-collapsing");
     const hideTimer = setTimeout(() => {
       if (completionTokens.get(kind) !== token) return;
-      transientCompletions[kind] = kind === "special" || kind === "afterStars" ? null : false;
+      transientCompletions[kind] = kind === "special" || kind === "afterStars" || kind.startsWith("narrative") ? null : false;
       document.querySelector(selector)?.classList.remove("is-collapsing");
       renderOrders();
       renderWeekly();
+      renderNarrativeDelivery();
       completionTimers.delete(kind);
       if (typeof onHidden === "function") onHidden();
     }, reducedMotion ? 0 : Logic.COMPLETION_CARD_CONFIG.fadeMs);
@@ -255,6 +256,7 @@ function renderAll() {
   renderPotionShelf();
   renderRecipes();
   renderOrders();
+  renderNarrativeDelivery();
   renderWeekly();
   renderUpgrades();
   renderJournal();
@@ -413,7 +415,7 @@ function renderReadyDeliverStrip() {
     const recipe = recipeById(order.recipeId);
     return `<button data-quick-deliver="${order.id}">${potionSpriteMarkup(recipe)}<span>Deliver ${recipe.name} · +${orderReward(order)}</span></button>`;
   }).join("")}</div>` : "";
-  strip.querySelectorAll("[data-quick-deliver]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.quickDeliver))));
+  strip.querySelectorAll("[data-quick-deliver]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.quickDeliver), "workshop")));
 }
 
 function setDisclosure(kind, open) {
@@ -578,7 +580,15 @@ function renderOrders() {
       <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
     </article>`;
   }).join("");
-  document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.order))));
+  document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.order), "orders")));
+}
+
+function renderNarrativeDelivery() {
+  for (const [id, detail] of [["workshopNarrativeDelivery", transientCompletions.narrativeWorkshop], ["ordersNarrativeDelivery", transientCompletions.narrativeOrders]]) {
+    const card = document.querySelector(`#${id}`);
+    card.hidden = !detail;
+    card.innerHTML = detail ? `<p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small>` : "";
+  }
 }
 
 function chooseCommission(commissionId) {
@@ -773,13 +783,14 @@ function collectBrew() {
   showTutorialTransition(tutorialBefore, viewBeforeAction);
 }
 
-function fulfillOrder(orderId) {
+function fulfillOrder(orderId, surface = "orders") {
   const tutorialBefore = Logic.beginnerQuest(state);
   const viewBeforeAction = activeView();
   const result = window.PPWLogic.fulfillOrder(state, orderId, Date.now());
   if (!result) return;
   if (result.commission) beginCompletionState("special", { title: result.commission.title, customer: CUSTOMERS[Number(result.commission.customerId.slice(9))][0], keepsake: result.commission.keepsake.name });
   if (result.afterStars?.complete) beginCompletionState("afterStars", result.afterStars);
+  if (result.narrative) beginCompletionState(surface === "workshop" ? "narrativeWorkshop" : "narrativeOrders", result.narrative);
   announceLevels(result.levels);
   checkAchievements();
   const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";

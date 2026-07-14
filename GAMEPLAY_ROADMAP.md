@@ -22,20 +22,20 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
 - Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
 - Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
+- Mira's first trust heart now produces one brief inline authored delivery payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and remains a one-villager pilot until natural owner play establishes that it improves delivery feel.
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 19 Mira first-heart narrative pilot
+## Now - Task 20 hostile save normalization and invalid active-brew recovery
 
-Tasks 15 through 18 are complete. Task 19 is the only released implementation task.
+Tasks 15 through 19 are complete. Task 20 is the only released implementation task.
 
-When a successful delivery earns Mira the Baker's first trust heart, show one brief authored, non-modal payoff at the visible delivery surface. The moment must complement rather than duplicate her first Journal story, leave that story unread and claimable, and preserve the existing 12-coin friendship favor. Use Mira's existing persistent heart progress as the one-time boundary; do not add saved narrative state or change the save version.
+Treat every numeric value in a local save as untrusted. Bound current and migratable save normalization so adversarial negative, fractional, non-finite-like, or extremely large values cannot create unbounded work, unsafe gameplay arithmetic, broken UI output, or a level above the existing level cap. Preserve valid saves, established domain caps, future-version overwrite protection, migrations, and frozen-reader rollback behavior.
 
-This is a one-villager, one-heart presentation pilot. Do not force Mira orders, alter customer selection, change rewards, add later-heart moments, build a dialogue or chapter system, add navigation or recurrence, or expand the pilot until owner playtesting establishes that the moment improves delivery feel.
+Reject an active brew when its known recipe is above the normalized saved level. Clear only that invalid brew; do not unlock the recipe, raise the level, refund ingredients, grant a potion, or award discovery, mastery, XP, or currency. Preserve a structurally valid unlocked brew exactly. Keep this task at the save-normalization boundary: no economy retuning, storage-I/O redesign, save-version bump, or broader recovery UI.
 
 ## Unselected correctness candidates
 
-- **Hostile values and invalid active brews:** bound adversarial numeric save values and restore or reject a saved active brew when its known recipe is above the saved player level. This is separate from storage I/O resilience.
 - **Progression accounting:** evaluate achievements on their triggering actions and use one consistent definition of lifetime coins.
 
 Focus-restoration validation may accompany any future task that rerenders affected controls; it does not need to wait for the full deferred release matrix.

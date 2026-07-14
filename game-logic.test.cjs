@@ -199,6 +199,52 @@ test("recurring customers gain trust and grant a deterministic non-blocking favo
   assert.equal(result.customerBonus, game.CUSTOMER_CONFIG.heartBonusCoins);
   assert.equal(result.reward, 20 + game.CUSTOMER_CONFIG.heartBonusCoins);
   assert.deepEqual(state.customers["customer-0"], { deliveries: 3, hearts: 1 });
+  assert.deepEqual(result.narrative, { customerId: "customer-0", fromHearts: 0, toHearts: 1, kicker: "MIRA · FIRST TRUST HEART", title: "A warmer morning", body: "Mira leaves a warm bun beside your coins. \"Mornings are kinder with a friend.\"", footer: "1 of 3 trust hearts · New story ready in Journal" });
+  assert.equal(game.journalClaimableCounts(state).story, 1);
+  assert.equal(game.customerStoryStatus(state, "customer-0", 0).read, false);
+});
+
+test("Mira's narrative pilot is transition-only and preserves shared fulfillment results", () => {
+  const deliver = (customerId, deliveries, hearts, extra = {}) => {
+    const state = game.defaultState(NOW);
+    state.customers[customerId] = { deliveries, hearts };
+    state.orders = [{ id: 1, customerId, customer: game.CUSTOMERS[Number(customerId.slice(9))][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+    state.nextOrderId = 2;
+    state.potions.tonic = extra.ready === false ? 0 : 1;
+    return { state, result: game.fulfillOrder(state, 1, NOW, () => 0) };
+  };
+  assert.equal(deliver("customer-0", 1, 0).result.narrative, null, "Mira needs the third delivery");
+  assert.equal(deliver("customer-0", 3, 1).result.narrative, null, "later hearts cannot replay the pilot");
+  assert.equal(deliver("customer-1", 2, 0).result.narrative, null, "other villagers are ineligible");
+  assert.equal(deliver("customer-0", 2, 0, { ready: false }).result, null, "failed deliveries have no payload");
+  const replay = deliver("customer-0", 2, 0);
+  assert.equal(game.fulfillOrder(replay.state, 1, NOW, () => 0), null, "a repeated order ID cannot replay the pilot");
+
+  const commissionState = game.defaultState(NOW);
+  commissionState.commissions.invitations = 1;
+  const commissionOrder = game.selectSignatureCommission(commissionState, "mira-dawn");
+  commissionState.customers["customer-0"] = { deliveries: 2, hearts: 0 };
+  commissionState.potions.tonic = 1;
+  const commissionResult = game.fulfillOrder(commissionState, commissionOrder.id, NOW, () => 0);
+  assert.equal(commissionResult.commission.id, "mira-dawn");
+  assert.ok(commissionResult.narrative, "a special request retains its completion result and adds the pilot");
+
+  const afterStarsState = game.defaultState(NOW);
+  afterStarsState.stats.prestiges = 1;
+  game.ensureOrders(afterStarsState, () => 0);
+  const afterStarsOrder = afterStarsState.orders.find(game.isAfterStarsOrder);
+  afterStarsState.customers["customer-0"] = { deliveries: 2, hearts: 0 };
+  afterStarsState.potions.tonic = 1;
+  const afterStarsResult = game.fulfillOrder(afterStarsState, afterStarsOrder.id, NOW, () => 0);
+  assert.deepEqual(afterStarsResult.afterStars, { step: 0, title: "The Oven Remembers", complete: false });
+  assert.ok(afterStarsResult.narrative, "a post-rebirth After the Stars delivery remains eligible");
+
+  const rebirthState = game.defaultState(NOW);
+  rebirthState.level = game.PRESTIGE_CONFIG.unlockLevel;
+  rebirthState.customers["customer-0"] = { deliveries: 3, hearts: 1 };
+  const reborn = game.performPrestige(rebirthState, 3, NOW);
+  assert.deepEqual(reborn.customers["customer-0"], { deliveries: 3, hearts: 1 }, "rebirth preserves the already-earned first heart instead of replaying a delivery result");
+  assert.equal(Object.hasOwn(reborn, "narrative"), false, "rebirth alone cannot produce a fulfillment payload");
 });
 
 test("all villagers have three distinct trust stories and deterministic request variety", () => {

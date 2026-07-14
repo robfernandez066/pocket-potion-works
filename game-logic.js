@@ -13,6 +13,9 @@
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
   const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
   const CUSTOMER_CONFIG = Object.freeze({ deliveriesPerHeart: 3, maxHearts: 3, heartBonusCoins: 12 });
+  const DELIVERY_NARRATIVE_PILOTS = Object.freeze([
+    Object.freeze({ customerId: "customer-0", fromHearts: 0, toHearts: 1, kicker: "MIRA · FIRST TRUST HEART", title: "A warmer morning", body: "Mira leaves a warm bun beside your coins. \"Mornings are kinder with a friend.\"", footer: "1 of 3 trust hearts · New story ready in Journal" }),
+  ]);
   const COMPLETION_CARD_CONFIG = Object.freeze({ readableMs: 3000, fadeMs: 300 });
   const JOURNAL_REWARDS = Object.freeze({ story: 5, recipe: 5, achievement: 10 });
   const PRESTIGE_CONFIG = Object.freeze({ unlockLevel: 7, baseReward: 3, levelsPerBonus: 2 });
@@ -680,6 +683,7 @@
     progress.deliveries += 1;
     progress.hearts = Math.min(CUSTOMER_CONFIG.maxHearts, Math.floor(progress.deliveries / CUSTOMER_CONFIG.deliveriesPerHeart));
     state.customers[customerId] = progress;
+    const narrative = DELIVERY_NARRATIVE_PILOTS.find(pilot => pilot.customerId === customerId && pilot.fromHearts === previousHearts && pilot.toHearts === progress.hearts) || null;
     const customerBonus = progress.hearts > previousHearts ? CUSTOMER_CONFIG.heartBonusCoins : 0;
     const reward = Math.round(order.reward * orderMultiplier(state, now, order.recipeId)) + customerBonus;
     state.coins += reward; state.stats.coinsEarned += reward; state.stats.orders += 1; state.daily.orders += 1;
@@ -696,7 +700,7 @@
     state.orders.splice(index, 1);
     const levels = addXp(state, order.xp);
     ensureOrders(state, random);
-    return { reward, levels, customerBonus, customerProgress: { ...progress }, commission: completedCommission || null, afterStars: completedQuestStep ? { step: order.afterStarsStep, title: completedQuestStep.title, complete: state.afterStars.step >= AFTER_STARS_STEPS.length } : null };
+    return { reward, levels, customerBonus, customerProgress: { ...progress }, narrative: narrative ? { ...narrative } : null, commission: completedCommission || null, afterStars: completedQuestStep ? { step: order.afterStarsStep, title: completedQuestStep.title, complete: state.afterStars.step >= AFTER_STARS_STEPS.length } : null };
   }
 
   function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.9, state.upgrades[upgrade.id])); }
@@ -920,7 +924,7 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, DELIVERY_NARRATIVE_PILOTS, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
