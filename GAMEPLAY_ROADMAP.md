@@ -30,19 +30,19 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - owner decision gate for idle return
+## Now - Task 27 frontloaded idle return
 
-Tasks 15 through 26 are complete. No coder task is queued until the owner selects or rejects an idle-return candidate.
+Tasks 15 through 26 are complete. The owner approved frontloaded-diminishing for Task 27.
 
 Task 25 found no broad same-level recipe-pair failure: all eight measured recipes completed their request within ten minutes, with average delivery times from 109.0 to 175.8 seconds. In its representative active loop, Copper Cauldron and Golden Ledger produced clear throughput or coin effects, while ingredient upgrades mainly increased stock. Moonlit Garden added 2.8 active ingredients on average but no orders and no additional 60- or 120-minute offline ingredients because both cases reached the existing reserve cap.
 
-Task 26 confirmed that the current formula fills the representative passive reserve in 18 minutes. Two candidates met every printed criterion: frontloaded-diminishing reached the reserve in 98 minutes with 14/36/54 ingredients at 15/60/120 minutes and a 25% Garden level-1 benefit at 60 minutes; gentle-diminishing reached it in 115 minutes with 10/33/54 ingredients and a 24.242% Garden benefit. The PM recommendation is frontloaded-diminishing because it is closer to the stated 90-minute target while remaining bounded by the existing first-delivery gate, 60% reserve, manual-harvest room, and four-hour elapsed cap.
+Task 26 confirmed that the current formula fills the representative passive reserve in 18 minutes. The approved frontloaded-diminishing curve reaches it in 98 minutes with 14/36/54 ingredients at 15/60/120 minutes and a 25% Garden level-1 benefit at 60 minutes.
 
-The live formula remains unchanged. Implement frontloaded-diminishing only if the owner approves that direction; otherwise retain the current formula or request a different candidate study.
+Implement only that approved curve while preserving the existing first-delivery gate, uniform ingredient distribution, 60% reserve, room for charged harvests, Moonlit Garden multiplier, Pantry Shelves interaction, four-hour elapsed cap, save shape, and one-time offline-award lifecycle. Convert the Task 26 candidate harness into current-formula regression evidence rather than retaining rejected alternatives as active direction.
 
 ## Confirmed economy risks requiring design and simulation
 
-- **Idle return:** the four-hour value remains a safety cap. Task 26 measured the current representative reserve filling in 18 minutes and identified two bounded candidates for a 60-120 minute useful window. Preserve live values until the owner selects or rejects the recommended frontloaded-diminishing curve.
+- **Idle return:** the four-hour value remains a safety cap. The owner approved Task 26's frontloaded-diminishing curve for Task 27; revalidate its 98-minute representative reserve target, upgrade interactions, reload lifecycle, and active first-cycle invariance before adoption.
 - **Stardust scaling:** each Stardust currently adds 10% order-coin value, and daily rewards can add Stardust independently of rebirth. Evaluate a cap or reshaped economic effect while preserving earned counts and sources where practical, define save migration, and revalidate the seeded first-cycle envelope. Do not choose or implement a formula without simulation and owner approval.
 
 ## Near-term existing-loop and playtest candidates
