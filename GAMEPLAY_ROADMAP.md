@@ -21,16 +21,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Gameplay saves use schema v8 with v1-v7 migration, future-v9 overwrite protection, and frozen-reader rollback coverage.
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
 - Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
+- Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 18 foreground daily rollover correctness
+## Now - next scope selection
 
-Tasks 15 through 17 are complete. Task 18 is the only released implementation task.
-
-Daily rollover must occur before a successful post-midnight delivery mutates Daily Goal progress and before a Daily Goal claim checks eligibility. A foreground session must move to the new local date without losing the first new-day delivery or allowing the previous day's completed reward to be claimed. Preserve the saved-date high-water rule so clock rollback cannot reopen rewards, and refresh and persist the Daily Goal only when a real forward date transition occurs.
-
-Do not change Daily Goal thresholds or rewards, add streaks, retune Stardust, alter rolling requests, or combine this correction with progression accounting, hostile saves, content, release, or monetization. The narrative delivery pilot remains the preferred visible-content candidate after this bounded correctness task is complete.
+Tasks 15 through 18 are complete. No implementation task is currently released. The narrative delivery pilot remains the preferred visible-content candidate when the owner asks to begin the next task.
 
 ## Unselected correctness candidates
 

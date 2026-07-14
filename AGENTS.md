@@ -35,8 +35,11 @@
 
 - The PM owns project scope, roadmap sequencing, coder prompts, report review, task status, and Git publication.
 - Every newly approved roadmap task defaults to a fresh coder task. Continue the same coder task only for review questions or corrections within that task's unchanged scope.
-- Use only the 5.6 Luna, 5.6 Tera, or 5.6 Sol model families for coder work. Choose the least costly model that safely fits the task; do not recommend or use another model family.
-- Before every coder prompt, state the recommended ChatGPT model, thinking level, and whether to use a fresh or existing coder task.
+- Use only the 5.6 Luna, 5.6 Terra, or 5.6 Sol model families for coder work. Choose the least costly model that safely fits the task; do not recommend or use another model family.
+- Use Luna for narrow, low-risk, well-diagnosed work; Terra as the default for normal multi-file feature work; and Sol for ambiguous, high-risk, architectural, migration, or difficult cross-system work.
+- Choose an effort level from Light, Medium, High, Extra High, or Ultra. Use the lowest level that safely fits the task, and reserve Ultra for exceptional work that materially benefits from multi-agent execution.
+- Before every coder prompt, state the recommended ChatGPT model, effort level, and whether to use a fresh or existing coder task.
+- Begin every coder prompt with `Task #X`, followed by `Work in:`, the absolute repository path, and `Do not read archive/.` Label every correction or review follow-up with its existing task number.
 - Every coder prompt must name the objective, files to inspect first, required behavior, explicit out-of-scope work, acceptance checks, and validation proportional to risk.
 - The coder must finish with exactly one overall status: `PASS`, `FAIL`, or `BLOCKED`, followed by its summary, changed files, validation evidence, assumptions, and deferred or out-of-scope findings.
 - The PM reviews the report, actual diff, and validation. A failed or incomplete result returns to the same coder task with a focused correction prompt.

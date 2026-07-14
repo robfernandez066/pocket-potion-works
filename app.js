@@ -178,7 +178,11 @@ function scheduleSave() {
 }
 
 function resetDailyIfNeeded() {
-  window.PPWLogic.resetDailyIfNeeded(state);
+  return window.PPWLogic.resetDailyIfNeeded(state, Date.now());
+}
+
+function checkForegroundDateTransition(now = Date.now()) {
+  return Logic.foregroundDailyTransition(state, now, !document.hidden, renderAll);
 }
 
 function addRandomIngredients(amount, announce = false) {
@@ -772,7 +776,7 @@ function collectBrew() {
 function fulfillOrder(orderId) {
   const tutorialBefore = Logic.beginnerQuest(state);
   const viewBeforeAction = activeView();
-  const result = window.PPWLogic.fulfillOrder(state, orderId);
+  const result = window.PPWLogic.fulfillOrder(state, orderId, Date.now());
   if (!result) return;
   if (result.commission) beginCompletionState("special", { title: result.commission.title, customer: CUSTOMERS[Number(result.commission.customerId.slice(9))][0], keepsake: result.commission.keepsake.name });
   if (result.afterStars?.complete) beginCompletionState("afterStars", result.afterStars);
@@ -812,8 +816,10 @@ function buyUpgrade(id) {
 }
 
 function claimDaily() {
+  const now = Date.now();
+  if (checkForegroundDateTransition(now)) return;
   const invitationsBefore = state.commissions.invitations;
-  if (!window.PPWLogic.claimDaily(state)) return;
+  if (!window.PPWLogic.claimDaily(state, now)) return;
   const invitationGranted = state.commissions.invitations > invitationsBefore;
   const savedForLater = invitationGranted && Boolean(state.commissions.selectedId);
   const chooserToken = ++pendingDailyChooserToken;
@@ -1145,6 +1151,7 @@ function tick() {
   const elapsedSeconds = lifecycle.activeElapsed(lastTickAt, now);
   lastTickAt = now;
   if (document.hidden) return;
+  checkForegroundDateTransition(now);
   passiveBank += gatherRate() * elapsedSeconds;
   const whole = Math.floor(passiveBank);
   if (whole > 0) {
@@ -1216,7 +1223,7 @@ document.addEventListener("visibilitychange", () => {
     lifecycleAdapter.emit("resume", Date.now());
     analytics.track("lifecycle", { phase: "resume" });
     lastTickAt = Date.now();
-    renderAll();
+    if (!checkForegroundDateTransition(lastTickAt)) renderAll();
   }
 });
 

@@ -97,19 +97,87 @@ test("ingredient additions stop exactly at the storage cap", () => {
 
 test("daily reward is idempotent", () => {
   const state = game.defaultState(NOW); state.daily.orders = 5;
-  assert.equal(game.claimDaily(state), true);
-  assert.equal(game.claimDaily(state), false);
+  assert.equal(game.claimDaily(state, NOW), true);
+  assert.equal(game.claimDaily(state, NOW), false);
   assert.equal(state.coins, 80); assert.equal(state.stardust, 1); assert.equal(state.stats.coinsEarned, 50);
   assert.equal(state.commissions.invitations, 1);
   state.daily = { date: game.todayKey(NOW + 86400000), orders: 5, claimed: false };
   state.commissions.invitations = 12;
-  assert.equal(game.claimDaily(state), true);
+  assert.equal(game.claimDaily(state, NOW + 86400000), true);
   assert.equal(state.commissions.invitations, 12, "daily invitations cannot exceed unfinished requests");
   state.daily = { date: game.todayKey(NOW + 2 * 86400000), orders: 5, claimed: false };
   state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(item => item.id);
-  assert.equal(game.claimDaily(state), true);
+  assert.equal(game.claimDaily(state, NOW + 2 * 86400000), true);
   assert.equal(state.commissions.invitations, 0, "finishing the collection grants currencies but no invitation");
   assert.equal(state.coins, 180); assert.equal(state.stardust, 3);
+});
+
+test("daily rollover resets before a post-midnight delivery", () => {
+  const yesterday = NOW;
+  const midnight = NOW + 86400000;
+  const state = game.defaultState(yesterday);
+  state.daily.orders = 4;
+  state.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+  state.potions.tonic = 1;
+  assert.ok(game.fulfillOrder(state, 1, midnight, () => 0));
+  assert.deepEqual(state.daily, { date: game.todayKey(midnight), orders: 1, claimed: false });
+});
+
+test("stale daily completion cannot be claimed after rollover", () => {
+  const state = game.defaultState(NOW);
+  state.daily.orders = 5;
+  const coins = state.coins, stardust = state.stardust, invitations = state.commissions.invitations;
+  assert.equal(game.claimDaily(state, NOW + 86400000), false);
+  assert.deepEqual(state.daily, { date: game.todayKey(NOW + 86400000), orders: 0, claimed: false });
+  assert.equal(state.coins, coins); assert.equal(state.stardust, stardust); assert.equal(state.commissions.invitations, invitations);
+});
+
+test("same-day daily delivery and claim behavior is unchanged", () => {
+  const state = game.defaultState(NOW);
+  state.daily.orders = 4;
+  state.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+  state.potions.tonic = 1;
+  assert.ok(game.fulfillOrder(state, 1, NOW, () => 0));
+  assert.equal(state.daily.orders, 5);
+  assert.equal(game.claimDaily(state, NOW), true);
+  assert.equal(state.daily.claimed, true);
+});
+
+test("foreground rollover refreshes and schedules once, then stays quiet", () => {
+  const state = game.defaultState(NOW);
+  let renders = 0, saveSchedules = 0;
+  const refresh = () => { renders += 1; saveSchedules += 1; };
+  assert.equal(game.foregroundDailyTransition(state, NOW + 86400000, true, refresh), true);
+  assert.equal(game.foregroundDailyTransition(state, NOW + 86400000, true, refresh), false);
+  assert.equal(game.foregroundDailyTransition(state, NOW - 86400000, true, refresh), false);
+  assert.equal(renders, 1);
+  assert.equal(saveSchedules, 1);
+});
+
+test("stale claim orchestration rolls over before checking eligibility", () => {
+  const state = game.defaultState(NOW);
+  state.daily.orders = 5;
+  const before = { coins: state.coins, stardust: state.stardust, invitations: state.commissions.invitations };
+  let renders = 0, saveSchedules = 0;
+  const refresh = () => { renders += 1; saveSchedules += 1; };
+  const claimFromBrowser = now => {
+    if (game.foregroundDailyTransition(state, now, true, refresh)) return false;
+    return game.claimDaily(state, now);
+  };
+  assert.equal(claimFromBrowser(NOW + 86400000), false);
+  assert.deepEqual(state.daily, { date: game.todayKey(NOW + 86400000), orders: 0, claimed: false });
+  assert.deepEqual({ coins: state.coins, stardust: state.stardust, invitations: state.commissions.invitations }, before);
+  assert.equal(renders, 1);
+  assert.equal(saveSchedules, 1);
+});
+
+test("foreground transition seam is the tick boundary", () => {
+  const state = game.defaultState(NOW);
+  const tickAt = now => game.foregroundDailyTransition(state, now, true, () => {});
+  assert.equal(tickAt(NOW + 86400000), true);
+  assert.equal(state.daily.date, game.todayKey(NOW + 86400000));
+  assert.equal(tickAt(NOW + 86400000 + 1000), false);
+  assert.equal(tickAt(NOW - 86400000), false);
 });
 
 test("recipe mastery has bounded milestones and raises only matching order value", () => {
@@ -327,7 +395,7 @@ test("prestige opens with the final recipe and preserves durable goals plus the 
   assert.equal(next.level, 1); assert.equal(next.stardust, 5);
   assert.equal(next.mastery.tonic, 8); assert.deepEqual(next.customers["customer-0"], { deliveries: 4, hearts: 1 });
   assert.deepEqual(next.journal, state.journal);
-  assert.deepEqual(next.daily, state.daily); assert.equal(game.claimDaily(next), false, "rebirth cannot reclaim today's reward");
+  assert.deepEqual(next.daily, state.daily); assert.equal(game.claimDaily(next, NOW + 1000), false, "rebirth cannot reclaim today's reward");
   assert.equal(next.stats.prestiges, 1); assert.equal(game.cosmeticUnlocked(next, "starglass"), true);
   assert.equal(game.beginnerQuest(next, NOW + 1000), null, "rebirth cannot restart First Steps");
   assert.deepEqual(next.weekly, state.weekly); assert.deepEqual(next.customization, state.customization);
@@ -336,18 +404,18 @@ test("prestige opens with the final recipe and preserves durable goals plus the 
 test("daily reset uses a monotonic saved date across alternating clock changes", () => {
   const state = game.defaultState(NOW);
   state.daily.orders = 5;
-  assert.equal(game.claimDaily(state), true);
+  assert.equal(game.claimDaily(state, NOW), true);
   const firstDate = state.daily.date;
-  game.resetDailyIfNeeded(state, NOW - 86400000);
+  assert.equal(game.resetDailyIfNeeded(state, NOW - 86400000), false);
   assert.deepEqual(state.daily, { date: firstDate, orders: 5, claimed: true }, "clock rollback cannot reopen the saved date");
 
-  game.resetDailyIfNeeded(state, NOW + 86400000);
+  assert.equal(game.resetDailyIfNeeded(state, NOW + 86400000), true);
   const laterDate = game.todayKey(NOW + 86400000);
   assert.deepEqual(state.daily, { date: laterDate, orders: 0, claimed: false }, "a genuinely later local date opens one fresh goal");
   state.daily.orders = 5;
-  assert.equal(game.claimDaily(state), true);
-  game.resetDailyIfNeeded(state, NOW - 86400000);
-  game.resetDailyIfNeeded(state, NOW + 86400000);
+  assert.equal(game.claimDaily(state, NOW + 86400000), true);
+  assert.equal(game.resetDailyIfNeeded(state, NOW - 86400000), false);
+  assert.equal(game.resetDailyIfNeeded(state, NOW + 86400000), false);
   assert.deepEqual(state.daily, { date: laterDate, orders: 5, claimed: true }, "alternating backward and forward to the saved high-water date cannot reissue rewards");
   assert.equal(state.coins, 130);
   assert.equal(state.stardust, 2);
@@ -432,7 +500,7 @@ test("choosing a special request consumes one invitation and preserves normal de
   assert.equal(game.selectSignatureCommission(state, "moss-rainpath"), null, "only one request may be active");
   assert.equal(state.commissions.invitations, 1, "a rejected selection cannot consume an invitation");
   state.daily.orders = 5;
-  assert.equal(game.claimDaily(state), true);
+  assert.equal(game.claimDaily(state, NOW), true);
   assert.equal(state.commissions.invitations, 2, "a daily invitation waits safely behind an active request");
   const before = { coins: state.coins, orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered.tonic };
   state.potions.tonic = 1;

@@ -671,6 +671,7 @@
     if (index < 0) return null;
     const order = state.orders[index];
     if (state.potions[order.recipeId] < order.quantity) return null;
+    resetDailyIfNeeded(state, now);
     state.potions[order.recipeId] -= order.quantity;
     const customerId = customerIdFromOrder(order);
     order.customerId = customerId;
@@ -717,7 +718,8 @@
     state.coins -= cost; state.upgrades[id] += 1; return true;
   }
 
-  function claimDaily(state) {
+  function claimDaily(state, now = Date.now()) {
+    resetDailyIfNeeded(state, now);
     if (state.daily.claimed || state.daily.orders < 5) return false;
     state.daily.claimed = true; state.coins += 50; state.stardust += 1; state.stats.coinsEarned += 50;
     const invitationCap = unfinishedCommissionCount(state);
@@ -823,7 +825,15 @@
 
   function resetDailyIfNeeded(state, now = Date.now()) {
     const date = todayKey(now);
-    if (date > state.daily.date) state.daily = { date, orders: 0, claimed: false };
+    if (date <= state.daily.date) return false;
+    state.daily = { date, orders: 0, claimed: false };
+    return true;
+  }
+
+  function foregroundDailyTransition(state, now = Date.now(), visible = true, refresh = () => {}) {
+    if (!visible || !resetDailyIfNeeded(state, now)) return false;
+    refresh();
+    return true;
   }
 
   function enforceStorageCap(state) {
@@ -915,6 +925,6 @@
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
-    resetDailyIfNeeded, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
+    resetDailyIfNeeded, foregroundDailyTransition, addRandomIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

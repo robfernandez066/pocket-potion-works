@@ -129,7 +129,7 @@ function simulateToLevel(state, seed, targetLevel, start, maxSeconds = 7200, use
     if (second % 5 === 0) {
       game.collectBrew(state, now);
       for (const order of [...state.orders]) game.fulfillOrder(state, order.id, now, random);
-      if (state.daily.orders >= 5) game.claimDaily(state);
+      if (state.daily.orders >= 5) game.claimDaily(state, now);
       if (useCommissions && !state.commissions.selectedId && state.commissions.invitations > 0) {
         const choices = game.refreshCommissionChoices(state);
         if (choices[0]) game.selectSignatureCommission(state, choices[0].id);
