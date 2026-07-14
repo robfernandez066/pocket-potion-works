@@ -1,0 +1,181 @@
+[
+  {
+    "id": 6,
+    "status": "pending",
+    "releaseGate": true,
+    "onHold": true,
+    "holdReason": "Implementation shipped; remaining manual public-release evidence is deferred.",
+    "title": "Interaction blockers and prototype economy integrity",
+    "model": "Use the current efficient coding model with medium-high reasoning",
+    "freshChat": true,
+    "prompt": "Work only on the current Pocket Potion Works interaction blockers and simulated-reward integrity. Read AGENTS.md, README.md, GAMEPLAY_ROADMAP.md, RELEASE_READINESS.md, DEVICE_TEST_MATRIX.md, game-logic.js, app.js, style.css, index.html, economy-simulation.cjs, monetization-simulation.cjs, and the relevant tests. Do not read archive/. Make the tutorial transition banner dismissible, time-bounded, and unable to cover core controls; remove duplicate tutorial messaging. Keep the Market button enabled and explain its first-order lock on touch. Add a visible Prosperity charm countdown. Move finish-brew eligibility and consumption into deterministic shared logic used by both the UI and monetization simulation; replace the unlimited behavior and current abuse characterization with a bounded guardrail that preserves brew pacing, then make offer copy match availability. Stop rebuilding active brew controls every second, move ordinary toasts above bottom navigation, replace fractional gathering-rate copy with readable units, and reflect idle/active/ready brew state in the scene when safe. Add focused deterministic tests for reward abuse and state transitions. Do not redesign gathering, add puzzles, add production services, or begin later roadmap work.",
+    "acceptance": [
+      "Tutorial prompts never block Market, Settings, resources, or required navigation and can be dismissed",
+      "Only one tutorial message surface is prominent for a transition",
+      "Locked Market behavior is understandable on touch",
+      "Finish-brew simulation cannot be repeated to collapse timer progression and its UI matches the rule",
+      "The UI and monetization simulation use one deterministic finish-brew eligibility policy with a bounded guardrail",
+      "Active charm state and remaining time are visible outside the Market modal",
+      "Collect remains stable across timer ticks",
+      "Toasts do not cover resources or bottom navigation",
+      "npm.cmd run check passes and 390x844 plus 360x740 browser QA has no overflow or console errors"
+    ]
+  },
+  {
+    "id": 7,
+    "status": "complete",
+    "title": "Meaningful gathering and workshop flow",
+    "model": "Use the current efficient coding model with high reasoning",
+    "freshChat": true,
+    "prompt": "After Task 6 and owner approval, redesign charged gathering and shorten the Workshop loop. Use deterministic simulations to choose recharge and yield values; do not adopt unverified fixed numbers. Charged gathering must support intentional ingredient targeting while passive/offline gathering may remain random. Preserve a simple instant gather. Add a compact ready-to-deliver strip, sticky brew shortcut, and compact remembered Pantry/Recipe disclosures while retaining the four-tab navigation and full Orders view. Present any optional pick-3 foraging prototype separately and keep it skippable.",
+    "acceptance": [
+      "Charges create a meaningful limited decision without first-session stalls",
+      "Players can intentionally pursue a needed ingredient through charged gathering",
+      "Economy simulations cover scarcity, storage, targeting, and recharge behavior",
+      "One full loop requires materially less tab and scroll movement",
+      "Any puzzle remains optional, thumb-friendly, under ten seconds, and non-blocking",
+      "Existing saves migrate safely"
+    ]
+  },
+  {
+    "id": 8,
+    "status": "complete",
+    "title": "Prestige, mastery, upgrades, and customers",
+    "model": "Use the current efficient coding model with high reasoning",
+    "freshChat": true,
+    "prompt": "After Task 7 is approved, deepen progression without a large content dump. Rebalance prestige against the date-resetting daily reward using reproducible simulations; resolve the level-7 content ceiling versus level-8 prestige gate. Add small per-recipe mastery, clearer upgrade previews with a limited number of meaningful paths, and lightweight recurring-customer progress or special-request chains. Keep all systems deterministic, offline, accessible, and save-compatible. Do not treat any consultant-suggested formula as approved without evidence.",
+    "acceptance": [
+      "Prestige is a credible long-term choice and daily play remains worthwhile",
+      "There is no dead progression level immediately before prestige",
+      "Mastery adds a meaningful goal beyond player level",
+      "Upgrade effects are visible before purchase and include meaningful choice",
+      "Customer progress adds texture without blocking the core loop",
+      "Save migration, economy, and rollback behavior are tested"
+    ]
+  },
+  {
+    "id": 9,
+    "status": "complete",
+    "title": "Offline-friendly retention and customization",
+    "model": "Use the current efficient coding model with medium reasoning",
+    "freshChat": true,
+    "prompt": "After progression depth is approved, prototype workshop cosmetics, a small prestige keepsake, weekly request chains, and collection goals that work fully offline and do not punish missed days. Add content only where playtest demand is demonstrated. Audit critical cross-platform glyphs before store-facing screenshots. A second brew slot remains an experiment and requires separate pacing evidence.",
+    "acceptance": [
+      "Retention goals work without an account or trusted server clock",
+      "Missing a day causes no irreversible punishment",
+      "Cosmetics do not alter required progression balance",
+      "Critical store-facing icons render consistently",
+      "Any second-slot experiment preserves timer and economy pacing",
+      "Save migration and rollback remain tested"
+    ]
+  },
+  {
+    "id": 10,
+    "status": "pending",
+    "onHold": true,
+    "holdReason": "Owner requested more game content before monetization or release-stage work.",
+    "title": "Public beta and monetization decision",
+    "model": "Use the current efficient coding model with high reasoning",
+    "freshChat": true,
+    "prompt": "After owner approval of the gameplay MVP, perform a fresh public-PWA beta audit and a reproducible simulated-monetization comparison. Test real install, update, offline relaunch, storage, target browsers/devices, disclosures, screenshots, support/privacy requirements, and rollback. Evaluate bounded charm, finish-brew, and bundle variants with checked-in deterministic scenarios. Do not connect production services, publish to stores, or adopt pricing/value assumptions without explicit owner authorization.",
+    "acceptance": [
+      "Public beta verdict is evidence-backed and target-specific",
+      "Monetization comparisons are reproducible from checked-in tests or simulations",
+      "Current screenshots and disclosures match the approved build",
+      "Install, update, offline relaunch, and rollback are tested in real target environments",
+      "Production integrations and broader publishing remain explicit owner actions"
+    ]
+  },
+  {
+    "id": 11,
+    "status": "complete",
+    "title": "Village stories and order variety",
+    "model": "Use the current efficient coding model with medium reasoning",
+    "freshChat": true,
+    "prompt": "Add a bounded content expansion using the existing recipes, recurring customers, trust hearts, discoveries, and Journal. Give every customer three short trust-unlocked story beats and varied order-request lines that fit their established personality. Add a compact recipe lore entry for each existing potion, revealed through existing discovery progress. Make the Journal clearly show locked, newly available, and read content without adding notification pressure or required rewards. Use deterministic data selection, derive unlocks from existing save state wherever possible, preserve the current economy and level-7 rebirth timing, and keep all content offline and accessible. Do not add currencies, ingredients, recipes, production services, monetization, release work, or a second brew slot in this task.",
+    "acceptance": [
+      "All twelve customers have three distinct story beats unlocked by their existing trust hearts",
+      "Customer order text has meaningful deterministic variety without changing order rewards or requirements",
+      "All eight recipes have concise lore revealed through existing brew or delivery discovery",
+      "The Journal makes story and recipe unlock conditions understandable and remains readable at both target phone sizes",
+      "New content does not change economy, prestige timing, timers, inventory, or required progression",
+      "Existing saves remain compatible and malformed content-related state cannot crash the game",
+      "npm.cmd run check passes and 390x844 plus 360x740 browser QA has no overflow or console errors"
+    ]
+  },
+  {
+    "id": 12,
+    "status": "complete",
+    "title": "Expanded potion book",
+    "model": "Use a fresh high-reasoning coding context for balance, migration, and cross-system integration",
+    "freshChat": true,
+    "prompt": "Add a bounded playable-content expansion inside the existing level 4-7 curve: one new gatherable ingredient and four distinct new recipes, with concise names, descriptions, and recipe lore matching the established cozy village voice. Choose exact unlock levels, ingredient costs, brew times, and order values using deterministic simulations rather than guesswork. Integrate the content through charged gathering targets, passive/offline gathering, inventory normalization, brewing, order generation, mastery, discovery, level-up presentation, the Pantry, Recipe Book, Journal, and all relevant tests. Keep starry rebirth available at level 7 and preserve the approved first-cycle pacing near the existing Task 8 seeded ranges. Preserve Mooncloth Shelves for players who completed the original eight-recipe Potion Sampler; adding recipes must not revoke an earned cosmetic or silently move the old goalpost. Existing version-3 saves must acquire safe zeroed entries for new content without losing progress, and malformed saves must remain non-crashing. Keep one cauldron, existing currencies, current gathering rules, and the four-tab structure. Do not add monetization, release-stage work, new progression levels, another customer set, a second brew slot, external assets, or production services. Do not read archive/.",
+    "acceptance": [
+      "Exactly one new ingredient and four new recipes are playable within levels 4-7 and match the existing tone",
+      "New content is integrated with gathering, offline/passive gains, inventory, brewing, orders, mastery, discovery, lore, level-up presentation, and compact mobile UI",
+      "Deterministic seeded simulations justify costs, times, values, and unlock placement while keeping level-7 first-cycle timing and ingredient scarcity near the approved baseline",
+      "Prestige remains available at level 7 and no new progression tier, currency, timer system, or cauldron slot is added",
+      "The original eight-recipe Potion Sampler remains the durable Mooncloth requirement and already-qualified players are not relocked",
+      "Existing and malformed saves normalize the new inventory, mastery, potion, and discovery keys safely without losing prior progress",
+      "Focused tests cover content integrity, order eligibility, collection-goal durability, save normalization, and simulation guardrails",
+      "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
+    ]
+  },
+  {
+    "id": 13,
+    "status": "complete",
+    "title": "Signature villager commissions and keepsakes",
+    "model": "Use a fresh efficient coding context with high reasoning for deterministic order integration, save migration, and mobile UI",
+    "freshChat": true,
+    "prompt": "Add one authored, one-time signature commission for each of the twelve existing villagers. A commission becomes eligible after the player's first ordinary delivery to that villager and when its assigned existing recipe is unlocked. When multiple commissions are eligible, present at most two compact choices and let the player choose which commission occupies one normal Orders-board slot; the unchosen commission remains available later. Never allow more than one signature commission on the board at once, and keep two ordinary order slots playable so commissions cannot block the core loop. Each commission must use an existing potion and the normal order reward, XP, trust, daily, rolling-request, achievement, and delivery rules with no bonus coins or repeatable payout. Completion records one distinct code-native keepsake in a compact, collapsed Journal collection. Collecting all twelve keepsakes unlocks exactly one non-economic Workshop Look. Pending choices, the selected commission, and completed keepsakes must persist safely across reload and offline time; prestige may clear the active order choice with other ordinary orders but must preserve completed keepsakes. Advance the save schema with v1-v5 migration, a frozen-v5 rollback reader, and future-version overwrite protection. Use deterministic generation and simulations to prove commissions do not materially alter the approved level-7 timing or economy. Do not add new recipes, ingredients, customers, currencies, timers, deadlines, recurring commissions, external assets, monetization, release-stage work, a second cauldron, or dependencies. Do not read archive/.",
+    "acceptance": [
+      "All twelve existing villagers have distinct authored signature commission copy, an assigned existing recipe, and a distinct code-native keepsake",
+      "Commissions unlock only after one ordinary delivery to that villager and the assigned recipe is available",
+      "At most two eligible choices are shown, the unchosen commission remains available, and no more than one selected commission occupies the three-slot board",
+      "Two ordinary orders remain playable and ignoring a commission never blocks gathering, brewing, delivery, progression, refresh, or prestige",
+      "Signature deliveries use the existing reward, XP, trust, daily, rolling-request, achievement, and delivery rules without bonus or repeatable rewards",
+      "The Journal keepsake collection is compact and collapsed by default, and all twelve keepsakes unlock exactly one non-economic Workshop Look",
+      "Save v6 safely migrates v1-v5, preserves completed keepsakes through prestige, rejects malformed commission state, and is protected from frozen-v5 rollback and future-v7 overwrite",
+      "Deterministic simulations and focused tests show no material regression to the approved level-7 progression and economy envelope",
+      "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
+    ]
+  },
+  {
+    "id": 14,
+    "status": "complete",
+    "title": "Daily Villager Special Requests and collapsing completion cards",
+    "model": "Use a fresh efficient coding context with high reasoning for save migration, reward idempotency, and transient mobile UI",
+    "freshChat": true,
+    "prompt": "Replace the developer-facing signature-commission discovery flow with a clear player-facing Villager Special Request earned from the existing daily 5-delivery reward. Claiming the daily reward must still grant exactly 50 coins and 1 stardust once, and additionally grant one saved special-request invitation while unfinished keepsakes remain. Invitations may accumulate only up to the number of unfinished commissions, persist across reload/offline/date reset/prestige, and are consumed one at a time when the player selects a request. A daily claim with an active request saves the invitation for later. The dismissible chooser must be reopenable and list every unfinished villager request whose assigned potion is unlocked, without requiring a prior random ordinary delivery, so players can intentionally target a villager's trust and keepsake. Show villager, potion, current trust, and named keepsake; choosing still creates at most one special order and keeps two ordinary Orders slots playable. Rename player-facing commission copy to Villager Special Request without changing normal order coins, XP, trust, daily, rolling-chain, achievement, or delivery rules. After a daily reward claim, final rolling-chain claim, or special-request delivery, show an accessible completed state for about three seconds and then fade/collapse it so later content moves up; already completed state must start hidden after reload and reduced motion must remain readable. Keep a compact chooser prompt only while invitations are unused. Advance save v6 to v7 with safe v1-v6 migration, frozen-v6 rollback protection, malformed-state normalization, and future-v8 overwrite protection. Do not add new currencies, recipes, villagers, timers, deadlines, repeatable commissions, external assets, monetization, release-stage work, dependencies, or archive access.",
+    "acceptance": [
+      "Daily 5/5 claim grants exactly 50 coins, 1 stardust, and one bounded saved invitation once; all-twelve completion still grants currencies but no invitation",
+      "The chooser is dismissible, reopenable, and lists all unfinished requests with unlocked potions using clear villager, potion, trust, and keepsake copy",
+      "Selecting requires and consumes exactly one invitation, permits only one active special request, and preserves two ordinary order slots",
+      "Special requests retain existing normal reward, XP, trust, daily, rolling-chain, achievement, and one-time keepsake rules",
+      "Claimed daily, fully completed rolling-chain, and delivered special-request states remain readable for about three seconds then fade and collapse; reload does not replay them",
+      "Unused invitations persist through reload, offline time, daily reset, clock rollback, and prestige, with malformed or oversized values safely bounded",
+      "Save v7 migrates v1-v6 safely, includes frozen-v6 rollback protection, and protects future-v8 saves from overwrite",
+      "Focused tests cover idempotency, invitation targeting and caps, active-request interactions, persistence, migration, reduced-motion behavior, and completion-card visibility",
+      "npm.cmd run check passes and the full loop plus 390x844 and 360x740 browser QA has no overflow or console errors"
+    ]
+  },
+  {
+    "id": 15,
+    "status": "next",
+    "title": "After the Stars post-rebirth questline",
+    "model": "Use a fresh gpt-5.6-terra coding context with high reasoning; do not use the highest-cost model",
+    "freshChat": true,
+    "prompt": "Add one authored, one-time four-step post-rebirth questline called After the Stars. It must remain completely dormant until the player has completed their first Starry Rebirth. Use only existing villagers, recipes, ingredients, trust, Orders, delivery logic, and ordinary rewards: Mira requests Meadow Tonic for The Oven Remembers; Postmaster Pip requests Clarity Elixir for A New Route; Fern requests Cloudbloom Tea for Roots After Starlight; Rowan requests Bottled Sunrise for The Dawnthread Hem. Steps unlock sequentially when their existing recipes are available, request one bottle, and use the normal delivery pipeline with no bonus coins, XP, trust, daily, rolling-chain, discovery, achievement, or other payout beyond what an ordinary one-bottle order already grants. The final delivery unlocks exactly one reversible, code-native, non-economic Workshop Look named Dawnthread Workshop. Quest orders and Villager Special Requests must share the existing single reserved order slot, never coexist, never consume invitations, and always preserve two ordinary order slots. If another special request is active, the quest waits; if the quest is active, saved invitations remain and the chooser clearly explains the starborn errand must be completed first. Deterministically restore a missing eligible quest order and canonicalize forged saved villager, recipe, quantity, reward, and XP data from authored configuration. Persist a bounded step index from zero through four across reload, offline time, date changes, clock rollback, and later rebirths. Later rebirths may clear the active order but must leave the same step pending; completed progress and the cosmetic remain. Advance save v7 to v8 with safe v1-v7 migration, frozen-v7 rollback protection, malformed-state normalization, and future-v9 overwrite protection. Add a compact Orders tracker labeled AFTER THE STARS with step progress, current request, or the next recipe unlock; hide it before the first rebirth and collapse it permanently after a brief accessible final completion state. Use deterministic simulations to prove first-cycle outputs are unchanged and post-rebirth pacing remains bounded. Do not add monetization, currencies, ingredients, potions, villagers, levels, timers, external art, dependencies, a second cauldron, repeatable rewards, first-cycle behavior changes, or archive access.",
+    "acceptance": [
+      "Exactly four authored ordered steps use Mira, Pip, Fern, and Rowan with the specified existing potions; the quest is invisible and inactive before the first rebirth",
+      "Steps cannot skip or repeat, recipe locks clearly identify the next action, and final completion is idempotent",
+      "Quest orders and Villager Special Requests share one reserved slot, never coexist or consume each other's state, and always preserve two ordinary orders",
+      "All quest deliveries use canonical ordinary one-bottle rewards and the existing fulfillment pipeline with no additional per-step payout",
+      "Forged or malformed saved quest orders are canonicalized, missing eligible orders restore deterministically, and later rebirths preserve the same pending step",
+      "Progress and the reversible Dawnthread Workshop look survive reload, offline time, date rollback, and later rebirths without changing any economy calculation",
+      "Save v8 migrates v1-v7 safely, includes frozen-v7 rollback protection, bounds malformed quest state, and protects future-v9 saves from overwrite",
+      "First-cycle seeded outputs remain unchanged; a post-rebirth control comparison proves no deadlock, two ordinary slots throughout, and bounded level-4 timing and lifetime coins",
+      "npm.cmd run check passes and browser QA covers rebirth, recipe gating, special-slot contention, reload, final delivery, and cosmetic selection at 390x844 and 360x740 without overflow or console errors"
+    ]
+  }
+]

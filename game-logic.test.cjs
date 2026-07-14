@@ -329,6 +329,7 @@ test("prestige opens with the final recipe and preserves durable goals plus the 
   assert.deepEqual(next.journal, state.journal);
   assert.deepEqual(next.daily, state.daily); assert.equal(game.claimDaily(next), false, "rebirth cannot reclaim today's reward");
   assert.equal(next.stats.prestiges, 1); assert.equal(game.cosmeticUnlocked(next, "starglass"), true);
+  assert.equal(game.beginnerQuest(next, NOW + 1000), null, "rebirth cannot restart First Steps");
   assert.deepEqual(next.weekly, state.weekly); assert.deepEqual(next.customization, state.customization);
 });
 

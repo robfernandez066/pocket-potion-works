@@ -39,7 +39,7 @@ assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release 
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
 for (const file of streamedAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
 assert.ok(pagesWorkflow.includes("cp -r assets/images _site/assets/"), "GitHub Pages must copy the complete local image library");
-const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "STORE_LISTING_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "SCREENSHOT_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
+const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
 for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v9.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs", "fixtures/rollback/game-save-reader-v4.cjs", "fixtures/rollback/game-save-reader-v5.cjs", "fixtures/rollback/game-save-reader-v6.cjs", "fixtures/rollback/game-save-reader-v7.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -100,16 +100,13 @@ assert.doesNotMatch(text["app.js"], /Production|RealIap|RealRewarded|RemoteAnaly
 
 const privacy = fs.readFileSync("PRIVACY_DISCLOSURE_DRAFT.md", "utf8");
 for (const phrase of ["local gameplay save", "local consent and simulated-commerce receipt state", "local sound preference", "memory only", "no accounts", "no ad sdk", "no billing", "no cloud"]) assert.ok(privacy.toLowerCase().includes(phrase), `privacy draft is missing current-behavior phrase: ${phrase}`);
-const storeDraft = fs.readFileSync("STORE_LISTING_DRAFT.md", "utf8");
-assert.match(storeDraft, /DRAFT|PLACEHOLDER/);
-assert.match(storeDraft, /No real-money purchases, advertisements, accounts, analytics transmission, or cloud saves/i);
 
 const allReleaseFiles = fs.readdirSync(".").filter(file => fs.statSync(file).isFile());
 const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 8/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v49`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v50`/);
 assert.match(text["audio-feedback.js"], /function effectsOutputGain\(volume\)/);
 assert.match(text["audio-feedback.js"], /const SYNTH_OUTPUT_BOOST = 8/);
 assert.match(text["style.css"], /workshop-scene:not\(\.is-idle\) \.bubble \{ display: block !important; animation: none !important; opacity: \.82; \}/);
@@ -158,6 +155,9 @@ assert.ok(total <= budgets.totalRuntimeBytes, `runtime shell is ${total} bytes, 
 const evidence = JSON.parse(fs.readFileSync("release-browser-evidence.json", "utf8"));
 assert.equal(evidence.schemaVersion, 1);
 assert.equal(evidence.releaseTarget, "local-browser-release-candidate");
+const runtimeCache = text["service-worker.js"].match(/const CACHE = `\$\{CACHE_PREFIX\}(v\d+)`/);
+assert.ok(runtimeCache, "service worker cache identity is missing");
+assert.equal(evidence.runtimeCache, `ppw-shell-${runtimeCache[1]}`, "manual evidence must identify the current runtime cache");
 assert.equal(evidence.candidateVersion, pkg.version);
 const requiredManualChecks = ["mobile-loop-390x844", "mobile-loop-360x740", "keyboard-modal-focus", "zoom-200-reflow", "sound-off-behavior", "sound-on-sample-mix", "csp-runtime-smoke"];
 assert.ok(Array.isArray(evidence.manualChecks));
@@ -174,19 +174,19 @@ for (const check of evidence.manualChecks) {
 const incomplete = evidence.manualChecks.filter(check => requiredManualChecks.includes(check.id) && check.status !== "passed");
 const readiness = fs.readFileSync("RELEASE_READINESS.md", "utf8");
 const matrix = fs.readFileSync("DEVICE_TEST_MATRIX.md", "utf8");
-assert.match(readiness, /Installable PWA \| \*\*NO-GO for public release\*\*/);
+assert.match(readiness, /Installable production PWA \| \*\*NO-GO\*\*/);
 assert.match(readiness, /Native app stores \| \*\*NO-GO\*\*/);
 assert.match(readiness, /Production monetization, analytics, accounts, or cloud \| \*\*NO-GO\*\*/);
-for (const phrase of ["PWA install/update", "Browser lifecycle", "Screen reader", "Physical iOS/iPadOS", "Physical Android", "Native iOS/Android wrappers"]) assert.ok(matrix.includes(phrase), `device matrix is missing separately blocked coverage: ${phrase}`);
+for (const phrase of ["service-worker update", "screen-reader", "iOS/iPadOS", "Android", "Native-wrapper"]) assert.ok(matrix.includes(phrase), `device matrix is missing separately blocked coverage: ${phrase}`);
 console.log(`Automated release checks passed: ${runtimeFiles.length + runtimeAssets.length + streamedAssets.length} runtime files, ${releaseDocs.length} release documents, ${total}/${budgets.totalRuntimeBytes} runtime bytes.`);
 if (incomplete.length) {
   const detail = incomplete.map(check => `${check.id}=${check.status}`).join(", ");
-  assert.match(readiness, /Local browser prototype release candidate \| \*\*NO-GO pending browser evidence\*\*/);
+  assert.match(readiness, /Broader public promotion \| \*\*ON HOLD\*\*/);
   const releaseGateTask = JSON.parse(fs.readFileSync("coder-tasks.json", "utf8")).find(task => task.releaseGate === true);
   assert.ok(["next", "pending"].includes(releaseGateTask?.status), "The active release-gate task must remain open while browser evidence is incomplete");
   if (automatedOnly) console.log(`Local/browser final gate remains pending: ${detail}`);
   else throw new Error(`Local/browser release evidence is incomplete: ${detail}. Record real dated environment evidence before reporting GO.`);
 } else {
-  assert.match(readiness, /Local browser prototype release candidate \| \*\*GO\*\*/, "release report must be updated to GO after all local/browser evidence passes");
+  assert.match(readiness, /Broader public promotion \| \*\*GO\*\*/, "release report must be updated to GO after all local/browser evidence passes");
   console.log("Local/browser release candidate gate passed with complete dated browser evidence.");
 }

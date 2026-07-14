@@ -370,6 +370,7 @@
   }
 
   function beginnerQuest(state, now = Date.now()) {
+    if (int(state?.stats?.prestiges) > 0) return null;
     if (state.discovery.delivered.clarity) return null;
     if (state.stats.orders < 1) {
       const quest = recipeTutorialState(state, "tonic", 1, "first-tonic", now);

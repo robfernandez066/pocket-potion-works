@@ -2,20 +2,21 @@
   "schemaVersion": 1,
   "releaseTarget": "local-browser-release-candidate",
   "candidateVersion": "0.1.0",
+  "runtimeCache": "ppw-shell-v50",
   "manualChecks": [
     {
       "id": "mobile-loop-390x844",
       "description": "Current dark-theme/audio build: full loop, reload, overflow, and console at 390x844",
       "status": "pending",
       "environment": "",
-      "notes": "Task 7 local acceptance passed for targeted gather, disclosures, shortcut, inline delivery, reload, overflow, and console; keep pending until owner playtest and full release-gate evidence are recorded."
+      "notes": "Focused feature checks do not replace the deferred full release-gate pass."
     },
     {
       "id": "mobile-loop-360x740",
       "description": "Current dark-theme/audio build: full loop, reload, overflow, and console at 360x740",
       "status": "pending",
       "environment": "",
-      "notes": "Task 7 local acceptance passed for compact layout and no overflow or console errors; keep pending until owner playtest and full release-gate evidence are recorded."
+      "notes": "Focused feature checks do not replace the deferred full release-gate pass."
     },
     {
       "id": "keyboard-modal-focus",
@@ -43,14 +44,14 @@
       "description": "Owner-approved local sample cues, pitch, volume, capped coin tiers, persistence, and fallback behavior",
       "status": "pending",
       "environment": "",
-      "notes": "Requires owner listening approval."
+      "notes": "Phone effects were accepted for current playtesting; full representative-device mix approval remains deferred."
     },
     {
       "id": "csp-runtime-smoke",
       "description": "Shell, service worker, gameplay, and local audio samples under delivered CSP without errors",
       "status": "pending",
       "environment": "",
-      "notes": "Current cache and audio asset set require refreshed evidence."
+      "notes": "Runtime cache ppw-shell-v50 requires a complete delivered-environment check before release approval."
     }
   ]
 }

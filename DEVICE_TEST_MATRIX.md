@@ -1,46 +1,30 @@
 # Device and lifecycle test matrix
 
-Automated evidence and real browser/device evidence are separate. The active candidate is the charcoal-black/purple build with local audio, twenty-two supplied static/utility Sprixen sprites plus the optimized Aurora animation sheet, bounded automatic gathering, first-time Journal rewards, daily Villager Special Requests, and service-worker cache `ppw-shell-v48`.
+Automated evidence and real browser or device evidence are separate. `release-browser-evidence.json` is the machine-readable source of truth for manual status and must identify the runtime cache generation it applies to.
 
-## Required local/browser candidate gates
+## Current automated coverage
 
-`release-browser-evidence.json` is the machine-readable source of truth.
+`npm.cmd run check` covers deterministic gameplay and economy, save migration and rollback protection, offline progress, fake platform boundaries, audio behavior, service-worker installation and fallback, static security, and runtime budgets.
 
-| Gate | Status | Required evidence |
-| --- | --- | --- |
-| 390x844 mobile loop | Pending | Targeted gather, mastery, customer trust, upgrade preview, level-7 rebirth copy, tutorial, Market, reload, overflow, contrast, and console. |
-| 360x740 mobile loop | Pending | Same complete loop and progression checks at the narrower target. |
-| Keyboard and modal focus | Pending | Essential controls, focus trap, Escape, and focus return. |
-| Representative 200% reflow | Pending | Essential controls remain available without page overflow. |
-| Sound Off | Pending | Can be selected from the default-On state, persists, initializes nothing while Off, and never blocks gameplay. |
-| Sound On sample mix | Pending owner approval | Correct cues; 50% effects/music defaults; tactile sliders; random music start then numbered fades; Trycja via Pixabay credit; tap pitch; gameplay cues; capped coin tiers; persistence; graceful fallback. |
-| CSP/runtime smoke | Pending | Current shell and local audio load under delivered headers with no CSP, console, or unexpected network errors. |
+Current runtime identity: gameplay save v8 and service-worker cache `ppw-shell-v50`.
 
-## Automated coverage
+## Deferred manual release gates
 
-| Area | Status | Evidence |
-| --- | --- | --- |
-| Core loop and transactions | Pass | Deterministic gather -> brew -> collect -> deliver -> upgrade tests. |
-| Economy and content | Pass | Twelve seeded ten-minute simulations and unlock/order invariants. |
-| Save and rollback compatibility | Pass | Historical v1-v7 migrate to current v8; unsupported future v9 and frozen-v1-v7 downlevel overwrite protection pass. |
-| Journal rewards | Pass | Stories and bottle notes grant 5 coins once, achievements grant 10 once, invalid/repeated claims are rejected, and claim state survives migration and rebirth. |
-| Offline retention/customization | Pass | Three calendar-independent rolling chains, capped claims, durable collection cosmetics, and economy-neutral selection tests. |
-| Lifecycle/offline progress | Pass | Background suppression, one resume credit, four-hour cap, and future-time zero credit. |
-| Platform boundaries | Pass | Fake ad/IAP, consent, local analytics schema, pending fulfillment, and local cloud-conflict contracts. |
-| Audio behavior | Pass | Preference safety, sample mapping, tap pitch behavior, capped coin tiers, gathering playback, fallback, and failure isolation. |
-| Offline shell | Pass | Install, complete cache list, old-cache removal, cached response, network rejection, and HTML fallback. |
-| Static security and budgets | Pass | CSP/header policy, path containment, no production SDK/endpoints, and per-file/total budgets. |
+These remain pending while public-release work is on hold:
 
-## Public PWA and native coverage
+- complete mobile loop at 390x844 and 360x740, including reload, overflow, and console review;
+- keyboard and modal focus behavior;
+- representative 200% reflow;
+- Sound Off behavior and owner-approved Sound On mix on physical hardware;
+- delivered CSP, service-worker update, offline relaunch, storage, and network smoke;
+- screen-reader checks on an owner-approved assistive-technology target;
+- representative iOS/iPadOS and Android browser or installed-PWA lifecycle checks.
 
-| Area | Status | Required procedure |
-| --- | --- | --- |
-| Browser lifecycle | Untested | Background/resume/reload and clock-boundary tests in chosen Chromium, WebKit, and Firefox targets. |
-| PWA install/update | Owner check pending | Update an installed `ppw-shell-v47` game to `ppw-shell-v48`, confirm the in-app New update prompt appears, tap it to restart, and verify menu taps plus action effects are clearly audible at 100% without losing progress. Offline relaunch, eviction, and uninstall/reinstall remain separate release checks. |
-| Network conditions | Untested | First load, offline reload, interrupted update, recovery, and third-party request inspection. |
-| Screen reader | Untested | Owner-approved VoiceOver, TalkBack, NVDA, or equivalent set. |
-| Physical iOS/iPadOS | Untested | Safari/PWA lifecycle, safe areas, audio unlock, storage, and orientation. |
-| Physical Android | Untested | Chrome/PWA install, lifecycle, back behavior, audio, and storage. |
-| Native iOS/Android wrappers | Blocked | Requires authorized wrapper, signing, plugins, and store accounts. |
+Native-wrapper checks remain blocked because no wrapper, signing setup, store account, or production plugin is approved.
 
-Public PWA and native targets remain NO-GO until their applicable rows pass with dated browser/OS/device evidence.
+## Evidence rules
+
+- Do not mark evidence passed unless its `runtimeCache` matches the current service-worker cache.
+- Record browser, OS or device, date, tested dimensions, and concise notes.
+- A focused gameplay-task browser check does not automatically satisfy the broader release matrix.
+- Re-run an affected row after changes to saves, caching, lifecycle, layout, input, audio, privacy behavior, or production boundaries.
