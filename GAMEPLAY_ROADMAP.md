@@ -23,16 +23,19 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - awaiting the next bounded scope
+## Now - Task 17 truthful Welcome Back recap
 
-Tasks 15 and 16 are complete. No implementation task is currently released. Every remaining candidate stays unselected until the owner approves one bounded scope.
+Tasks 15 and 16 are complete. Task 17 is the only released implementation task.
+
+The Welcome Back modal currently grants offline ingredients before it appears but labels its dismiss action `Collect ingredients`. Replace that claim-like wording with a truthful recap that says the ingredients were already added to the Pantry and uses a non-claiming return action. Preserve all offline timing, first-delivery, four-hour cap, Pantry soft-cap, and save behavior.
+
+Do not combine this copy-and-contract correction with idle tuning, another reward step, delayed claiming, mobile hierarchy, narrative, content, release, or monetization work.
 
 ## Unselected correctness candidates
 
 - **Hostile values and invalid active brews:** bound adversarial numeric save values and restore or reject a saved active brew when its known recipe is above the saved player level. This is separate from storage I/O resilience.
 - **Foreground daily rollover:** reset the saved day before any daily mutation or claim and validate the foreground-midnight path.
 - **Progression accounting:** evaluate achievements on their triggering actions and use one consistent definition of lifetime coins.
-- **Welcome Back truthfulness:** offline ingredients are granted before the modal appears, so its current `Collect ingredients` button is inaccurate. A future correction must use truthful button and recap language without being folded into the selected storage task.
 
 Focus-restoration validation may accompany any future task that rerenders affected controls; it does not need to wait for the full deferred release matrix.
 
