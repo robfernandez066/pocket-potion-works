@@ -25,9 +25,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - next scope selection
+## Now - Task 19 Mira first-heart narrative pilot
 
-Tasks 15 through 18 are complete. No implementation task is currently released. The narrative delivery pilot remains the preferred visible-content candidate when the owner asks to begin the next task.
+Tasks 15 through 18 are complete. Task 19 is the only released implementation task.
+
+When a successful delivery earns Mira the Baker's first trust heart, show one brief authored, non-modal payoff at the visible delivery surface. The moment must complement rather than duplicate her first Journal story, leave that story unread and claimable, and preserve the existing 12-coin friendship favor. Use Mira's existing persistent heart progress as the one-time boundary; do not add saved narrative state or change the save version.
+
+This is a one-villager, one-heart presentation pilot. Do not force Mira orders, alter customer selection, change rewards, add later-heart moments, build a dialogue or chapter system, add navigation or recurrence, or expand the pilot until owner playtesting establishes that the moment improves delivery feel.
 
 ## Unselected correctness candidates
 
@@ -43,7 +47,6 @@ Focus-restoration validation may accompany any future task that rerenders affect
 
 ## Near-term existing-loop and playtest candidates
 
-- **Narrative delivery pilot:** use one villager and one inline heart-completion payoff with existing or code-native presentation. Do not create a dialogue engine, branching narrative system, recurring modal, or large asset pack.
 - **Meaningful choice:** run a focused owner playtest or small data-driven experiment around identical same-level recipe timer/value pairs, linear upgrades, substantially random Smart Mix behavior, and uniform customer selection. Do not introduce branches, loadouts, currencies, or another recurring system.
 - **Mobile action hierarchy:** measure the full path to ordinary-order delivery at 390x844 and 360x740 before prescribing a redesign. Distinguish onboarding, an ordinary order not ready, an ordinary order ready, Daily Goal completion, and Rolling Request completion; account for the existing Workshop ready-delivery shortcut.
 - **Gathering clarity:** Smart Mix may later receive modest need-based weighting or be renamed to describe its randomness honestly. Targeted gathering guarantees only the selected ingredient.

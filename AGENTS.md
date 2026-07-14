@@ -45,6 +45,7 @@
 - The PM reviews the report, actual diff, and validation. A failed or incomplete result returns to the same coder task with a focused correction prompt.
 - Ask the owner to test only when a meaningful batch is ready or when a critical behavior needs immediate owner confirmation. Give a short procedure and expected result.
 - When the PM approves the coder result and owner testing is not needed, the PM commits and pushes the scoped changes.
+- After an approved task is pushed, the PM immediately selects and presents the next bounded roadmap task with its task number, model, effort level, and fresh or existing coder-task direction unless the owner explicitly pauses development.
 - Coders must not commit, push, change roadmap scope, or edit `coder-tasks.json` unless the PM explicitly authorizes it.
 
 ## Handoff
@@ -52,4 +53,4 @@
 - Run `npm.cmd run handoff` before starting a roadmap task.
 - Work on only the printed task.
 - The PM updates task status only after reviewing the coder report, diff, and required evidence.
-- Do not begin the next task in the same run unless the user explicitly asks.
+- A coder must not begin the next task in the same run. The PM presents the next task after approval and push as a separate coder task.
