@@ -357,7 +357,10 @@
     const achievement = ACHIEVEMENTS.filter(item => Number.isFinite(state?.achievements?.[item.id]) && state.achievements[item.id] > 0 && !claimedAchievements.has(item.id)).length;
     return { story, recipe, achievement, total: story + recipe + achievement };
   }
-  function claimJournalReward(state, kind, id) {
+  function evaluateAchievements(s, now = Date.now()) { const at = int(now, 1, 1); return ACHIEVEMENTS.filter(a => { if ((Number.isFinite(s?.achievements?.[a.id]) && s.achievements[a.id] > 0) || !a.test(s)) return false; s.achievements[a.id] = at; return true; }); }
+  function withAchievements(result, achievements) { Object.defineProperty(result, "achievements", { value: achievements, enumerable: false }); return result; }
+  function grantGameplayCoins(s, amount) { const coins = int(amount, 0, 0, SAVE_LIMITS.currency); s.coins = Math.min(SAVE_LIMITS.currency, int(s.coins, 0, 0, SAVE_LIMITS.currency) + coins); s.stats.coinsEarned = Math.min(SAVE_LIMITS.currency, int(s.stats?.coinsEarned, 0, 0, SAVE_LIMITS.currency) + coins); return coins; }
+  function claimJournalReward(state, kind, id, now = Date.now()) {
     let reward = 0;
     if (kind === "story") {
       const match = typeof id === "string" ? /^customer-(?:[0-9]|1[01]):([1-3])$/.exec(id) : null;
@@ -374,9 +377,8 @@
       state.journal.claimedAchievements.push(id);
       reward = JOURNAL_REWARDS.achievement;
     } else return null;
-    state.coins += reward;
-    state.stats.coinsEarned += reward;
-    return { kind, id, reward };
+    grantGameplayCoins(state, reward);
+    return withAchievements({ kind, id, reward }, evaluateAchievements(state, now));
   }
   function tutorialQuest({ id, step, status, title, detail, view, targetSelector, targetKind = "control", buttonLabel = "Show me" }) {
     return { id, step, status, label: `First steps · ${step} of ${BEGINNER_QUESTS.steps}`, title, detail, view, targetSelector, targetKind, buttonLabel };
@@ -663,7 +665,7 @@
     return { applied: true, reason: "applied", previousRemainingMs: status.remainingMs, remainingMs: reducedRemainingMs };
   }
 
-  function addXp(state, amount) {
+  function addXp(state, amount, now = Date.now()) {
     const levels = [];
     state.level = int(state.level, 1, 1, SAVE_LIMITS.level);
     state.xp = int(state.xp, 0, 0, MAX_SAVED_XP);
@@ -671,10 +673,11 @@
     while (state.level < SAVE_LIMITS.level && state.xp >= xpNeeded(state.level)) {
       state.xp -= xpNeeded(state.level);
       state.level += 1;
-      state.coins += 10 * state.level;
+      grantGameplayCoins(state, 10 * state.level);
       levels.push(state.level);
     }
     if (state.level >= SAVE_LIMITS.level) state.xp = Math.min(state.xp, xpNeeded(SAVE_LIMITS.level) - 1);
+    Object.defineProperty(levels, "achievements", { value: evaluateAchievements(state, now), enumerable: false });
     return levels;
   }
 
@@ -687,7 +690,8 @@
     state.discovery.brewed[recipe.id] = int(state.discovery.brewed[recipe.id]) + 1;
     state.mastery[recipe.id] = int(state.mastery[recipe.id]) + 1;
     state.brew = null;
-    return { recipe, levels: addXp(state, 5 + recipe.unlock * 2) };
+    const levels = addXp(state, 5 + recipe.unlock * 2, now);
+    return withAchievements({ recipe, levels }, levels.achievements);
   }
 
   function generateOrder(state, random = Math.random) {
@@ -735,7 +739,7 @@
     const narrative = DELIVERY_NARRATIVE_PILOTS.find(pilot => pilot.customerId === customerId && pilot.fromHearts === previousHearts && pilot.toHearts === progress.hearts) || null;
     const customerBonus = progress.hearts > previousHearts ? CUSTOMER_CONFIG.heartBonusCoins : 0;
     const reward = Math.round(order.reward * orderMultiplier(state, now, order.recipeId)) + customerBonus;
-    state.coins += reward; state.stats.coinsEarned += reward; state.stats.orders += 1; state.daily.orders += 1;
+    grantGameplayCoins(state, reward); state.stats.orders += 1; state.daily.orders += 1;
     recordWeeklyDelivery(state);
     state.discovery.delivered[order.recipeId] = int(state.discovery.delivered[order.recipeId]) + order.quantity;
     const completedCommission = commissionById(order.commissionId);
@@ -747,9 +751,9 @@
     }
     if (completedQuestStep) state.afterStars.step = Math.min(AFTER_STARS_STEPS.length, state.afterStars.step + 1);
     state.orders.splice(index, 1);
-    const levels = addXp(state, order.xp);
+    const levels = addXp(state, order.xp, now);
     ensureOrders(state, random);
-    return { reward, levels, customerBonus, customerProgress: { ...progress }, narrative: narrative ? { ...narrative } : null, commission: completedCommission || null, afterStars: completedQuestStep ? { step: order.afterStarsStep, title: completedQuestStep.title, complete: state.afterStars.step >= AFTER_STARS_STEPS.length } : null };
+    return withAchievements({ reward, levels, customerBonus, customerProgress: { ...progress }, narrative: narrative ? { ...narrative } : null, commission: completedCommission || null, afterStars: completedQuestStep ? { step: order.afterStarsStep, title: completedQuestStep.title, complete: state.afterStars.step >= AFTER_STARS_STEPS.length } : null }, levels.achievements);
   }
 
   function upgradeCost(state, upgrade) { return Math.round(upgrade.baseCost * Math.pow(1.9, state.upgrades[upgrade.id])); }
@@ -763,22 +767,23 @@
     };
     return { path: upgrade.path, current: values[upgrade.id](level), next: values[upgrade.id](next), maxed: level >= upgrade.max };
   }
-  function buyUpgrade(state, id) {
+  function buyUpgrade(state, id, now = Date.now()) {
     const upgrade = upgradeById(id);
     if (!upgrade || state.upgrades[id] >= upgrade.max) return false;
     const cost = upgradeCost(state, upgrade);
     if (state.coins < cost) return false;
-    state.coins -= cost; state.upgrades[id] += 1; return true;
+    state.coins -= cost; state.upgrades[id] += 1;
+    return withAchievements({}, evaluateAchievements(state, now));
   }
 
   function claimDaily(state, now = Date.now()) {
     resetDailyIfNeeded(state, now);
     if (state.daily.claimed || state.daily.orders < 5) return false;
-    state.daily.claimed = true; state.coins += 50; state.stardust += 1; state.stats.coinsEarned += 50;
+    state.daily.claimed = true; grantGameplayCoins(state, 50); state.stardust += 1;
     const invitationCap = unfinishedCommissionCount(state);
     state.commissions.invitations = Math.min(int(state.commissions?.invitations), invitationCap);
     if (state.commissions.invitations < invitationCap) state.commissions.invitations += 1;
-    return true;
+    return withAchievements({}, evaluateAchievements(state, now));
   }
 
   function completionCardPhase(shownAt, now = Date.now(), reducedMotion = false) {
@@ -838,16 +843,15 @@
     return true;
   }
 
-  function claimWeeklyStep(state) {
+  function claimWeeklyStep(state, now = Date.now()) {
     const status = weeklyChainStatus(state);
     if (status.complete || !status.ready) return null;
     const reward = status.reward;
-    state.coins += reward;
-    state.stats.coinsEarned += reward;
+    grantGameplayCoins(state, reward);
     state.weekly.claimedSteps += 1;
     const chainCompleted = state.weekly.claimedSteps >= status.chain.thresholds.length;
     if (chainCompleted) state.weekly = { cycle: status.cycle + 1, progress: 0, claimedSteps: 0 };
-    return { reward, chainCompleted, cycle: status.cycle };
+    return withAchievements({ reward, chainCompleted, cycle: status.cycle }, evaluateAchievements(state, now));
   }
 
   function prestigeReward(state) { return PRESTIGE_CONFIG.baseReward + Math.floor(Math.max(0, state.level - PRESTIGE_CONFIG.unlockLevel) / PRESTIGE_CONFIG.levelsPerBonus); }
@@ -867,6 +871,7 @@
     next.daily = { ...state.daily };
     next.tutorialSeen = true;
     next.starterClaimed = state.starterClaimed;
+    Object.defineProperty(next, "newlyUnlocked", { value: evaluateAchievements(next, now), enumerable: false });
     return next;
   }
 
@@ -931,7 +936,7 @@
     rechargeGather(state, now);
     if (state.gather.charges < 1) {
       const waitMs = Math.max(0, GATHER_CONFIG.rechargeSeconds * 1000 - (now - state.gather.lastRechargeAt));
-      return { added: 0, charges: 0, waitMs };
+      return withAchievements({ added: 0, charges: 0, waitMs }, []);
     }
     state.gather.charges -= 1;
     if (state.gather.charges === GATHER_CONFIG.maxCharges - 1) state.gather.lastRechargeAt = now;
@@ -942,7 +947,8 @@
       added = Math.min(amount, Math.max(0, storageCap(state) - totalIngredients(state)));
       state.ingredients[targetId] += added;
     } else added = addRandomIngredients(state, amount, random);
-    return { added, targetId: targetId || null, charges: state.gather.charges, waitMs: GATHER_CONFIG.rechargeSeconds * 1000 };
+    if (added > 0) state.stats.taps = Math.min(SAVE_LIMITS.counter, int(state.stats?.taps, 0, 0, SAVE_LIMITS.counter) + 1);
+    return withAchievements({ added, targetId: targetId || null, charges: state.gather.charges, waitMs: GATHER_CONFIG.rechargeSeconds * 1000 }, added > 0 ? evaluateAchievements(state, now) : []);
   }
 
   function setGatherTarget(state, targetId) {
@@ -974,7 +980,7 @@
 
   return Object.freeze({
     SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, DELIVERY_NARRATIVE_PILOTS, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS, SAVE_LIMITS,
-    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
+    clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, evaluateAchievements, grantGameplayCoins, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,

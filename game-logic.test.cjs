@@ -86,6 +86,124 @@ test("XP overflow crosses multiple levels and keeps the remainder", () => {
   assert.equal(state.xp, 7);
 });
 
+test("data-driven achievement evaluation unlocks every existing threshold once with supplied timestamps", () => {
+  const thresholds = {
+    firstBrew: [state => { state.stats.brewed = 0; }, state => { state.stats.brewed = 1; }],
+    orderFive: [state => { state.stats.orders = 4; }, state => { state.stats.orders = 5; }],
+    coin500: [state => { state.stats.coinsEarned = 499; }, state => { state.stats.coinsEarned = 500; }],
+    brew25: [state => { state.stats.brewed = 24; }, state => { state.stats.brewed = 25; }],
+    rebirth: [state => { state.stats.prestiges = 0; }, state => { state.stats.prestiges = 1; }],
+    tap50: [state => { state.stats.taps = 49; }, state => { state.stats.taps = 50; }],
+    levelFour: [state => { state.level = 3; }, state => { state.level = 4; }],
+    upgradeThree: [state => { state.upgrades.garden = 2; }, state => { state.upgrades.garden = 3; }],
+  };
+  assert.equal(Object.keys(thresholds).length, game.ACHIEVEMENTS.length);
+  for (const achievement of game.ACHIEVEMENTS) {
+    const state = game.defaultState(NOW);
+    for (const other of game.ACHIEVEMENTS) if (other.id !== achievement.id) state.achievements[other.id] = NOW - 1;
+    const [before, reach] = thresholds[achievement.id];
+    before(state);
+    assert.deepEqual(game.evaluateAchievements(state, NOW), [], `${achievement.id} unlocked before its threshold`);
+    reach(state);
+    assert.deepEqual(game.evaluateAchievements(state, NOW).map(item => item.id), [achievement.id]);
+    assert.equal(state.achievements[achievement.id], NOW);
+    assert.deepEqual(game.evaluateAchievements(state, NOW + 1), [], `${achievement.id} announced twice`);
+    assert.equal(state.achievements[achievement.id], NOW, `${achievement.id} timestamp changed after re-evaluation`);
+  }
+});
+
+test("triggering actions evaluate harvest, upgrade, rolling reward, and level-up achievements immediately", () => {
+  const pinOtherAchievements = (state, id) => {
+    for (const achievement of game.ACHIEVEMENTS) if (achievement.id !== id) state.achievements[achievement.id] = NOW - 1;
+  };
+
+  const harvest = game.defaultState(NOW);
+  harvest.stats.taps = 49;
+  pinOtherAchievements(harvest, "tap50");
+  assert.deepEqual(game.chargedGather(harvest, NOW, () => 0).achievements.map(item => item.id), ["tap50"]);
+  assert.equal(harvest.achievements.tap50, NOW);
+
+  const upgrade = game.defaultState(NOW);
+  upgrade.coins = 1000; upgrade.upgrades.garden = 2;
+  pinOtherAchievements(upgrade, "upgradeThree");
+  assert.deepEqual(game.buyUpgrade(upgrade, "garden", NOW).achievements.map(item => item.id), ["upgradeThree"]);
+  assert.equal(upgrade.achievements.upgradeThree, NOW);
+
+  const rolling = game.defaultState(NOW);
+  rolling.stats.coinsEarned = 490; rolling.weekly.progress = 2;
+  pinOtherAchievements(rolling, "coin500");
+  assert.deepEqual(game.claimWeeklyStep(rolling, NOW).achievements.map(item => item.id), ["coin500"]);
+  assert.equal(rolling.achievements.coin500, NOW);
+
+  const levelUp = game.defaultState(NOW);
+  levelUp.stats.coinsEarned = 480; levelUp.xp = game.xpNeeded(1) - 1;
+  pinOtherAchievements(levelUp, "coin500");
+  assert.deepEqual(game.addXp(levelUp, 1, NOW).achievements.map(item => item.id), ["coin500"]);
+  assert.equal(levelUp.achievements.coin500, NOW);
+});
+
+test("gameplay coin grants update lifetime coins exactly once and exclude starting, spending, and bundle currency", () => {
+  const assertGrant = (state, action, expected) => {
+    const before = { coins: state.coins, earned: state.stats.coinsEarned };
+    const result = action();
+    assert.equal(state.coins - before.coins, expected);
+    assert.equal(state.stats.coinsEarned - before.earned, expected);
+    return result;
+  };
+
+  const order = game.defaultState(NOW);
+  order.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 0 }]; order.nextOrderId = 2; order.potions.tonic = 1;
+  assert.equal(assertGrant(order, () => game.fulfillOrder(order, 1, NOW, () => 0).reward, 20), 20);
+
+  const favor = game.defaultState(NOW);
+  favor.customers["customer-0"] = { deliveries: 2, hearts: 0 };
+  favor.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 0 }]; favor.nextOrderId = 2; favor.potions.tonic = 1;
+  const favorResult = game.fulfillOrder(favor, 1, NOW, () => 0);
+  assert.equal(favorResult.customerBonus, game.CUSTOMER_CONFIG.heartBonusCoins);
+  assert.equal(favorResult.reward, 20 + game.CUSTOMER_CONFIG.heartBonusCoins);
+  assert.equal(favor.coins, 30 + favorResult.reward);
+  assert.equal(favor.stats.coinsEarned, favorResult.reward);
+
+  const level = game.defaultState(NOW);
+  level.xp = game.xpNeeded(1) - 1;
+  assertGrant(level, () => game.addXp(level, 1, NOW), 20);
+
+  const daily = game.defaultState(NOW);
+  daily.daily.orders = 5;
+  assertGrant(daily, () => game.claimDaily(daily, NOW), 50);
+
+  const rolling = game.defaultState(NOW);
+  rolling.weekly.progress = 2;
+  assertGrant(rolling, () => game.claimWeeklyStep(rolling, NOW), 10);
+
+  const journal = game.defaultState(NOW);
+  journal.discovery.brewed.tonic = 1;
+  assertGrant(journal, () => game.claimJournalReward(journal, "recipe", "tonic", NOW), game.JOURNAL_REWARDS.recipe);
+  journal.achievements.firstBrew = NOW;
+  assertGrant(journal, () => game.claimJournalReward(journal, "achievement", "firstBrew", NOW), game.JOURNAL_REWARDS.achievement);
+
+  const excluded = game.defaultState(NOW);
+  assert.deepEqual({ coins: excluded.coins, earned: excluded.stats.coinsEarned }, { coins: 30, earned: 0 });
+  const earnedBeforeSpend = excluded.stats.coinsEarned;
+  excluded.coins = 100;
+  assert.ok(game.buyUpgrade(excluded, "garden", NOW));
+  assert.equal(excluded.coins, 30);
+  assert.equal(excluded.stats.coinsEarned, earnedBeforeSpend);
+  excluded.starterClaimed = true; excluded.coins += 100;
+  assert.equal(excluded.stats.coinsEarned, earnedBeforeSpend, "simulated apprentice-bundle currency remains excluded");
+});
+
+test("existing lifetime coin totals round-trip unchanged before adopting prospective grants", () => {
+  const existing = game.defaultState(NOW);
+  existing.stats.coinsEarned = 451;
+  existing.daily.orders = 5;
+  const loaded = game.parseSave(JSON.stringify(existing), NOW).state;
+  assert.equal(loaded.version, game.SAVE_VERSION);
+  assert.equal(loaded.stats.coinsEarned, 451);
+  assert.ok(game.claimDaily(loaded, NOW));
+  assert.equal(loaded.stats.coinsEarned, 501);
+});
+
 test("hostile save numerics normalize to finite bounded gameplay values", () => {
   const state = game.defaultState(NOW);
   state.coins = "499.9";
@@ -257,17 +375,17 @@ test("ingredient additions stop exactly at the storage cap", () => {
 
 test("daily reward is idempotent", () => {
   const state = game.defaultState(NOW); state.daily.orders = 5;
-  assert.equal(game.claimDaily(state, NOW), true);
+  assert.ok(game.claimDaily(state, NOW));
   assert.equal(game.claimDaily(state, NOW), false);
   assert.equal(state.coins, 80); assert.equal(state.stardust, 1); assert.equal(state.stats.coinsEarned, 50);
   assert.equal(state.commissions.invitations, 1);
   state.daily = { date: game.todayKey(NOW + 86400000), orders: 5, claimed: false };
   state.commissions.invitations = 12;
-  assert.equal(game.claimDaily(state, NOW + 86400000), true);
+  assert.ok(game.claimDaily(state, NOW + 86400000));
   assert.equal(state.commissions.invitations, 12, "daily invitations cannot exceed unfinished requests");
   state.daily = { date: game.todayKey(NOW + 2 * 86400000), orders: 5, claimed: false };
   state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(item => item.id);
-  assert.equal(game.claimDaily(state, NOW + 2 * 86400000), true);
+  assert.ok(game.claimDaily(state, NOW + 2 * 86400000));
   assert.equal(state.commissions.invitations, 0, "finishing the collection grants currencies but no invitation");
   assert.equal(state.coins, 180); assert.equal(state.stardust, 3);
 });
@@ -299,7 +417,7 @@ test("same-day daily delivery and claim behavior is unchanged", () => {
   state.potions.tonic = 1;
   assert.ok(game.fulfillOrder(state, 1, NOW, () => 0));
   assert.equal(state.daily.orders, 5);
-  assert.equal(game.claimDaily(state, NOW), true);
+  assert.ok(game.claimDaily(state, NOW));
   assert.equal(state.daily.claimed, true);
 });
 
@@ -610,7 +728,7 @@ test("prestige opens with the final recipe and preserves durable goals plus the 
 test("daily reset uses a monotonic saved date across alternating clock changes", () => {
   const state = game.defaultState(NOW);
   state.daily.orders = 5;
-  assert.equal(game.claimDaily(state, NOW), true);
+  assert.ok(game.claimDaily(state, NOW));
   const firstDate = state.daily.date;
   assert.equal(game.resetDailyIfNeeded(state, NOW - 86400000), false);
   assert.deepEqual(state.daily, { date: firstDate, orders: 5, claimed: true }, "clock rollback cannot reopen the saved date");
@@ -619,7 +737,7 @@ test("daily reset uses a monotonic saved date across alternating clock changes",
   const laterDate = game.todayKey(NOW + 86400000);
   assert.deepEqual(state.daily, { date: laterDate, orders: 0, claimed: false }, "a genuinely later local date opens one fresh goal");
   state.daily.orders = 5;
-  assert.equal(game.claimDaily(state, NOW + 86400000), true);
+  assert.ok(game.claimDaily(state, NOW + 86400000));
   assert.equal(game.resetDailyIfNeeded(state, NOW - 86400000), false);
   assert.equal(game.resetDailyIfNeeded(state, NOW + 86400000), false);
   assert.deepEqual(state.daily, { date: laterDate, orders: 5, claimed: true }, "alternating backward and forward to the saved high-water date cannot reissue rewards");
@@ -706,7 +824,7 @@ test("choosing a special request consumes one invitation and preserves normal de
   assert.equal(game.selectSignatureCommission(state, "moss-rainpath"), null, "only one request may be active");
   assert.equal(state.commissions.invitations, 1, "a rejected selection cannot consume an invitation");
   state.daily.orders = 5;
-  assert.equal(game.claimDaily(state, NOW), true);
+  assert.ok(game.claimDaily(state, NOW));
   assert.equal(state.commissions.invitations, 2, "a daily invitation waits safely behind an active request");
   const before = { coins: state.coins, orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered.tonic };
   state.potions.tonic = 1;
@@ -1133,7 +1251,7 @@ test("the deterministic gather-brew-collect-deliver-upgrade loop succeeds", () =
   state.orders[0] = { ...state.orders[0], recipeId: "tonic", quantity: 1, reward: 20, xp: 20 };
   assert.ok(game.fulfillOrder(state, state.orders[0].id, NOW + 30000, () => 0));
   state.coins = 70;
-  assert.equal(game.buyUpgrade(state, "garden"), true);
+  assert.ok(game.buyUpgrade(state, "garden"));
   assert.equal(state.upgrades.garden, 1);
 });
 

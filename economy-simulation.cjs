@@ -334,9 +334,9 @@ for (const seed of progressionSeeds) {
   }
 }
 const expectedFirstCycle = {
-  7: { seconds: 2660, orders: 31, coinsEarned: 5901 },
-  42: { seconds: 2640, orders: 31, coinsEarned: 5431 },
-  2026: { seconds: 2540, orders: 32, coinsEarned: 5636 },
+  7: { seconds: 2660, orders: 31, coinsEarned: 6171 },
+  42: { seconds: 2640, orders: 31, coinsEarned: 5701 },
+  2026: { seconds: 2540, orders: 32, coinsEarned: 5906 },
 };
 for (const row of progressionRows) {
   assert.deepEqual({ seconds: row.seconds, orders: row.orders, coinsEarned: row.coinsEarned }, expectedFirstCycle[row.seed], `seed ${row.seed}: dormant quest must leave first-cycle output unchanged`);

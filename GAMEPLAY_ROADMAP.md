@@ -24,18 +24,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
 - Mira's first trust heart now produces one brief inline authored delivery payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and remains a one-villager pilot until natural owner play establishes that it improves delivery feel.
 - Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
+- All eight achievements now unlock on the action that satisfies them while remaining manual one-time Journal claims. Lifetime coins now prospectively include every non-purchased gameplay coin grant while excluding starting coins, spending, and bundle currency.
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 21 achievement timing and lifetime coin accounting
+## Now - Task 22 need-aware Request Mix gathering pilot
 
-Tasks 15 through 20 are complete. Task 21 is the only released implementation task.
+Tasks 15 through 21 are complete. Task 22 is the only released implementation task.
 
-Unlock each existing achievement on the action that actually satisfies it. Manual gathering must immediately evaluate Green Thumb, purchasing an upgrade must immediately evaluate Cozy Improvements, and claiming a rolling-request parcel must immediately evaluate Pocketful of Gold when applicable. Preserve immediate evaluation already present after collecting, delivering, Daily Goal claims, Journal claims, and rebirth. Keep achievement rewards in the existing Journal claim flow; do not auto-claim or add new achievements.
+Rename untargeted charged gathering from Smart Mix to Request Mix and describe it honestly as random items weighted toward active requests. Give every unlocked ingredient a base chance, then add a small capped weight for ingredient deficits across active requested potions after accounting for bottled potions and Pantry stock. Recompute between rolls so the weighting responds to what was just gathered. Preserve exact ingredient targeting as the reliable alternative.
 
-Define `stats.coinsEarned` as lifetime gameplay-earned coins after workshop creation: order rewards including friendship favors, level-up coin bonuses, Daily Goal rewards, rolling-request rewards, and Journal claims. Exclude the initial 30-coin balance, spending, and simulated or future purchased bundle currency. Preserve the existing stored total without retroactively inventing missed historical level-up bonuses; apply the clarified definition prospectively. Update deterministic accounting and simulation expectations only for the newly included level-up bonuses. Do not retune rewards, add migration state, or change save version 8.
-
-Focus-restoration validation may accompany any future task that rerenders affected controls; it does not need to wait for the full deferred release matrix.
+Apply this weighting only to untargeted charged harvests. Passive and offline gathering remain unchanged. Preserve current charges, recharge, yield, storage, save version, rewards, and progression values. The three documented first-cycle seeds must remain inside the current 2,540-2,660 second envelope.
 
 ## Confirmed economy risks requiring design and simulation
 
@@ -44,9 +43,9 @@ Focus-restoration validation may accompany any future task that rerenders affect
 
 ## Near-term existing-loop and playtest candidates
 
-- **Meaningful choice:** run a focused owner playtest or small data-driven experiment around identical same-level recipe timer/value pairs, linear upgrades, substantially random Smart Mix behavior, and uniform customer selection. Do not introduce branches, loadouts, currencies, or another recurring system.
+- **Meaningful choice:** after the bounded Request Mix pilot, evaluate identical same-level recipe timer/value pairs, linear upgrades, and uniform customer selection. Do not introduce branches, loadouts, currencies, or another recurring system.
 - **Mobile action hierarchy:** measure the full path to ordinary-order delivery at 390x844 and 360x740 before prescribing a redesign. Distinguish onboarding, an ordinary order not ready, an ordinary order ready, Daily Goal completion, and Rolling Request completion; account for the existing Workshop ready-delivery shortcut.
-- **Gathering clarity:** Smart Mix may later receive modest need-based weighting or be renamed to describe its randomness honestly. Targeted gathering guarantees only the selected ingredient.
+- **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
 
 ## Unselected content candidates
 

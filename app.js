@@ -733,7 +733,7 @@ function claimJournalEntry(kind, id) {
   const result = Logic.claimJournalReward(state, kind, id);
   if (!result) return;
   const customerId = kind === "story" ? id.split(":")[0] : null;
-  checkAchievements();
+  announceAchievements(result.achievements);
   feedback(`Journal reward claimed! +${result.reward} coins`, { tone: "reward", soundName: "confirm", target: ".resource-bar" });
   playCoinArrivals(result.reward);
   renderAll();
@@ -753,6 +753,7 @@ function selectCosmetic(cosmeticId) {
 function claimWeekly() {
   const result = Logic.claimWeeklyStep(state);
   if (!result) return;
+  announceAchievements(result.achievements);
   if (result.chainCompleted && Logic.weeklyChainStatus(state).complete) beginCompletionState("weekly");
   feedback(`${result.chainCompleted ? "Request chain complete" : "Request parcel claimed"}! +${result.reward} coins`, { tone: "reward", soundName: "reward", target: "#weeklyCard" });
   playCoinArrivals(result.reward);
@@ -777,7 +778,7 @@ function collectBrew() {
   const result = window.PPWLogic.collectBrew(state);
   if (!result) return;
   announceLevels(result.levels);
-  checkAchievements();
+  announceAchievements(result.achievements);
   feedback(`${result.recipe.name} added to your shelf!`, { tone: "collect", soundName: "collect", target: "#potionShelf" });
   renderAll();
   showTutorialTransition(tutorialBefore, viewBeforeAction);
@@ -792,7 +793,7 @@ function fulfillOrder(orderId, surface = "orders") {
   if (result.afterStars?.complete) beginCompletionState("afterStars", result.afterStars);
   if (result.narrative) beginCompletionState(surface === "workshop" ? "narrativeWorkshop" : "narrativeOrders", result.narrative);
   announceLevels(result.levels);
-  checkAchievements();
+  announceAchievements(result.achievements);
   const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";
   feedback(`Order delivered! +${result.reward} coins${result.customerBonus ? ` · friendship favor +${result.customerBonus}` : ""}${completion}`, { tone: "delivery", soundName: "delivery", target: ".resource-bar" });
   renderAll();
@@ -801,7 +802,9 @@ function fulfillOrder(orderId, surface = "orders") {
 }
 
 function addXp(amount) {
-  announceLevels(window.PPWLogic.addXp(state, amount));
+  const levels = window.PPWLogic.addXp(state, amount);
+  announceLevels(levels);
+  announceAchievements(levels.achievements);
 }
 
 function announceLevels(levels) {
@@ -820,7 +823,9 @@ function buyUpgrade(id) {
   const tutorialBefore = Logic.beginnerQuest(state);
   const viewBeforeAction = activeView();
   const upgrade = upgradeById(id);
-  if (!window.PPWLogic.buyUpgrade(state, id)) return;
+  const result = window.PPWLogic.buyUpgrade(state, id);
+  if (!result) return;
+  announceAchievements(result.achievements);
   renderAll();
   feedback(`${upgrade.name} improved to level ${state.upgrades[id]}.`, { tone: "upgrade", soundName: "tap", target: `[data-upgrade="${id}"]` });
   showTutorialTransition(tutorialBefore, viewBeforeAction);
@@ -830,7 +835,8 @@ function claimDaily() {
   const now = Date.now();
   if (checkForegroundDateTransition(now)) return;
   const invitationsBefore = state.commissions.invitations;
-  if (!window.PPWLogic.claimDaily(state, now)) return;
+  const result = window.PPWLogic.claimDaily(state, now);
+  if (!result) return;
   const invitationGranted = state.commissions.invitations > invitationsBefore;
   const savedForLater = invitationGranted && Boolean(state.commissions.selectedId);
   const chooserToken = ++pendingDailyChooserToken;
@@ -840,7 +846,7 @@ function claimDaily() {
     showSpecialRequestChooser({ automatic: true });
   } : null;
   beginCompletionState("daily", { invitationGranted, savedForLater }, autoOpenChooser);
-  checkAchievements();
+  announceAchievements(result.achievements);
   toast(`Daily goal complete! +50 coins and +1 stardust${invitationGranted ? " · special request earned" : ""}`);
   renderAll();
   playCoinArrivals(50);
@@ -862,19 +868,14 @@ function performPrestige(reward) {
   if (!nextState) return;
   state = nextState;
   closeModal();
-  checkAchievements();
+  announceAchievements(nextState.newlyUnlocked);
   switchView("workshop");
   toast("The stars remember you. Your workshop begins anew.");
   renderAll();
 }
 
-function checkAchievements() {
-  ACHIEVEMENTS.forEach(achievement => {
-    if (!state.achievements[achievement.id] && achievement.test(state)) {
-      state.achievements[achievement.id] = Date.now();
-      toast(`Achievement: ${achievement.name}`);
-    }
-  });
+function announceAchievements(achievements = []) {
+  achievements.forEach(achievement => toast(`Achievement: ${achievement.name}`));
 }
 
 function refreshOrder() {
@@ -1144,7 +1145,7 @@ function manualGather(event) {
   }
   const gatheredName = result.targetId ? INGREDIENTS[result.targetId].name : "fresh ingredient";
   feedback(`Gathered ${added} ${gatheredName}${added === 1 || result.targetId ? "" : "s"}.`, { tone: "gather", soundName: "gather", target: ".workshop-card" });
-  state.stats.taps += 1;
+  announceAchievements(result.achievements);
   if (added > 0 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     const particle = document.querySelector("#particleTemplate").content.firstElementChild.cloneNode(true);
     particle.textContent = `+${added}`;
@@ -1281,7 +1282,7 @@ function setupServiceWorkerUpdates() {
 setupServiceWorkerUpdates();
 
 reconcileOfflineProgress();
-checkAchievements();
+announceAchievements(Logic.evaluateAchievements(state));
 renderAll();
 setInterval(tick, 1000);
 setTimeout(() => gameplaySaveWritesBlocked ? showFutureSaveGuard() : showTutorial(), 500);
