@@ -16,7 +16,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Twelve recurring villagers with trust, 36 story beats, one-time Villager Special Requests, twelve keepsakes, and bounded first-read Journal rewards.
 - Three charged harvests recharge every 30 seconds and yield 3 base items. A targeted charged harvest guarantees the selected unlocked ingredient for that harvest; it does not guarantee completion of a recipe or order. Smart Mix remains substantially random. Passive gathering starts after the first delivery at about 5 items per minute; offline gathering uses a slower rate, stops at 60% of Pantry capacity, and retains a four-hour elapsed-time safety cap.
 - Daily goals do not use streaks. Rolling request chains do not expire. All recurring and one-time rewards are bounded.
-- Seven reversible, economy-neutral Workshop Looks include the original look plus six earned looks.
+- Eight reversible, economy-neutral Workshop Looks include the original look plus seven earned looks. Twelvefold Mastery derives completion from all twelve recipes at mastery rank 3 and unlocks the Masterwork Alcove without a claim or economy reward.
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
 - Gameplay saves use schema v8 with v1-v7 migration, future-v9 overwrite protection, and frozen-reader rollback coverage.
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
@@ -29,13 +29,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - With Request Mix, the current seeded first cycle reaches level 7 in 2,565-2,690 seconds with 30-31 orders. Treat fixed-seed results as comparison baselines, not exact invariants: an RNG-affecting experiment may vary by up to 5% in completion time and one order per seed without retuning values. Larger movement requires owner review before adoption.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 23 mastery collection endpoint
+## Now - Task 24 varied village order board
 
-Tasks 15 through 22 are complete. Task 23 is the only released implementation task.
+Tasks 15 through 23 are complete. Task 24 is the only released implementation task.
 
-Give the existing three-rank mastery system one permanent collection endpoint. The Journal should count how many of all twelve recipes have reached mastery rank 3 and unlock one reversible, economy-neutral Masterwork Alcove Workshop Look when all twelve are complete.
+Make the visible order board present a broader mix of villagers while modestly surfacing trust-heart moments already close to completion. New ordinary orders should avoid villagers already represented on the current board whenever alternatives exist. Among remaining villagers, everyone keeps a base chance while a villager exactly one delivery from an unearned trust heart receives a small capped weight.
 
-Derive progress entirely from existing mastery counts. Add no claim step, currency, reward amount, timer, recurrence, saved field, migration, or save-version change. Mastery already persists through Starry Rebirth, so the endpoint must remain durable and automatically recognize valid existing progress.
+Do not alter reserved Villager Special Request or After the Stars customers, trust thresholds, favors, story rewards, order recipes, quantities, values, or saved state. The purpose is to expose existing authored content and give the player clearer order choices, not to add a new relationship system.
 
 ## Confirmed economy risks requiring design and simulation
 
@@ -44,7 +44,7 @@ Derive progress entirely from existing mastery counts. Add no claim step, curren
 
 ## Near-term existing-loop and playtest candidates
 
-- **Meaningful choice:** after the bounded Request Mix pilot, evaluate identical same-level recipe timer/value pairs, linear upgrades, and uniform customer selection. Do not introduce branches, loadouts, currencies, or another recurring system.
+- **Meaningful choice:** after the varied-board pilot, evaluate identical same-level recipe timer/value pairs and linear upgrades. Do not introduce branches, loadouts, currencies, or another recurring system.
 - **Mobile action hierarchy:** measure the full path to ordinary-order delivery at 390x844 and 360x740 before prescribing a redesign. Distinguish onboarding, an ordinary order not ready, an ordinary order ready, Daily Goal completion, and Rolling Request completion; account for the existing Workshop ready-delivery shortcut.
 - **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
 

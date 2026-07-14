@@ -2,8 +2,8 @@
   "totalRuntimeBytes": 24000000,
   "files": {
     "index.html": 16000,
-    "style.css": 55000,
-    "game-logic.js": 77000,
+    "style.css": 58000,
+    "game-logic.js": 80000,
     "platform-adapters.js": 24000,
     "audio-feedback.js": 22000,
     "app.js": 80000,

@@ -883,7 +883,7 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   assert.equal(game.selectCosmetic(state, "fern"), true);
   assert.equal(game.selectCosmetic(state, "mooncloth"), false);
   assert.deepEqual({ order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) }, baseline);
-  Object.keys(state.mastery).forEach(id => { state.mastery[id] = 1; });
+  Object.keys(state.mastery).forEach(id => { state.mastery[id] = game.MASTERY_CONFIG.thresholds.at(-1); });
   state.stats.prestiges = 1;
   state.weekly.cycle = 1;
   state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(commission => commission.id);
@@ -893,15 +893,54 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
     assert.equal(game.selectCosmetic(state, cosmetic.id), true);
     visualStates[cosmetic.id] = game.workshopDecorationState(state);
   }
-  assert.deepEqual(visualStates.midnight, { selected: "midnight", keepsake: false, ribbon: false, dawnthread: false });
-  assert.deepEqual(visualStates.starglass, { selected: "starglass", keepsake: true, ribbon: false, dawnthread: false });
-  assert.deepEqual(visualStates.guild, { selected: "guild", keepsake: false, ribbon: true, dawnthread: false });
+  assert.deepEqual(visualStates.midnight, { selected: "midnight", keepsake: false, ribbon: false, dawnthread: false, masterwork: false });
+  assert.deepEqual(visualStates.starglass, { selected: "starglass", keepsake: true, ribbon: false, dawnthread: false, masterwork: false });
+  assert.deepEqual(visualStates.guild, { selected: "guild", keepsake: false, ribbon: true, dawnthread: false, masterwork: false });
   assert.equal(new Set(Object.values(visualStates).map(visual => JSON.stringify(visual))).size, game.COSMETICS.length, "each advertised selection yields a distinct reversible visual state");
   assert.equal(game.selectCosmetic(state, "midnight"), true);
   assert.equal(game.selectCosmetic(state, "midnight"), false, "selecting the current look is a no-op");
   const reloaded = game.normalizeState(state, NOW);
   assert.equal(reloaded.customization.selected, "midnight");
-  assert.ok(game.COSMETICS.length <= 7);
+  assert.ok(game.COSMETICS.length <= 8);
+});
+
+test("Twelvefold Mastery unlocks only at the twelfth rank-three recipe and stays cosmetic", () => {
+  const state = game.defaultState(NOW);
+  const goal = game.COLLECTION_GOALS.find(item => item.id === "mastery");
+  const maxCount = game.MASTERY_CONFIG.thresholds.at(-1);
+  const rankTwoCount = game.MASTERY_CONFIG.thresholds.at(-2);
+  assert.deepEqual(goal, { id: "mastery", name: "Twelvefold Mastery", target: game.RECIPES.length, cosmeticId: "masterwork" });
+  assert.deepEqual(game.collectionGoalProgress(state, "mastery"), { current: 0, target: 12 });
+  state.mastery.tonic = rankTwoCount;
+  assert.deepEqual(game.collectionGoalProgress(state, "mastery"), { current: 0, target: 12 });
+  state.mastery.tonic = maxCount;
+  assert.deepEqual(game.collectionGoalProgress(state, "mastery"), { current: 1, target: 12 });
+  assert.equal(game.cosmeticUnlocked(state, "masterwork"), false);
+  state.mastery.tonic = "malformed";
+  assert.deepEqual(game.collectionGoalProgress(state, "mastery"), { current: 0, target: 12 });
+  game.RECIPES.forEach(recipe => { state.mastery[recipe.id] = maxCount; });
+  state.mastery.aurora = maxCount - 1;
+  assert.deepEqual(game.collectionGoalProgress(state, "mastery"), { current: 11, target: 12 });
+  assert.equal(game.cosmeticUnlocked(state, "masterwork"), false);
+  assert.equal(game.selectCosmetic(state, "masterwork"), false);
+  state.mastery.aurora = maxCount;
+  assert.deepEqual(game.collectionGoalProgress(state, "mastery"), { current: 12, target: 12 });
+  assert.equal(game.cosmeticUnlocked(state, "masterwork"), true);
+  const baseline = { coins: state.coins, xp: state.xp, stardust: state.stardust, order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) };
+  assert.equal(game.selectCosmetic(state, "masterwork"), true);
+  assert.deepEqual(game.workshopDecorationState(state), { selected: "masterwork", keepsake: false, ribbon: false, dawnthread: false, masterwork: true });
+  assert.deepEqual({ coins: state.coins, xp: state.xp, stardust: state.stardust, order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) }, baseline);
+  assert.equal(game.selectCosmetic(state, "midnight"), true);
+  assert.equal(game.selectCosmetic(state, "masterwork"), true);
+  const reloaded = game.normalizeState(state, NOW + 1);
+  assert.equal(reloaded.customization.selected, "masterwork");
+  const forged = game.defaultState(NOW);
+  forged.customization.selected = "masterwork";
+  assert.equal(game.normalizeState(forged, NOW).customization.selected, "midnight");
+  reloaded.level = game.PRESTIGE_CONFIG.unlockLevel;
+  const reborn = game.performPrestige(reloaded, 3, NOW + 2);
+  assert.equal(game.cosmeticUnlocked(reborn, "masterwork"), true);
+  assert.equal(reborn.customization.selected, "masterwork");
 });
 
 test("upgrade previews expose exact current and next effects across three paths", () => {

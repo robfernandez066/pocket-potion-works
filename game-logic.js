@@ -32,6 +32,7 @@
     Object.freeze({ id: "guild", name: "Guild Ribbon", description: "Unlocked by completing one rolling request chain." }),
     Object.freeze({ id: "heirloom", name: "Heirloom Garland", description: "Unlocked by collecting all twelve villager keepsakes." }),
     Object.freeze({ id: "dawnthread", name: "Dawnthread Workshop", description: "Unlocked by completing After the Stars." }),
+    Object.freeze({ id: "masterwork", name: "Masterwork Alcove", description: "A violet-and-gold alcove lit by twelve mastered recipes." }),
   ]);
   const INGREDIENTS = {
     herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 },
@@ -65,6 +66,7 @@
     Object.freeze({ id: "sampler", name: "Potion Sampler", target: SAMPLER_IDS.length, cosmeticId: "mooncloth" }),
     Object.freeze({ id: "keepsake", name: "First Star Keepsake", target: 1, cosmeticId: "starglass" }),
     Object.freeze({ id: "heirlooms", name: "Village Heirlooms", target: 12, cosmeticId: "heirloom" }),
+    Object.freeze({ id: "mastery", name: "Twelvefold Mastery", target: RECIPES.length, cosmeticId: "masterwork" }),
   ]);
 
   const UPGRADES = [
@@ -798,6 +800,7 @@
     if (goalId === "sampler") return { current: SAMPLER_IDS.filter(id => int(state.mastery?.[id]) > 0).length, target: SAMPLER_IDS.length };
     if (goalId === "keepsake") return { current: Math.min(1, int(state.stats?.prestiges)), target: 1 };
     if (goalId === "heirlooms") return { current: Math.min(SIGNATURE_COMMISSIONS.length, state.commissions?.completedIds?.length || 0), target: SIGNATURE_COMMISSIONS.length };
+    if (goalId === "mastery") return { current: RECIPES.filter(recipe => recipeMasteryRank(state, recipe.id) >= MASTERY_CONFIG.thresholds.length).length, target: RECIPES.length };
     return null;
   }
 
@@ -819,7 +822,7 @@
 
   function workshopDecorationState(state) {
     const selected = cosmeticUnlocked(state, state.customization?.selected) ? state.customization.selected : "midnight";
-    return { selected, keepsake: selected === "starglass", ribbon: selected === "guild", dawnthread: selected === "dawnthread" };
+    return { selected, keepsake: selected === "starglass", ribbon: selected === "guild", dawnthread: selected === "dawnthread", masterwork: selected === "masterwork" };
   }
 
   function weeklyChainStatus(state) {
