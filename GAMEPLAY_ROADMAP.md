@@ -24,14 +24,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - awaiting the next bounded scope
+## Now - Task 18 foreground daily rollover correctness
 
-Tasks 15 through 17 are complete. No implementation task is currently released. Every remaining candidate stays unselected until the owner signals that the PM should release the next bounded scope.
+Tasks 15 through 17 are complete. Task 18 is the only released implementation task.
+
+Daily rollover must occur before a successful post-midnight delivery mutates Daily Goal progress and before a Daily Goal claim checks eligibility. A foreground session must move to the new local date without losing the first new-day delivery or allowing the previous day's completed reward to be claimed. Preserve the saved-date high-water rule so clock rollback cannot reopen rewards, and refresh and persist the Daily Goal only when a real forward date transition occurs.
+
+Do not change Daily Goal thresholds or rewards, add streaks, retune Stardust, alter rolling requests, or combine this correction with progression accounting, hostile saves, content, release, or monetization. The narrative delivery pilot remains the preferred visible-content candidate after this bounded correctness task is complete.
 
 ## Unselected correctness candidates
 
 - **Hostile values and invalid active brews:** bound adversarial numeric save values and restore or reject a saved active brew when its known recipe is above the saved player level. This is separate from storage I/O resilience.
-- **Foreground daily rollover:** reset the saved day before any daily mutation or claim and validate the foreground-midnight path.
 - **Progression accounting:** evaluate achievements on their triggering actions and use one consistent definition of lifetime coins.
 
 Focus-restoration validation may accompany any future task that rerenders affected controls; it does not need to wait for the full deferred release matrix.
