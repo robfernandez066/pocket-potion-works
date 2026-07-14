@@ -21,9 +21,9 @@
 - Preserve versioned saves, the four-hour offline cap, safe-area support, reduced-motion support, and 44px minimum touch targets.
 - Treat local saves as untrusted input. Migrate or recover safely rather than crashing.
 - Do not claim a monetization reward until the future platform adapter reports success.
-- No remote fonts or runtime assets; the prototype must remain usable offline.
+- No remote fonts or remotely loaded runtime assets; the prototype must remain usable offline.
 
-## Required validation
+## Required implementation validation
 
 1. Run `npm.cmd run check` on Windows.
 2. Test gather -> brew -> collect -> deliver -> upgrade in the browser.

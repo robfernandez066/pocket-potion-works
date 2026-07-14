@@ -7,16 +7,16 @@
 | `bagpop.mp3` | A brewed potion entering inventory |
 | `brew-start.mp3` | Brewing begins |
 | `brew-ready.mp3` | A potion finishes brewing and is ready to collect |
-| `coin.mp3` | Coin rewards use capped tiers: 1 chime below 10 coins, 2 at 10+, 3 at 20+, 5 at 40+, 7 at 80+, and no more than 9 at 150+. Each chime uses 0.3 base volume with random +/-10% volume and 0.95x-1.1x playback-rate variation. |
+| `coin.mp3` | Coin rewards use capped tiers instead of one sound per coin. The current cue uses 0.55 base volume with random +/-10% volume and 0.95x-1.1x playback-rate variation; canonical thresholds live in `audio-feedback.js` and its tests. |
 | `gather.mp3` | Ingredient gathering; plays the complete trimmed file |
 | `confirm.mp3` | Successful order delivery |
 | `levelup.ogg` | Level-up celebration |
-| `tap.ogg` | Buttons and menus that do not play a more specific action sound, including successful workshop upgrade purchases; volume 0.4 at 4.0x playback speed with pitch preservation disabled so the pitch rises |
+| `tap.ogg` | Buttons and menus that do not play a more specific action sound, including successful workshop upgrade purchases; 1.0 cue volume at 4.0x playback speed with pitch preservation disabled so the pitch rises. The effects slider applies the final output level. |
 | `music1.mp3`, `music2.mp3`, `music3.mp3` | Pixabay-licensed background playlist credited to Trycja via Pixabay; begins from a random track after the first player interaction, then follows numbered order with fades. Exact titles, source URLs, certificate hashes, and restrictions are maintained in `ASSET_PROVENANCE.md`. |
 
 The game's synthesized cues remain as safe fallbacks if a sample cannot play.
 Music and sound-effect volume default to 50% and persist independently under the master Sound setting.
-The project owner confirms that all listed local samples came from Pixabay pages marked free for use under the Pixabay Content License. Music has track-specific certificate evidence; sound-effect evidence is owner-attested because exact source URLs were not retained. See `ASSET_PROVENANCE.md`.
+Licensing and source evidence are maintained only in `ASSET_PROVENANCE.md`.
 
 ## Parked for a future use
 

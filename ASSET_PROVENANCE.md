@@ -24,7 +24,7 @@ The owner downloaded all three tracks under the Pixabay Content License on July 
 
 The tracks are used only as part of Pocket Potion Works and must not be offered, claimed, sold, or redistributed as standalone music. The source pages identify the music as AI-generated; at least Violin Alchemy and Emerald Echoes Cries are Content ID registered, so the retained certificates must be kept for possible claim disputes. This evidence does not remove Pixabay's disclaimer concerning third-party rights.
 
-## Task 4 synthesized audio
+## Synthesized fallback audio
 
 - The fallback sound set in `audio-feedback.js` is original for Pocket Potion Works. It uses nine short, hand-authored Web Audio frequency/duration/volume sequences (`tap`, `gather`, `brewStart`, `brewReady`, `collect`, `delivery`, `upgrade`, `levelUp`, and `reward`). No audio libraries or remote resources are included.
 - The added workshop stars, cauldron engraving, ready state, feedback rings, and color-coded toast accents in `style.css` are original CSS/code-native artwork. They use no external image or font.
@@ -38,11 +38,11 @@ The tracks are used only as part of Pocket Potion Works and must not be offered,
 - The 23 shipped image files under `assets/images/` are owner-generated transparent PNG sprite assets created with Sprixen for Pocket Potion Works: seven ingredients, three Workshop utility images, twelve static potion designs, and one optimized Aurora animation sheet.
 - Static images are square 128x128 or 256x256 PNGs. `aurora-nectar-animated-12f.png` is a 1536x128 horizontal sheet containing twelve 128x128 frames. It was derived from the owner-provided 96-frame cinematic sheet by sampling every eighth frame and downsizing without generative redrawing; the static Aurora sprite remains the reduced-motion and compact-icon fallback.
 - The release checks require every supplied sprite to be a valid expected-size PNG, wired into the stylesheet, copied to Pages, and included in the offline shell.
-- The 23 shipped image files add 983,858 bytes to the offline installation shell and require no remote runtime service. The 4 MB source sheet is retained only in the owner's ignored local source folder and is not shipped. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
+- The 23 shipped image files add 973,236 bytes to the offline installation shell and require no remote runtime service. The 4 MB source sheet is retained only in the owner's ignored local source folder and is not shipped. The owner should retain Sprixen generation records and confirm applicable commercial-use terms before a store release.
 
-## Unchanged pre-existing assets
+## Pre-existing local assets
 
-- `icon.svg` is the existing local Pocket Potion Works application icon and was not modified in Task 4.
+- `icon.svg` is the existing local Pocket Potion Works application icon.
 - The remaining workshop scene, shelves, customer glyphs, and other interface artwork remain HTML/CSS/SVG or system glyphs already present in the repository.
 - The existing font stack uses only local system fonts. No remote fonts or runtime asset requests were added.
 

@@ -1,140 +1,58 @@
 # Pocket Potion Works gameplay roadmap
 
-This is the active product roadmap. Archived plans and consultant inputs are not sources of truth.
+This is the active product roadmap. Completed task reports and superseded planning live in `archive/` and are not sources of current direction.
 
 ## Product principles
 
 - Preserve the core loop: gather -> brew -> collect -> fulfill orders -> upgrade -> repeat.
-- Add meaningful choices before adding more content.
-- Keep required play cozy, short, offline, mobile-friendly, and accessible.
-- Optional interactions may improve rewards but must never become mandatory skill gates.
-- Use owner playtests for subjective feel and deterministic tests/simulations for balance.
-- Keep production monetization and native packaging out of scope until retention is proven.
+- Add meaningful choices and authored content without adding avoidable currencies, timers, or navigation.
+- Keep required play cozy, short, offline-friendly, mobile-first, and accessible.
+- Use owner playtests for feel and deterministic tests or simulations for progression and economy.
+- Keep production monetization and native packaging on hold until the game has enough content and retention evidence.
 
-## Completed - interaction blockers and prototype integrity
+## Current shipped baseline
 
-Task 6 shipped a dismissible, timed tutorial handoff; touch-readable Market lock; visible Prosperity countdown; stable brew controls; non-occluding toasts; readable gathering rate; and idle/brewing/ready scene states. Quick-brew now uses one shared deterministic rule in gameplay and simulation: once per brew, with at least 45 seconds remaining, remove 40% of the remaining time. Automated checks and 390x844 plus 360x740 browser acceptance passed. The broader owner/release gate remains separate.
+- Seven ingredients, twelve recipes across levels 1-7, one cauldron, three-rank recipe mastery, five upgrades, and level-7 Starry Rebirth.
+- Twelve recurring villagers with trust, 36 story beats, one-time Villager Special Requests, twelve keepsakes, and bounded first-read Journal rewards.
+- Three charged targeted harvests recharge every 30 seconds and yield 3 base items. Passive and offline gathering start after the first delivery, average about 5 items per minute, stop at 60% of Pantry capacity, and remain capped at four offline hours.
+- Daily goals do not use streaks. Rolling request chains do not expire. All recurring and one-time rewards are bounded.
+- Seven reversible, economy-neutral Workshop Looks include the original look plus six earned looks.
+- Gameplay saves use schema v8 with v1-v7 migration, future-v9 overwrite protection, and frozen-reader rollback coverage.
+- The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
+- The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Completed - meaningful gathering and a shorter workshop loop
+## Now - After the Stars owner acceptance
 
-Task 7 implementation is ready for owner feel-testing. Three charged harvests now recharge every 30 seconds and yield 3 base items. The checked-in candidate comparison models 69 charged items per ten minutes, between the 15-second small-yield option (86) and 60-second large-yield option (65); existing first-session milestone simulations still pass. Players may keep Smart mix or target an unlocked Pantry ingredient. A targeted 180-second scarcity run produced 27 Starshards versus 9 from Smart mix.
+Task 15 is implemented and deployed, but remains in review until its post-rebirth presentation is seen in a real rebirthed save.
 
-Owner level-4 playtesting found automatic gathering kept the Pantry full. Live and offline gathering now begin after the first delivered order, use an approximately 5-items-per-minute base rate, and stop at 60% of storage capacity. Charged targeted harvests retain access to the full Pantry, and Clear space lets players intentionally discard 1, 5, or all of an unwanted ingredient without earning coins.
+- The four one-time errands use Mira, Postmaster Pip, Fern, and Rowan in sequence after the first Starry Rebirth.
+- The quest shares the reserved Orders slot with Villager Special Requests, preserves two ordinary orders, uses normal one-bottle delivery economics, and never consumes invitations.
+- Completion unlocks the reversible Dawnthread Workshop look with no economic effect.
+- Automated progression, malformed-save restoration, v8 migration, later-rebirth persistence, and first-cycle invariance checks pass.
+- Pre-rebirth concealment and compact layout pass at 390x844 and 360x740. The remaining owner check is the tracker, final completion card, and Workshop Look selection after rebirth.
 
-### Gathering redesign
+Exit gate: the post-rebirth tracker and finale are clear, compact, and satisfying in the owner's normal save.
 
-- Validate whether 30-second recharge and 3-item targeted harvests feel meaningful in owner playtesting; adjust only if feel evidence contradicts the passing simulations.
-- Keep Smart mix and targeted charged gathering while passive/offline gathering remains random.
-- Keep the instant harvest. No optional puzzle was added because targeting supplies the intended decision without another interaction layer.
+## Next
 
-### Workshop flow
+No additional implementation task is approved yet. Choose the next bounded content expansion after Task 15 owner acceptance and current playtest feedback. Prefer one of:
 
-- Keep the four bottom tabs; do not add draggable or collapsible navigation chrome.
-- The Workshop now provides inline ready-order delivery while retaining the full Orders noticeboard.
-- A sticky brew-status shortcut appears when the cauldron is off-screen or the player is on another tab.
-- Pantry and Recipe Book use compact, remembered disclosure state; costs and details remain available on demand and tutorial targeting opens the required section.
+- additional authored recipe, villager, achievement, prestige-goal, or cosmetic content;
+- a small improvement to an existing loop that playtesting identifies as repetitive or unclear;
+- visual or audio polish using approved local assets.
 
-Exit gate: gathering creates deliberate ingredient decisions, pantry scarcity remains understandable, and one full loop can be completed with materially less tab and scroll movement.
+Do not extend the level curve, add a second cauldron, or introduce another recurring system without evidence that the current loop needs it.
 
-## Completed - progression depth
+## On hold
 
-Task 8 moves starry rebirth to the final recipe unlock at level 7 and grants 3 base stardust. Across seeds 7, 42, and 2026, the checked-in realistic strategy reached level 7 in 2,425-2,730 seconds with 30-33 orders, 36-39 mastery brews, and the normal 1-stardust daily claimed. A counterfactual reset retaining only that daily stardust and the chosen rebirth both recovered to level 3 in 317 seconds with four upgrades, while the chosen grant retained 69 coins versus the baseline's 26. Four reward stardust did not improve that recovery band: it averaged 323 seconds, five upgrades, and 6 unspent coins. This supports 3 as a bounded recovery cushion, not a claimed speed boost; staying at level 7 with the daily stardust remains the stronger immediate option. Rebirth preserves the current daily state so it cannot reset the same-date claim.
-
-Each recipe now has durable mastery ranks at 3, 8, and 15 collected brews. Ranks add 4% matching-order value and survive rebirth. Upgrade cards expose exact current-to-next effects and group the existing five investments into Harvest, Brewing, and Trade paths. Recurring customers gain one trust heart every three deliveries, up to three hearts, with a visible 12-coin favor at each milestone. Trust and mastery normalize safely from existing saves and never block ordinary orders.
-
-The optional brew-start timing interaction was not added; mastery supplies the intended longer goal without precision play.
-
-Exit gate: players have at least two meaningful goals beyond player level, and prestige offers a credible long-term choice without invalidating daily play.
-
-## Completed - offline-friendly retention and identity
-
-- Five compact code-native workshop looks shipped with the retention pass: the original, two collection-goal looks, one first-prestige Starglass Keepsake, and one rolling-request ribbon. None changes economy or required progression.
-- Three deterministic request chains progress only on validated deliveries. Progress and claims never expire, local dates are ignored, and total prototype rewards are capped at 105 coins. This claim-when-ready policy avoids both missed-week punishment and false trust in a device clock.
-- The optional daily goal keeps a monotonic saved local-date boundary: rollback or returning to the same high-water date cannot reissue it, while a later date restores ordinary missed-day play without a streak penalty. A fully offline client cannot prevent someone from repeatedly advancing the clock to brand-new future dates.
-- Three collection goals reuse approved progress: brew 10 potions, collect the original eight recipes, and complete one rebirth.
-- Critical screenshot chrome now uses inline SVG or CSS geometry for the brand, settings, market, resources, and four-tab navigation instead of platform-dependent glyphs.
-
-The second brew slot remains deferred. Current evidence validates one cauldron plus bounded quick-brew; there is no separate pacing simulation showing that a second concurrent timer preserves ingredient demand, delivery cadence, or upgrade value.
-
-Exit gate: owner playtests whether the rolling-chain cadence and small visual choices feel motivating without turning them into obligations.
-
-## Completed - village stories and order variety
-
-Owner direction is to add more playable content before monetization or broader release work. This bounded expansion deepened the twelve existing villagers and eight existing potions instead of extending timers, currencies, or the level curve.
-
-- Give every recurring customer three short story beats revealed by their existing trust hearts.
-- Add deterministic variety to each customer's order-request copy while preserving recipe requirements and rewards.
-- Add one compact lore entry for every existing recipe, revealed by existing discovery progress.
-- Present locked, newly available, and read story content clearly in the Journal without streaks or urgency. Friends are collapsed first, then each villager expands to three story slots.
-- Award a bounded first-time claim of 5 coins per story or bottle note and 10 coins per earned achievement, capped at 320 coins across all current Journal content. Red dots derive from claimable state and clear only when that item is claimed; collection goals keep their existing Workshop Look rewards.
-- Derive unlocks from existing trust, discovery, and achievement state. Previously read stories and bottle notes stay complete; pre-v5 earned achievements become claimable once.
-
-Exit gate: the village feels more authored and worth revisiting, while bounded Journal claims do not become a recurring obligation or destabilize the level-7 rebirth curve.
-
-## Completed - expanded potion book
-
-Task 12 adds Frostmint and four new recipes across the existing level 4-7 progression. This is an optional content expansion inside the proven first-cycle level curve, not a new progression tier: starry rebirth remains available at level 7, no new currency or timer system was introduced, and the existing one-cauldron loop remains intact.
-
-- Deterministic seeds 7, 42, and 2026 reach level 7 in 2,635-2,655 seconds with 31 orders, inside the approved Task 8 envelope.
-- Frostmint and the four potions are integrated with Pantry targeting, passive/offline gathering, recipes, orders, mastery, discovery lore, and level-up presentation.
-- Mooncloth Shelves remains tied to the original eight-recipe sampler, so adding content cannot revoke the earned cosmetic.
-- The Task 12 save boundary remains covered by its frozen v3 reader; the current schema is defined by the newest completed or in-development task below.
-- The full loop, all tabs, and Settings passed 390x844 and 360x740 browser QA without horizontal overflow or console errors.
-
-Exit gate: the new potions create meaningful additional choices within levels 4-7 without materially delaying rebirth, relocking existing rewards, or destabilizing the economy.
-
-## Completed - signature villager commissions and keepsakes
-
-Task 13 authored twelve one-time villager commissions, distinct keepsakes, and the Heirloom Garland without adding another economy or timer. Task 14 below supersedes its original random-order-gated discovery flow while retaining this content foundation and its delivery rules.
-
-- Signature commissions use normal order rewards, XP, trust, daily, rolling-request, achievement, and delivery rules. They add no bonus coins and cannot repeat.
-- Two ordinary order slots remain playable, so an ignored commission cannot block the core loop.
-- Each completed commission records one code-native keepsake in a compact, collapsed Journal collection.
-- Completing all twelve unlocks exactly one non-economic Workshop Look.
-- Completed keepsakes survive prestige; the current invitation and active-request persistence rules are defined by Task 14 below.
-- Save v6 migrates v1-v5 safely and adds frozen-v5 rollback plus future-v7 overwrite protection.
-- Across seeds 7, 42, and 2026, an always-choose-commissions strategy reached level 7 in 2,540-2,570 seconds with 32-33 total deliveries and 3-9 commissions completed. The unchanged baseline reached level 7 in 2,540-2,660 seconds with 31-32 deliveries; lifetime coin generation stayed inside the checked 12% guardrail.
-- Browser acceptance completed the gather, brew, collect, ordinary delivery, upgrade, commission choice, reload, signature delivery, and keepsake path. The Orders board and collapsed or expanded keepsake collection had no horizontal overflow or console errors at 390x844 and 360x740.
-
-Exit gate: friendships create authored playable goals and a clear collection payoff while deterministic evidence keeps first-cycle level-7 pacing and the existing economy materially unchanged.
-
-## Completed - daily Villager Special Requests and compact completion states
-
-Task 14 connects the existing five-delivery daily reward to one saved Villager Special Request invitation. Claiming still pays 50 coins and 1 stardust exactly once, then lets the player deliberately choose any unfinished villager request whose potion is unlocked. This replaces random-order-gated commission discovery and the permanent chooser card with a dismissible, reopenable player-facing flow.
-
-- Earned invitations persist and may be saved for later, but remain bounded by unfinished keepsakes and never allow more than one active special request.
-- The chooser explains the requested potion, current villager trust, and named keepsake before selection; two ordinary Orders slots remain available.
-- Claimed daily goals, the fully completed rolling request chain, and delivered special requests show their final state briefly, then fade and collapse so the Orders screen does not retain dead space.
-- Save v7 migrates v1-v6, adds frozen-v6 rollback protection, and keeps future-v8 saves write-protected. Automated reward, targeting, persistence, malformed-save, and reduced-motion timing coverage passes.
-- Browser acceptance completed the real fifth delivery, daily claim, three-second claimed hold, delayed targeted chooser, request selection, reload persistence, special-request delivery, three-second keepsake completion, gather, and upgrade path. Orders and Journal had no horizontal overflow or console warnings/errors at 390x844 and 360x740.
-
-Exit gate: daily play creates an understandable, intentional path toward villager trust and keepsakes while completed panels leave the active Orders screen promptly.
-
-## Next - After the Stars post-rebirth questline
-
-Task 15 adds one bounded four-step village questline after the player's first Starry Rebirth. It reuses existing villagers, recipes, ingredients, and the normal delivery pipeline rather than extending the first-cycle level curve.
-
-- Mira, Postmaster Pip, Fern, and Rowan each provide one sequential starborn errand using an existing level 1-4 potion.
-- The quest shares the single reserved Orders slot with Villager Special Requests, never consumes invitations, and always leaves two ordinary orders playable.
-- Each delivery grants only its canonical ordinary reward. Completing all four unlocks the non-economic Dawnthread Workshop look.
-- Progress survives reload, offline time, clock changes, and later rebirths. Save v8 migration and deterministic restoration protect malformed or missing quest orders.
-- First-cycle simulations must remain unchanged, and post-rebirth comparison gates must show no deadlock or material recovery distortion.
-
-Exit gate: the first rebirth has an authored follow-up purpose and visible cosmetic payoff without adding a currency, another timer, another cauldron, or first-cycle pressure.
+- Task 6 public-release evidence: implementation is shipped; the broader manual release matrix is intentionally deferred.
+- Task 10 public beta and monetization decision: no real ads, billing, analytics transmission, accounts, cloud saves, native wrapper, or store submission until the owner resumes release work.
 
 ## Later
 
-- Further recipes, ingredients, customers, achievements, prestige goals, or cosmetics only when playtests justify another bounded expansion.
-- Playtest the implemented effects/music sliders and three-track fades before adding more mix controls or music.
-
-## Simulated monetization rules
-
-- Current placements remain explicitly fake. No production ad or billing SDK is approved.
-- Prototype tuning must be bounded enough that tester behavior still produces useful economy evidence.
-- `monetization-simulation.cjs` reproduces a fixed scripted-player comparison and is part of automated validation. Its magnitudes are exact for that profile but remain directional for human behavior.
-- Charm caps/stacking, bundle value, permanent cosmetics, and contextual offers require simulation plus owner approval. Quick-brew remains on the shared once-per-brew bounded-policy guardrail.
-- Prefer optional convenience and cosmetic/supporter value. Do not sell required progression or design punitive timers around ads.
+- Revisit native packaging, public promotion, store materials, privacy/legal publication, production services, and monetization only with explicit owner approval.
+- Add mix controls, more music, or large asset sets only when owner listening or device evidence shows a need and the runtime budget permits it.
 
 ## Release boundary
 
-The public GitHub Pages tester build is authorized. Broader promotion, store submission, native packaging, production ads, billing, transmitted analytics, accounts, cloud saves, notifications, and live operations remain unapproved.
+The public GitHub Pages tester build is authorized. Broader promotion, production integrations, native packaging, and store release remain unapproved.
