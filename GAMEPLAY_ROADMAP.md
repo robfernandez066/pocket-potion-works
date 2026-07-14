@@ -23,20 +23,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
 - Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
 - Mira's first trust heart now produces one brief inline authored delivery payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and remains a one-villager pilot until natural owner play establishes that it improves delivery feel.
+- Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 20 hostile save normalization and invalid active-brew recovery
+## Now - Task 21 achievement timing and lifetime coin accounting
 
-Tasks 15 through 19 are complete. Task 20 is the only released implementation task.
+Tasks 15 through 20 are complete. Task 21 is the only released implementation task.
 
-Treat every numeric value in a local save as untrusted. Bound current and migratable save normalization so adversarial negative, fractional, non-finite-like, or extremely large values cannot create unbounded work, unsafe gameplay arithmetic, broken UI output, or a level above the existing level cap. Preserve valid saves, established domain caps, future-version overwrite protection, migrations, and frozen-reader rollback behavior.
+Unlock each existing achievement on the action that actually satisfies it. Manual gathering must immediately evaluate Green Thumb, purchasing an upgrade must immediately evaluate Cozy Improvements, and claiming a rolling-request parcel must immediately evaluate Pocketful of Gold when applicable. Preserve immediate evaluation already present after collecting, delivering, Daily Goal claims, Journal claims, and rebirth. Keep achievement rewards in the existing Journal claim flow; do not auto-claim or add new achievements.
 
-Reject an active brew when its known recipe is above the normalized saved level. Clear only that invalid brew; do not unlock the recipe, raise the level, refund ingredients, grant a potion, or award discovery, mastery, XP, or currency. Preserve a structurally valid unlocked brew exactly. Keep this task at the save-normalization boundary: no economy retuning, storage-I/O redesign, save-version bump, or broader recovery UI.
-
-## Unselected correctness candidates
-
-- **Progression accounting:** evaluate achievements on their triggering actions and use one consistent definition of lifetime coins.
+Define `stats.coinsEarned` as lifetime gameplay-earned coins after workshop creation: order rewards including friendship favors, level-up coin bonuses, Daily Goal rewards, rolling-request rewards, and Journal claims. Exclude the initial 30-coin balance, spending, and simulated or future purchased bundle currency. Preserve the existing stored total without retroactively inventing missed historical level-up bonuses; apply the clarified definition prospectively. Update deterministic accounting and simulation expectations only for the newly included level-up bonuses. Do not retune rewards, add migration state, or change save version 8.
 
 Focus-restoration validation may accompany any future task that rerenders affected controls; it does not need to wait for the full deferred release matrix.
 

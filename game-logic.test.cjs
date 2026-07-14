@@ -86,6 +86,166 @@ test("XP overflow crosses multiple levels and keeps the remainder", () => {
   assert.equal(state.xp, 7);
 });
 
+test("hostile save numerics normalize to finite bounded gameplay values", () => {
+  const state = game.defaultState(NOW);
+  state.coins = "499.9";
+  state.level = Number.MAX_SAFE_INTEGER;
+  state.xp = Number.MAX_VALUE;
+  state.stardust = "Infinity";
+  state.ingredients = { herb: "12.8", mushroom: -4, crystal: "1e9999", mist: Number.MAX_SAFE_INTEGER, ember: "NaN", mint: Number.MAX_VALUE, lavender: "-0.5" };
+  state.potions = Object.fromEntries(game.RECIPES.map((recipe, index) => [recipe.id, ["4.9", -1, "Infinity", Number.MAX_VALUE][index % 4]]));
+  state.mastery = Object.fromEntries(game.RECIPES.map((recipe, index) => [recipe.id, [Number.MAX_SAFE_INTEGER, "1e9999", -3, "2.7"][index % 4]]));
+  state.customers["customer-0"] = { deliveries: Number.MAX_VALUE, hearts: Number.MAX_SAFE_INTEGER };
+  state.daily = { date: game.todayKey(NOW), orders: "1e9999", claimed: false };
+  state.weekly = { cycle: Number.MAX_SAFE_INTEGER, progress: Number.MAX_VALUE, claimedSteps: "1e9999" };
+  state.gather = { charges: "2.9", lastRechargeAt: "Infinity", targetId: "mint" };
+  state.stats = { taps: Number.MAX_VALUE, brewed: "1e9999", orders: -8, coinsEarned: Number.MAX_SAFE_INTEGER, prestiges: "3.7", legacyCounter: "11.4" };
+  state.orders = [{ id: Number.MAX_SAFE_INTEGER, recipeId: "tonic", quantity: "1.8", reward: Number.MAX_VALUE, xp: Number.MAX_SAFE_INTEGER }];
+  state.brew = { recipeId: "aurora", startedAt: "Infinity", endsAt: Number.MAX_VALUE, durationMs: "1e9999", assistUses: Number.MAX_SAFE_INTEGER };
+
+  const loaded = game.normalizeState(state, NOW);
+  assert.equal(loaded.coins, 499, "smaller valid numeric strings retain their value");
+  assert.equal(loaded.level, game.SAVE_LIMITS.level);
+  assert.ok(loaded.xp < game.xpNeeded(loaded.level));
+  assert.equal(loaded.stardust, 0);
+  assert.equal(loaded.ingredients.herb, 12);
+  assert.equal(loaded.ingredients.mushroom, 0);
+  assert.equal(loaded.potions.tonic, 4);
+  assert.equal(loaded.mastery.aurora, 2);
+  assert.equal(loaded.customers["customer-0"].deliveries, game.SAVE_LIMITS.counter);
+  assert.equal(loaded.daily.orders, 0);
+  assert.equal(loaded.gather.charges, 2);
+  assert.equal(loaded.gather.lastRechargeAt, NOW);
+  assert.equal(loaded.stats.legacyCounter, 11);
+  assert.equal(loaded.stats.coinsEarned, game.SAVE_LIMITS.currency);
+  const tonicOrder = loaded.orders.find(order => order.recipeId === "tonic" && !game.isAfterStarsOrder(order));
+  assert.equal(tonicOrder.id, game.SAVE_LIMITS.counter);
+  assert.equal(tonicOrder.reward, game.SAVE_LIMITS.currency);
+  assert.equal(loaded.brew.assistUses, game.FINISH_BREW_CONFIG.maxUsesPerBrew);
+  for (const value of [loaded.coins, loaded.xp, loaded.stardust, ...Object.values(loaded.ingredients), ...Object.values(loaded.potions), ...Object.values(loaded.mastery), loaded.daily.orders, loaded.gather.charges, ...Object.values(loaded.stats), tonicOrder.id, tonicOrder.reward, tonicOrder.xp, loaded.brew.startedAt, loaded.brew.endsAt, loaded.brew.durationMs, loaded.brew.assistUses]) {
+    assert.ok(Number.isSafeInteger(value) && value >= 0, `unsafe normalized value: ${value}`);
+  }
+});
+
+test("save XP normalization preserves reasonable overflow and caps extreme values", () => {
+  const reasonable = game.defaultState(NOW);
+  reasonable.xp = game.xpNeeded(1) + game.xpNeeded(2) + 7;
+  assert.deepEqual(game.normalizeState(reasonable, NOW).level, 3);
+  assert.equal(game.normalizeState(reasonable, NOW).xp, 7);
+
+  const extreme = game.defaultState(NOW);
+  extreme.xp = Number.MAX_SAFE_INTEGER;
+  const loaded = game.normalizeState(extreme, NOW);
+  assert.equal(loaded.level, game.SAVE_LIMITS.level);
+  assert.ok(loaded.xp >= 0 && loaded.xp < game.xpNeeded(loaded.level));
+});
+
+test("maximum-level saves remain capped through collecting, delivering, and direct XP", () => {
+  const saved = game.defaultState(NOW);
+  saved.xp = Number.MAX_SAFE_INTEGER;
+  const state = game.normalizeState(saved, NOW);
+  const maxXp = game.xpNeeded(game.SAVE_LIMITS.level) - 1;
+  assert.equal(state.level, game.SAVE_LIMITS.level);
+  assert.equal(state.xp, maxXp);
+
+  const coinsBeforeCollect = state.coins;
+  assert.equal(game.startBrew(state, "tonic", NOW), true);
+  const collected = game.collectBrew(state, NOW + 30000);
+  assert.deepEqual(collected.levels, []);
+  assert.equal(state.level, game.SAVE_LIMITS.level);
+  assert.equal(state.xp, maxXp);
+  assert.equal(state.coins, coinsBeforeCollect);
+
+  state.orders = [{ id: 17, recipeId: "tonic", quantity: 1, reward: 20, xp: 9999 }];
+  state.nextOrderId = 18;
+  const coinsBeforeDelivery = state.coins;
+  const delivered = game.fulfillOrder(state, 17, NOW + 30000, () => 0);
+  assert.ok(delivered);
+  assert.deepEqual(delivered.levels, []);
+  assert.equal(state.level, game.SAVE_LIMITS.level);
+  assert.equal(state.xp, maxXp);
+  assert.equal(state.coins, coinsBeforeDelivery + delivered.reward);
+
+  const coinsBeforeDirectXp = state.coins;
+  assert.deepEqual(game.addXp(state, Number.MAX_SAFE_INTEGER), []);
+  assert.equal(state.level, game.SAVE_LIMITS.level);
+  assert.equal(state.xp, maxXp);
+  assert.equal(state.coins, coinsBeforeDirectXp);
+});
+
+test("order IDs recover uniquely and continue without reuse across reloads", () => {
+  const hostile = game.defaultState(NOW);
+  hostile.orders = [
+    { id: Number.MAX_SAFE_INTEGER, recipeId: "tonic", quantity: 1, reward: 20, xp: 1 },
+    { id: Number.MAX_SAFE_INTEGER, recipeId: "tonic", quantity: 1, reward: 21, xp: 1 },
+    { id: Number.MAX_SAFE_INTEGER, recipeId: "tonic", quantity: 1, reward: 22, xp: 1 },
+  ];
+  hostile.nextOrderId = Number.MAX_SAFE_INTEGER;
+  const loaded = game.normalizeState(hostile, NOW);
+  const initialIds = new Set(loaded.orders.map(order => order.id));
+  assert.equal(initialIds.size, loaded.orders.length);
+  assert.ok([...initialIds].every(id => id >= 1 && id <= game.SAVE_LIMITS.counter));
+  assert.ok(!initialIds.has(loaded.nextOrderId));
+
+  const fulfilledId = loaded.orders[0].id;
+  loaded.potions.tonic = 1;
+  assert.ok(game.fulfillOrder(loaded, fulfilledId, NOW, () => 0));
+  const replacement = loaded.orders.find(order => !initialIds.has(order.id));
+  assert.ok(replacement, "fulfillment generates a genuinely new safe order ID");
+  assert.notEqual(replacement.id, fulfilledId);
+  assert.equal(new Set(loaded.orders.map(order => order.id)).size, loaded.orders.length);
+  assert.ok(!loaded.orders.some(order => order.id === loaded.nextOrderId));
+
+  const reloaded = game.normalizeState(loaded, NOW);
+  assert.equal(new Set(reloaded.orders.map(order => order.id)).size, reloaded.orders.length);
+  assert.deepEqual(new Set(reloaded.orders.map(order => order.id)), new Set(loaded.orders.map(order => order.id)));
+  assert.ok(!reloaded.orders.some(order => order.id === reloaded.nextOrderId));
+});
+
+test("coins earned uses the currency cap while action counters retain their counter cap", () => {
+  const state = game.defaultState(NOW);
+  state.stats = {
+    taps: Number.MAX_SAFE_INTEGER,
+    brewed: Number.MAX_SAFE_INTEGER,
+    orders: Number.MAX_SAFE_INTEGER,
+    coinsEarned: game.SAVE_LIMITS.counter + 12345,
+    prestiges: Number.MAX_SAFE_INTEGER,
+  };
+  const loaded = game.normalizeState(state, NOW);
+  assert.equal(loaded.stats.coinsEarned, game.SAVE_LIMITS.counter + 12345);
+  assert.equal(loaded.stats.taps, game.SAVE_LIMITS.counter);
+  assert.equal(loaded.stats.brewed, game.SAVE_LIMITS.counter);
+  assert.equal(loaded.stats.orders, game.SAVE_LIMITS.counter);
+  assert.equal(loaded.stats.prestiges, game.SAVE_LIMITS.counter);
+});
+
+test("save normalization clears only a known brew locked above the normalized level", () => {
+  const state = game.defaultState(NOW - 1000);
+  state.ingredients = { herb: 21, mushroom: 13, crystal: 8, mist: 4, ember: 2, mint: 0, lavender: 0 };
+  state.potions.tonic = 3;
+  state.mastery.tonic = 2;
+  state.stats = { taps: 9, brewed: 2, orders: 1, coinsEarned: 99, prestiges: 0 };
+  state.brew = { recipeId: "clarity", startedAt: NOW - 1000, endsAt: NOW + 65000, durationMs: 66000, assistUses: 1 };
+
+  const loaded = game.normalizeState(state, NOW);
+  assert.equal(loaded.level, 1);
+  assert.equal(loaded.brew, null);
+  assert.deepEqual(loaded.ingredients, state.ingredients);
+  assert.equal(loaded.potions.tonic, 3);
+  assert.equal(loaded.mastery.tonic, 2);
+  assert.deepEqual(loaded.stats, state.stats);
+});
+
+test("an unlocked completed brew round-trips with its saved timing and assist use", () => {
+  const state = game.defaultState(NOW - 100000);
+  state.level = 2;
+  state.brew = { recipeId: "clarity", startedAt: NOW - 100000, endsAt: NOW - 34000, durationMs: 66000, assistUses: 1 };
+  const loaded = game.normalizeState(state, NOW);
+  assert.deepEqual(loaded.brew, state.brew);
+  assert.ok(game.collectBrew(loaded, NOW));
+  assert.equal(loaded.potions.clarity, 1);
+});
+
 test("ingredient additions stop exactly at the storage cap", () => {
   const state = game.defaultState(NOW);
   state.ingredients = { herb: 59, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };

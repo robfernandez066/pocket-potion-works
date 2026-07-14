@@ -154,12 +154,19 @@
   ];
 
   const BEGINNER_QUESTS = Object.freeze({ steps: 7, finalRecipe: "clarity" });
+  const SAVE_LIMITS = Object.freeze({
+    level: 10000,
+    counter: 1000000,
+    currency: 1000000000,
+    stardust: 100000,
+  });
 
   const isRecord = value => Boolean(value) && typeof value === "object" && !Array.isArray(value);
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const int = (value, fallback = 0, min = 0, max = Number.MAX_SAFE_INTEGER) => Math.min(max, Math.max(min, Math.floor(finite(value, fallback))));
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-  const recipeCounts = (source = {}, fallback = {}) => Object.fromEntries(RECIPES.map(({ id }) => [id, int(source[id], fallback[id])]));
+  const counter = (value, fallback = 0) => int(value, fallback, 0, SAVE_LIMITS.counter);
+  const recipeCounts = (source = {}, fallback = {}) => Object.fromEntries(RECIPES.map(({ id }) => [id, counter(source[id], fallback[id])]));
 
   function todayKey(now = Date.now()) {
     const date = new Date(now);
@@ -202,6 +209,21 @@
   }
   function commissionById(id) { return SIGNATURE_COMMISSIONS.find(commission => commission.id === id); }
   function isSignatureOrder(order) { return Boolean(commissionById(order?.commissionId)); }
+  function findAvailableOrderId(usedIds, preferredId = 1) {
+    let id = int(preferredId, 1, 1, SAVE_LIMITS.counter);
+    for (let attempts = 0; attempts < SAVE_LIMITS.counter; attempts += 1) {
+      if (!usedIds.has(id)) return id;
+      id = id === SAVE_LIMITS.counter ? 1 : id + 1;
+    }
+    return null;
+  }
+  function nextSafeOrderId(state) {
+    const usedIds = new Set(state.orders.map(order => order.id));
+    const id = findAvailableOrderId(usedIds, state.nextOrderId);
+    if (id === null) return null;
+    state.nextOrderId = id === SAVE_LIMITS.counter ? 1 : id + 1;
+    return id;
+  }
   function afterStarsStepByIndex(index) { return AFTER_STARS_STEPS[int(index, 0, 0, AFTER_STARS_STEPS.length - 1)]; }
   function isAfterStarsOrder(order) {
     const index = Number(order?.afterStarsStep);
@@ -234,8 +256,10 @@
     const economics = signatureOrderEconomics(commission);
     const customerIndex = customerIndexFromId(commission.customerId);
     const customer = CUSTOMERS[customerIndex];
+    const orderId = nextSafeOrderId(state);
+    if (orderId === null) return null;
     const order = {
-      id: state.nextOrderId++, commissionId: commission.id, customerId: commission.customerId, customer: customer[0], avatar: customer[1],
+      id: orderId, commissionId: commission.id, customerId: commission.customerId, customer: customer[0], avatar: customer[1],
       note: commission.request, avatarColor: customer[3], recipeId: recipe.id, quantity: 1,
       reward: economics.reward, xp: economics.xp,
     };
@@ -263,8 +287,10 @@
     const economics = signatureOrderEconomics(step);
     const customerIndex = customerIndexFromId(step.customerId);
     const customer = CUSTOMERS[customerIndex];
+    const orderId = nextSafeOrderId(state);
+    if (orderId === null) return null;
     return {
-      id: state.nextOrderId++, afterStarsStep: stepIndex, customerId: step.customerId, customer: customer[0], avatar: customer[1],
+      id: orderId, afterStarsStep: stepIndex, customerId: step.customerId, customer: customer[0], avatar: customer[1],
       note: step.request, avatarColor: customer[3], recipeId: recipe.id, quantity: 1, reward: economics.reward, xp: economics.xp,
     };
   }
@@ -405,7 +431,25 @@
       recipes: RECIPES.filter(recipe => recipe.unlock === level),
     };
   }
-  function xpNeeded(level) { return Math.round(38 * Math.pow(Math.max(1, int(level, 1, 1)), 1.28)); }
+  function xpNeeded(level) { return Math.round(38 * Math.pow(Math.max(1, int(level, 1, 1, SAVE_LIMITS.level)), 1.28)); }
+  const XP_PREFIX = (() => {
+    const totals = [0, 0];
+    for (let level = 1; level < SAVE_LIMITS.level; level += 1) totals[level + 1] = totals[level] + xpNeeded(level);
+    return totals;
+  })();
+  const MAX_SAVED_XP = XP_PREFIX[SAVE_LIMITS.level] + xpNeeded(SAVE_LIMITS.level) - 1;
+  function normalizeLevelAndXp(levelValue, xpValue) {
+    const initialLevel = int(levelValue, 1, 1, SAVE_LIMITS.level);
+    const availableXp = int(xpValue, 0, 0, MAX_SAVED_XP);
+    let low = initialLevel, high = SAVE_LIMITS.level;
+    while (low < high) {
+      const middle = Math.ceil((low + high) / 2);
+      if (XP_PREFIX[middle] - XP_PREFIX[initialLevel] <= availableXp) low = middle;
+      else high = middle - 1;
+    }
+    const spentXp = XP_PREFIX[low] - XP_PREFIX[initialLevel];
+    return { level: low, xp: Math.min(availableXp - spentXp, xpNeeded(low) - 1) };
+  }
   function storageCap(state) { return 60 + Math.max(0, state.level - 1) * 10 + int(state.upgrades?.shelves, 0, 0, 6) * 25; }
   function gatherRate(state) { return BASE_PASSIVE_RATE * (1 + int(state.upgrades?.garden, 0, 0, 8) * .25); }
   function passiveStorageCap(state) { return Math.floor(storageCap(state) * PASSIVE_STORAGE_RATIO); }
@@ -431,37 +475,37 @@
     const fresh = defaultState(now);
     if (!isRecord(input)) return fresh;
     const state = { ...fresh };
-    state.coins = int(input.coins, fresh.coins);
-    state.xp = int(input.xp);
-    state.level = int(input.level, 1, 1, 10000);
-    state.stardust = int(input.stardust);
-    state.ingredients = Object.fromEntries(Object.keys(INGREDIENTS).map(id => [id, int(isRecord(input.ingredients) ? input.ingredients[id] : 0)]));
+    state.coins = int(input.coins, fresh.coins, 0, SAVE_LIMITS.currency);
+    ({ level: state.level, xp: state.xp } = normalizeLevelAndXp(input.level, input.xp));
+    state.stardust = int(input.stardust, 0, 0, SAVE_LIMITS.stardust);
+    state.ingredients = Object.fromEntries(Object.keys(INGREDIENTS).map(id => [id, counter(isRecord(input.ingredients) ? input.ingredients[id] : 0)]));
     state.potions = recipeCounts(isRecord(input.potions) ? input.potions : {});
     state.upgrades = Object.fromEntries(UPGRADES.map(upgrade => [upgrade.id, int(isRecord(input.upgrades) ? input.upgrades[upgrade.id] : 0, 0, 0, upgrade.max)]));
-    state.nextOrderId = int(input.nextOrderId, 1, 1);
-    state.boostUntil = int(input.boostUntil);
+    state.nextOrderId = int(input.nextOrderId, 1, 1, SAVE_LIMITS.counter);
+    state.boostUntil = int(input.boostUntil, 0, 0, now + 5 * 60 * 1000);
     state.starterClaimed = input.starterClaimed === true;
     state.tutorialSeen = input.tutorialSeen === true;
-    state.lastSeen = clamp(finite(input.lastSeen, now), 0, now);
+    state.lastSeen = int(input.lastSeen, now, 0, now);
     const sourceAchievements = isRecord(input.achievements) ? input.achievements : {};
     state.achievements = Object.fromEntries(ACHIEVEMENTS.flatMap(achievement => {
-      const earnedAt = Number(sourceAchievements[achievement.id]);
-      return Number.isFinite(earnedAt) && earnedAt > 0 ? [[achievement.id, earnedAt]] : [];
+      const earnedAt = int(sourceAchievements[achievement.id], 0, 0, now);
+      return earnedAt > 0 ? [[achievement.id, earnedAt]] : [];
     }));
     const sourceStats = isRecord(input.stats) ? input.stats : {};
-    state.stats = { ...sourceStats };
-    for (const id of Object.keys(fresh.stats)) state.stats[id] = int(sourceStats[id]);
+    const statValue = (id, value) => int(value, 0, 0, id === "coinsEarned" ? SAVE_LIMITS.currency : SAVE_LIMITS.counter);
+    state.stats = Object.fromEntries(Object.keys(sourceStats).map(id => [id, statValue(id, sourceStats[id])]));
+    for (const id of Object.keys(fresh.stats)) state.stats[id] = statValue(id, sourceStats[id]);
     const sourceAfterStars = isRecord(input.afterStars) ? input.afterStars : {};
     state.afterStars = { step: state.stats.prestiges > 0 ? int(sourceAfterStars.step, 0, 0, AFTER_STARS_STEPS.length) : 0 };
     const sourceDaily = isRecord(input.daily) ? input.daily : {};
     state.daily = {
       date: typeof sourceDaily.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sourceDaily.date) ? sourceDaily.date : todayKey(now),
-      orders: int(sourceDaily.orders), claimed: sourceDaily.claimed === true,
+      orders: counter(sourceDaily.orders), claimed: sourceDaily.claimed === true,
     };
     const sourceGather = isRecord(input.gather) ? input.gather : {};
     state.gather = {
       charges: int(sourceGather.charges, GATHER_CONFIG.maxCharges, 0, GATHER_CONFIG.maxCharges),
-      lastRechargeAt: clamp(finite(sourceGather.lastRechargeAt, now), 0, now),
+      lastRechargeAt: int(sourceGather.lastRechargeAt, now, 0, now),
       targetId: typeof sourceGather.targetId === "string" && INGREDIENTS[sourceGather.targetId]?.unlock <= state.level ? sourceGather.targetId : null,
     };
     const sourceDiscovery = isRecord(input.discovery) ? input.discovery : {};
@@ -473,7 +517,7 @@
     const sourceCustomers = isRecord(input.customers) ? input.customers : {};
     state.customers = Object.fromEntries(CUSTOMERS.map((_, index) => {
       const id = `customer-${index}`, source = isRecord(sourceCustomers[id]) ? sourceCustomers[id] : {};
-      const deliveries = int(source.deliveries), hearts = Math.min(CUSTOMER_CONFIG.maxHearts, Math.floor(deliveries / CUSTOMER_CONFIG.deliveriesPerHeart));
+      const deliveries = counter(source.deliveries), hearts = Math.min(CUSTOMER_CONFIG.maxHearts, Math.floor(deliveries / CUSTOMER_CONFIG.deliveriesPerHeart));
       return [id, { deliveries, hearts }];
     }));
     const sourceCommissions = isRecord(input.commissions) ? input.commissions : {};
@@ -513,28 +557,29 @@
     const requestedCosmetic = isRecord(input.customization) && typeof input.customization.selected === "string" ? input.customization.selected : "midnight";
     state.customization = { selected: cosmeticUnlocked(state, requestedCosmetic) ? requestedCosmetic : "midnight" };
     const sourceBrew = isRecord(input.brew) ? input.brew : null;
-    if (sourceBrew && recipeById(sourceBrew.recipeId)) {
-      const startedAt = clamp(finite(sourceBrew.startedAt, now), 0, now);
-      const durationMs = int(sourceBrew.durationMs, recipeById(sourceBrew.recipeId).seconds * 1000, 1, OFFLINE_CAP_SECONDS * 1000);
-      const endsAt = clamp(finite(sourceBrew.endsAt, startedAt + durationMs), startedAt, startedAt + durationMs);
+    const brewRecipe = sourceBrew && recipeById(sourceBrew.recipeId);
+    if (brewRecipe && brewRecipe.unlock <= state.level) {
+      const startedAt = int(sourceBrew.startedAt, now, 0, now);
+      const durationMs = int(sourceBrew.durationMs, brewRecipe.seconds * 1000, 1, OFFLINE_CAP_SECONDS * 1000);
+      const endsAt = int(sourceBrew.endsAt, startedAt + durationMs, startedAt, startedAt + durationMs);
       state.brew = { recipeId: sourceBrew.recipeId, startedAt, endsAt, durationMs, assistUses: int(sourceBrew.assistUses, 0, 0, FINISH_BREW_CONFIG.maxUsesPerBrew) };
     }
     const seenIds = new Set();
     const normalizedOrders = (Array.isArray(input.orders) ? input.orders : []).map(order => normalizeOrder(order, state)).filter(order => {
-      if (!order || seenIds.has(order.id)) return false;
-      seenIds.add(order.id); return true;
+      if (!order) return false;
+      const uniqueId = findAvailableOrderId(seenIds, order.id);
+      if (uniqueId === null) return false;
+      order.id = uniqueId;
+      seenIds.add(uniqueId); return true;
     });
     const selectedSignature = normalizedOrders.find(order => isSignatureOrder(order));
     const selectedQuest = normalizedOrders.find(order => isAfterStarsOrder(order) && order.afterStarsStep === state.afterStars.step);
     const selectedOrder = selectedSignature || selectedQuest;
     if (!selectedSignature) state.commissions.selectedId = null;
     state.orders = selectedOrder ? [selectedOrder, ...normalizedOrders.filter(order => !isReservedOrder(order)).slice(0, 2)] : normalizedOrders.filter(order => !isReservedOrder(order)).slice(0, 3);
-    state.nextOrderId = Math.max(state.nextOrderId, ...state.orders.map(order => order.id + 1), 1);
-    while (state.xp >= xpNeeded(state.level)) {
-      state.xp -= xpNeeded(state.level);
-      state.level += 1;
-    }
+    state.nextOrderId = findAvailableOrderId(new Set(state.orders.map(order => order.id)), state.nextOrderId) || 1;
     ensureAfterStarsOrder(state);
+    state.nextOrderId = findAvailableOrderId(new Set(state.orders.map(order => order.id)), state.nextOrderId) || 1;
     enforceStorageCap(state);
     return state;
   }
@@ -543,7 +588,7 @@
     if (!isRecord(order)) return null;
     const recipe = recipeById(order.recipeId);
     if (!recipe || recipe.unlock > state.level) return null;
-    const id = int(order.id, 0, 1);
+    const id = int(order.id, 0, 1, SAVE_LIMITS.counter);
     if (!id) return null;
     const requestedCommission = typeof order.commissionId === "string" ? commissionById(order.commissionId) : null;
     const commission = requestedCommission && state.commissions.selectedId === requestedCommission.id && !state.commissions.completedIds.includes(requestedCommission.id)
@@ -564,7 +609,7 @@
       note: commission?.request || questStep?.request || customerOrderLine(customerId, id, recipe.id, quantity),
       avatarColor: commission || questStep ? CUSTOMERS[customerIndex][3] : typeof order.avatarColor === "string" ? order.avatarColor.slice(0, 30) : CUSTOMERS[customerIndex][3],
       recipeId: recipe.id, quantity: commission || questStep ? 1 : quantity,
-      reward: reservedEconomics?.reward ?? int(order.reward, recipe.sell, 1), xp: reservedEconomics?.xp ?? int(order.xp, 12, 1),
+      reward: reservedEconomics?.reward ?? int(order.reward, recipe.sell, 1, SAVE_LIMITS.currency), xp: reservedEconomics?.xp ?? counter(order.xp, 12),
       ...(commission ? { commissionId: commission.id } : {}),
       ...(questStep ? { afterStarsStep: requestedQuestIndex } : {}),
     };
@@ -620,13 +665,16 @@
 
   function addXp(state, amount) {
     const levels = [];
-    state.xp += int(amount);
-    while (state.xp >= xpNeeded(state.level)) {
+    state.level = int(state.level, 1, 1, SAVE_LIMITS.level);
+    state.xp = int(state.xp, 0, 0, MAX_SAVED_XP);
+    state.xp = Math.min(MAX_SAVED_XP, state.xp + int(amount, 0, 0, MAX_SAVED_XP));
+    while (state.level < SAVE_LIMITS.level && state.xp >= xpNeeded(state.level)) {
       state.xp -= xpNeeded(state.level);
       state.level += 1;
       state.coins += 10 * state.level;
       levels.push(state.level);
     }
+    if (state.level >= SAVE_LIMITS.level) state.xp = Math.min(state.xp, xpNeeded(SAVE_LIMITS.level) - 1);
     return levels;
   }
 
@@ -651,7 +699,8 @@
     const quantity = state.level >= 4 && random() > .68 ? 2 : 1;
     const customerIndex = Math.floor(clamp(random(), 0, .999999) * CUSTOMERS.length);
     const customer = CUSTOMERS[customerIndex];
-    const orderId = state.nextOrderId++;
+    const orderId = nextSafeOrderId(state);
+    if (orderId === null) return null;
     return {
       id: orderId, customerId: `customer-${customerIndex}`, customer: customer[0], avatar: customer[1], note: customerOrderLine(`customer-${customerIndex}`, orderId, recipe.id, quantity), avatarColor: customer[3],
       recipeId: recipe.id, quantity,
@@ -924,7 +973,7 @@
   }
 
   return Object.freeze({
-    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, DELIVERY_NARRATIVE_PILOTS, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS,
+    SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, DELIVERY_NARRATIVE_PILOTS, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS, SAVE_LIMITS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
