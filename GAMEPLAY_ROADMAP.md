@@ -19,18 +19,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Seven reversible, economy-neutral Workshop Looks include the original look plus six earned looks.
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
 - Gameplay saves use schema v8 with v1-v7 migration, future-v9 overwrite protection, and frozen-reader rollback coverage.
+- Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
 - The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 16 storage resilience and truthful save feedback
+## Now - awaiting the next bounded scope
 
-Task 15 is owner-accepted and complete. Task 16 is the only released implementation task.
-
-**Storage I/O resilience and truthful manual-save feedback** is the selected scope.
-
-The bounded scope is to guard the game's existing save-related storage reads, writes, and removals; keep normal play running when storage is unavailable or throws; report manual-save success only after a confirmed write; show a clear non-destructive failure result; preserve the last valid save after a later failed write; and retain current migrations, future-version overwrite protection, rollback compatibility, and ordinary successful-save behavior. Deterministic storage-failure tests and focused Save Now checks at 390x844 and 360x740 will be required when the task is released.
-
-Do not combine this task with hostile numeric normalization, invalid active-brew recovery, daily rollover, progression accounting, mobile hierarchy, idle or Stardust economy work, Welcome Back changes, narrative, content, release, or monetization. After Task 16, every remaining candidate stays unselected until the owner approves one bounded scope.
+Tasks 15 and 16 are complete. No implementation task is currently released. Every remaining candidate stays unselected until the owner approves one bounded scope.
 
 ## Unselected correctness candidates
 

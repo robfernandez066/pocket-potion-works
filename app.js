@@ -11,7 +11,14 @@ const POTION_SPRITES = new Set(RECIPES.map(recipe => recipe.id));
 const ingredientSpriteAttr = id => INGREDIENT_SPRITES.has(id) ? ` data-ingredient-sprite="${id}"` : "";
 const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
 const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionSpriteAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
-const platformStore = new Platform.PlatformStateStore(localStorage);
+function browserStorage() {
+  try { return window.localStorage; }
+  catch (_) { return null; }
+}
+const storage = browserStorage();
+const gameplayStorage = new Platform.LocalStorageBoundary(storage, SAVE_KEY);
+const uiPrefsStorage = new Platform.LocalStorageBoundary(storage, UI_PREFS_KEY);
+const platformStore = new Platform.PlatformStateStore(storage);
 const consent = new Platform.ConsentManager(platformStore);
 const analytics = new Platform.InMemoryAnalyticsAdapter(consent);
 const fakeRewardedAds = new Platform.FakeRewardedAdAdapter();
@@ -20,7 +27,7 @@ const entitlementLedger = new Platform.EntitlementLedger(platformStore);
 const fakePurchases = new Platform.FakeIapAdapter();
 const purchases = new Platform.PurchaseService(fakePurchases, entitlementLedger);
 const lifecycleAdapter = new Platform.FakeLifecycleAdapter();
-const audioPreferenceStore = new AudioFeedback.AudioPreferenceStore(localStorage);
+const audioPreferenceStore = new AudioFeedback.AudioPreferenceStore(storage);
 const sound = new AudioFeedback.SoundEngine(audioPreferenceStore);
 const music = new AudioFeedback.MusicEngine(audioPreferenceStore);
 function formatNumber(value) { return Math.floor(value).toLocaleString("en-US"); }
@@ -38,15 +45,14 @@ function totalIngredients() { return Logic.totalIngredients(state); }
 
 function loadUiPrefs() {
   try {
-    const input = JSON.parse(localStorage.getItem(UI_PREFS_KEY));
+    const input = JSON.parse(uiPrefsStorage.read().value);
     if (input?.version === 1) return { version: 1, pantryOpen: input.pantryOpen === true, recipesOpen: input.recipesOpen === true };
   } catch (_) { /* Use compact defaults for missing or malformed preferences. */ }
   return { version: 1, pantryOpen: false, recipesOpen: false };
 }
 
 function saveUiPrefs() {
-  try { localStorage.setItem(UI_PREFS_KEY, JSON.stringify(uiPrefs)); }
-  catch (_) { /* UI preferences never block gameplay. */ }
+  uiPrefsStorage.write(JSON.stringify(uiPrefs));
 }
 
 function pulseFeedback(selector, tone) {
@@ -72,10 +78,17 @@ function playCoinArrivals(amount) {
 }
 
 let gameplaySaveWritesBlocked = false;
+let gameplaySaveSessionOnly = gameplayStorage.sessionOnly;
 let unsupportedSaveVersion = null;
 
 function loadState() {
-  const result = window.PPWLogic.parseSave(localStorage.getItem(SAVE_KEY));
+  const loaded = gameplayStorage.read();
+  if (loaded.status !== "read") {
+    gameplaySaveSessionOnly = true;
+    console.warn("Saved workshop could not be read; continuing without local storage.");
+  }
+  const raw = loaded.value;
+  const result = window.PPWLogic.parseSave(raw);
   if (window.PPWLogic.shouldBlockSaveWrite(result)) {
     gameplaySaveWritesBlocked = true;
     unsupportedSaveVersion = result.sourceVersion;
@@ -129,10 +142,16 @@ function beginCompletionState(kind, detail = true, onHidden = null) {
 
 function saveState() {
   if (gameplaySaveWritesBlocked) return false;
+  if (gameplaySaveSessionOnly) return "unavailable";
   state.lastSeen = Date.now();
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
-  catch (error) { console.warn("Save failed.", error); }
-  return true;
+  const result = gameplayStorage.write(JSON.stringify(state));
+  if (result !== "saved") {
+    gameplaySaveSessionOnly = gameplayStorage.sessionOnly;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    console.warn("Save failed; progress remains only in this session.");
+  }
+  return result;
 }
 
 const commerceFulfillment = new Platform.CommerceFulfillmentCoordinator(entitlementLedger, {
@@ -146,15 +165,14 @@ const commerceFulfillment = new Platform.CommerceFulfillmentCoordinator(entitlem
     },
   },
   persistGameplay: () => {
-    if (gameplaySaveWritesBlocked) throw new Error("Unsupported future gameplay save is write-protected.");
-    state.lastSeen = Date.now();
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    const result = saveState();
+    if (result !== "saved") throw new Error(result === false ? "Unsupported future gameplay save is write-protected." : "Local storage is unavailable.");
   },
 });
 if (!gameplaySaveWritesBlocked) commerceFulfillment.reconcile();
 
 function scheduleSave() {
-  if (gameplaySaveWritesBlocked) return;
+  if (gameplaySaveWritesBlocked || gameplaySaveSessionOnly) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveState, 250);
 }
@@ -992,7 +1010,7 @@ function showSettings() {
     ${soundLine}
     <div class="volume-control"><label for="effectsVolume"><strong>Sound effects</strong><output data-volume-output="effects">${effectsPercent}%</output></label><input id="effectsVolume" data-volume-slider="effects" type="range" min="0" max="100" step="5" value="${effectsPercent}" /></div>
     <div class="volume-control"><label for="musicVolume"><strong>Music</strong><output data-volume-output="music">${musicPercent}%</output></label><input id="musicVolume" data-volume-slider="music" type="range" min="0" max="100" step="5" value="${musicPercent}" /></div>
-    <p><strong>Autosave:</strong> ${gameplaySaveWritesBlocked ? "Blocked to protect a newer save" : "On"}<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1</p>
+    <p><strong>Autosave:</strong> ${gameplaySaveWritesBlocked ? "Blocked to protect a newer save" : gameplaySaveSessionOnly ? "Session-only (storage unavailable)" : "On"}<br><strong>Offline gathering:</strong> Up to 4 hours<br><strong>Version:</strong> 0.1</p>
     <p><strong>Local analytics:</strong> ${consent.analyticsAllowed() ? "On" : "Off"}. Nothing is sent.</p>
     <p>No real ads or payments are connected. Progress stays in this browser.</p>`,
     actions: [
@@ -1004,7 +1022,11 @@ function showSettings() {
         toast(`Sound ${enabled ? "on" : "off"}.`);
       } },
       { label: "Credits", onClick: showCredits },
-      { label: "Save now", primary: true, onClick: () => { const saved = saveState(); closeModal(); toast(saved ? "Workshop saved." : "Newer save remains protected; this build did not write progress."); } },
+      { label: "Save now", primary: true, onClick: () => {
+        const result = saveState();
+        closeModal();
+        toast(result === "saved" ? "Workshop saved." : result === false ? "Newer save remains protected; this build did not write progress." : "Workshop could not be saved. You can keep playing, but progress will stay only in this session.", result === "saved" ? "success" : "warning");
+      } },
       { label: consent.analyticsAllowed() ? "Turn analytics off" : "Turn analytics on", onClick: () => {
         consent.setAnalytics(!consent.analyticsAllowed());
         analytics.track("consent_changed", { analytics: consent.analyticsAllowed() ? "allowed" : "denied" });
@@ -1067,7 +1089,14 @@ function showCredits() {
 function confirmReset() {
   openModal({ icon: "!", kicker: "RESET WORKSHOP", title: "Erase all progress?", body: "<p>This erases your local save and restarts the tutorial. It cannot be undone.</p>", actions: [
     { label: "Keep my workshop" },
-    { label: "Erase and restart", primary: true, onClick: () => { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(UI_PREFS_KEY); gameplaySaveWritesBlocked = false; unsupportedSaveVersion = null; state = defaultState(); uiPrefs = { version: 1, pantryOpen: false, recipesOpen: false }; closeModal(); switchView("workshop"); renderAll(); showTutorial(); } },
+    { label: "Erase and restart", primary: true, onClick: () => {
+      if (uiPrefsStorage.remove() !== "removed" || gameplayStorage.remove() !== "removed") {
+        console.warn("Reset failed; the saved workshop was not removed.");
+        toast("Workshop data could not be cleared. Your saved workshop remains unchanged.", "warning");
+        return;
+      }
+      gameplaySaveWritesBlocked = false; gameplaySaveSessionOnly = false; unsupportedSaveVersion = null; state = defaultState(); uiPrefs = { version: 1, pantryOpen: false, recipesOpen: false }; closeModal(); switchView("workshop"); renderAll(); showTutorial();
+    } },
   ] });
 }
 

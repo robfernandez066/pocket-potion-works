@@ -75,11 +75,39 @@
     catch (_) { return { state: defaultPlatformState(), recovered: true }; }
   }
 
+  class LocalStorageBoundary {
+    constructor(storage, key) {
+      this.storage = storage;
+      this.key = key;
+      this.initialReadFailed = !storage || typeof storage.getItem !== "function";
+      this.sessionOnly = this.initialReadFailed;
+      this.raw = null;
+      if (this.initialReadFailed) return;
+      try { this.raw = storage.getItem(key); }
+      catch { this.initialReadFailed = true; this.sessionOnly = true; }
+    }
+    read() { return { status: this.initialReadFailed ? "unavailable" : "read", value: this.initialReadFailed ? null : this.raw }; }
+    write(value) {
+      if (this.sessionOnly) return "unavailable";
+      if (!this.storage || typeof this.storage.setItem !== "function") { this.sessionOnly = true; return "unavailable"; }
+      try { this.storage.setItem(this.key, value); return "saved"; }
+      catch { this.sessionOnly = true; return "unavailable"; }
+    }
+    remove() {
+      if (this.initialReadFailed || !this.storage || typeof this.storage.removeItem !== "function") return "unavailable";
+      try { this.storage.removeItem(this.key); this.sessionOnly = false; this.raw = null; return "removed"; }
+      catch { return "unavailable"; }
+    }
+  }
+
   class PlatformStateStore {
     constructor(storage, key = "pocket-potion-works-platform-v1") {
       this.storage = storage;
       this.key = key;
-      const parsed = parsePlatformState(storage?.getItem?.(key));
+      this.persistenceBlocked = !storage || typeof storage.getItem !== "function";
+      let raw = null;
+      if (!this.persistenceBlocked) try { raw = storage.getItem(key); } catch { this.persistenceBlocked = true; /* Use a safe in-memory platform state. */ }
+      const parsed = parsePlatformState(raw);
       this.state = parsed.state;
       this.recovered = parsed.recovered;
     }
@@ -87,7 +115,7 @@
     update(mutator) {
       mutator(this.state);
       this.state = normalizePlatformState(this.state);
-      this.storage?.setItem?.(this.key, JSON.stringify(this.state));
+      if (!this.persistenceBlocked) try { this.storage.setItem(this.key, JSON.stringify(this.state)); } catch { /* Platform state never blocks play. */ }
       return this.snapshot();
     }
   }
@@ -296,7 +324,7 @@
 
   return Object.freeze({
     PLATFORM_STATE_VERSION, CONSENT_VERSION, PRODUCT_CATALOG, ANALYTICS_SCHEMAS,
-    defaultPlatformState, normalizePlatformState, parsePlatformState, validateAnalyticsEvent,
+    defaultPlatformState, normalizePlatformState, parsePlatformState, validateAnalyticsEvent, LocalStorageBoundary,
     PlatformStateStore, ConsentManager, InMemoryAnalyticsAdapter,
     FakeRewardedAdAdapter, RewardedAdService, EntitlementLedger, CommerceFulfillmentCoordinator, FakeIapAdapter, PurchaseService,
     FakeLifecycleAdapter, LifecycleCoordinator, LocalFakeCloudSaveAdapter,

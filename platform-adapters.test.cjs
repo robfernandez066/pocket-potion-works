@@ -12,6 +12,16 @@ function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
   return { getItem: key => values.has(key) ? values.get(key) : null, setItem: (key, value) => values.set(key, value), values };
 }
+function throwingStorage({ initial = {}, read = false, write = false, remove = false } = {}) {
+  const values = new Map(Object.entries(initial));
+  const writes = [];
+  return {
+    getItem: key => { if (read) throw new Error("read unavailable"); return values.has(key) ? values.get(key) : null; },
+    setItem: (key, value) => { writes.push([key, value]); if (write) throw new Error("write unavailable"); values.set(key, value); },
+    removeItem: key => { if (remove) throw new Error("remove unavailable"); values.delete(key); },
+    values, writes,
+  };
+}
 function clock() {
   let id = 0;
   const queue = [];
@@ -271,6 +281,85 @@ function rewardHarness(options = {}) {
     const loaded = game.parseSave(JSON.stringify(existing), 2000).state;
     assert.equal(loaded.coins, 321); assert.equal(loaded.stardust, 7); assert.equal(loaded.starterClaimed, true);
     assert.equal(Object.hasOwn(loaded, "platform"), false);
+  });
+
+  await test("platform state safely falls back in memory when storage is unavailable or throws", async () => {
+    const unavailable = new platform.PlatformStateStore(null);
+    assert.doesNotThrow(() => new platform.ConsentManager(unavailable, () => 7).setAnalytics(true));
+    assert.equal(unavailable.state.consent.analytics, "allowed");
+    const throwingReadStorage = throwingStorage({ read: true });
+    const throwingRead = new platform.PlatformStateStore(throwingReadStorage);
+    assert.equal(throwingRead.state.consent.analytics, "denied");
+    new platform.ConsentManager(throwingRead, () => 8).setAnalytics(true);
+    assert.equal(throwingRead.persistenceBlocked, true, "a failed initial platform read must block later writes");
+    assert.equal(throwingReadStorage.writes.length, 0, "a failed initial platform read must not overwrite an unknown namespace");
+    const existing = JSON.stringify({ version: 1, consent: { version: 1, analytics: "denied", updatedAt: 0 }, commerce: {} });
+    const throwingWrite = throwingStorage({ initial: { "pocket-potion-works-platform-v1": existing }, write: true });
+    const store = new platform.PlatformStateStore(throwingWrite);
+    assert.doesNotThrow(() => new platform.ConsentManager(store, () => 9).setAnalytics(true));
+    assert.equal(throwingWrite.values.get("pocket-potion-works-platform-v1"), existing, "a failed write must preserve the prior stored value");
+  });
+
+  await test("gameplay storage boundary protects uncertain saves and makes save and reset results truthful", async () => {
+    const SAVE_KEY = "pocket-potion-works-v1", UI_KEY = "pocket-potion-works-ui-v1", prior = '{"version":8,"coins":73}';
+    const unavailable = new platform.LocalStorageBoundary(null, SAVE_KEY);
+    assert.deepEqual(unavailable.read(), { status: "unavailable", value: null });
+    assert.equal(unavailable.write('{"coins":1}'), "unavailable", "unavailable startup cannot autosave");
+    assert.equal(unavailable.remove(), "unavailable", "missing storage cannot complete reset");
+
+    const failedReadStorage = throwingStorage({ initial: { [SAVE_KEY]: prior }, read: true });
+    const failedRead = new platform.LocalStorageBoundary(failedReadStorage, SAVE_KEY);
+    assert.equal(failedRead.read().status, "unavailable");
+    assert.equal(failedRead.write('{"coins":1}'), "unavailable", "a throwing initial read blocks later automatic writes");
+    assert.equal(failedReadStorage.values.get(SAVE_KEY), prior);
+
+    const failedWriteValues = new Map([[SAVE_KEY, prior]]);
+    let failWrites = true;
+    const failedWriteStorage = {
+      getItem: key => failedWriteValues.has(key) ? failedWriteValues.get(key) : null,
+      setItem: (key, value) => { if (failWrites) throw new Error("write unavailable"); failedWriteValues.set(key, value); },
+      removeItem: key => failedWriteValues.delete(key),
+      values: failedWriteValues,
+    };
+    const failedWrite = new platform.LocalStorageBoundary(failedWriteStorage, SAVE_KEY);
+    assert.equal(failedWrite.write('{"coins":99}'), "unavailable", "a failed manual save cannot report success");
+    assert.equal(failedWrite.sessionOnly, true, "a failed gameplay write must transition persistence to session-only so autosave and Settings stay unavailable");
+    assert.equal(failedWrite.write('{"coins":101}'), "unavailable", "session-only gameplay persistence must not retry later automatic writes");
+    assert.equal(failedWriteStorage.values.get(SAVE_KEY), prior, "a failed gameplay write must preserve the prior bytes");
+    assert.equal(failedWrite.remove(), "removed", "the same failed boundary can reset when removal succeeds");
+    assert.equal(failedWrite.sessionOnly, false);
+    assert.equal(failedWrite.raw, null);
+    assert.equal(failedWriteStorage.values.has(SAVE_KEY), false);
+    failWrites = false;
+    assert.equal(failedWrite.write('{"coins":102}'), "saved", "a successful reset restores persistence on the same boundary");
+
+    const missingWriterValues = new Map([[SAVE_KEY, prior]]);
+    const missingWriter = new platform.LocalStorageBoundary({ getItem: key => missingWriterValues.has(key) ? missingWriterValues.get(key) : null }, SAVE_KEY);
+    assert.equal(missingWriter.write('{"coins":103}'), "unavailable");
+    assert.equal(missingWriter.sessionOnly, true, "a missing writer must enter session-only mode");
+    assert.equal(missingWriter.write('{"coins":104}'), "unavailable", "a missing writer keeps later writes blocked");
+    assert.equal(missingWriterValues.get(SAVE_KEY), prior, "a missing writer preserves the prior gameplay value");
+
+    const successfulStorage = memoryStorage({ [SAVE_KEY]: prior, [UI_KEY]: "prefs" });
+    successfulStorage.removeItem = key => successfulStorage.values.delete(key);
+    const successfulSave = new platform.LocalStorageBoundary(successfulStorage, SAVE_KEY);
+    assert.equal(successfulSave.write('{"coins":100}'), "saved", "a successful manual save has a distinct success result");
+    const successfulUiReset = new platform.LocalStorageBoundary(successfulStorage, UI_KEY);
+    assert.equal(successfulUiReset.remove(), "removed");
+    assert.equal(successfulSave.remove(), "removed");
+    assert.equal(successfulStorage.values.has(SAVE_KEY), false, "a successful reset removes the gameplay save after UI preferences");
+
+    const partialResetStorage = throwingStorage({ initial: { [SAVE_KEY]: prior, [UI_KEY]: "prefs" } });
+    partialResetStorage.removeItem = key => { if (key === SAVE_KEY) throw new Error("gameplay remove unavailable"); partialResetStorage.values.delete(key); };
+    const uiBeforeGameplay = new platform.LocalStorageBoundary(partialResetStorage, UI_KEY);
+    const gameplayAfterUi = new platform.LocalStorageBoundary(partialResetStorage, SAVE_KEY);
+    assert.equal(uiBeforeGameplay.remove(), "removed");
+    assert.equal(partialResetStorage.values.get(SAVE_KEY), prior, "a failed reset keeps the gameplay save byte-for-byte");
+    assert.equal(gameplayAfterUi.remove(), "unavailable");
+
+    const future = game.defaultState(1000); future.version = game.SAVE_VERSION + 1;
+    const futureResult = game.parseSave(JSON.stringify(future), 2000);
+    assert.equal(game.shouldBlockSaveWrite(futureResult), true, "future-version protection remains distinct from unavailable storage");
   });
 
   console.log(`All ${passed} platform adapter tests passed.`);

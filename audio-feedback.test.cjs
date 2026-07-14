@@ -7,6 +7,14 @@ function storage(initial = {}) {
   const data = new Map(Object.entries(initial));
   return { getItem: key => data.has(key) ? data.get(key) : null, setItem: (key, value) => data.set(key, value), read: key => data.get(key) };
 }
+function throwingStorage({ read = false, write = false } = {}) {
+  const writes = [];
+  return {
+    getItem: () => { if (read) throw new Error("read unavailable"); return null; },
+    setItem: (...args) => { writes.push(args); if (write) throw new Error("write unavailable"); },
+    writes,
+  };
+}
 
 function fakeContext({ fail = false } = {}) {
   const calls = [];
@@ -44,6 +52,19 @@ test("sound preference persists independently and reloads safely", () => {
   assert.deepEqual(JSON.parse(memory.read(audio.AUDIO_PREFERENCE_KEY)), { version: 2, enabled: false, effectsVolume: .7, musicVolume: .25 });
   assert.equal(new audio.AudioPreferenceStore(memory).effectsVolume(), .7);
   assert.equal(new audio.AudioPreferenceStore(memory).musicVolume(), .25);
+});
+
+test("sound preferences safely use memory when storage is unavailable or throws", () => {
+  const unavailable = new audio.AudioPreferenceStore(null);
+  assert.doesNotThrow(() => unavailable.setEnabled(false));
+  assert.equal(unavailable.enabled(), false);
+  const unreadable = new audio.AudioPreferenceStore(throwingStorage({ read: true }));
+  assert.equal(unreadable.enabled(), true);
+  unreadable.setEnabled(false);
+  assert.equal(unreadable.storage.writes.length, 0, "a failed initial audio read must block later writes");
+  const unwritable = new audio.AudioPreferenceStore(throwingStorage({ write: true }));
+  assert.doesNotThrow(() => unwritable.setMusicVolume(.25));
+  assert.equal(unwritable.musicVolume(), .25);
 });
 
 test("effects use a louder perceptual curve without exceeding the safe base mix", () => {

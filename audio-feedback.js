@@ -76,8 +76,9 @@
     constructor(storage, key = AUDIO_PREFERENCE_KEY) {
       this.storage = storage;
       this.key = key;
+      this.persistenceBlocked = !storage || typeof storage.getItem !== "function";
       let raw = null;
-      try { raw = storage?.getItem?.(key); } catch { /* Use the safe default. */ }
+      if (!this.persistenceBlocked) try { raw = storage.getItem(key); } catch { this.persistenceBlocked = true; /* Use the safe default. */ }
       this.preference = raw === null ? { ...DEFAULT_AUDIO_PREFERENCE } : parseAudioPreference(raw).preference;
     }
     enabled() { return this.preference.enabled; }
@@ -85,7 +86,7 @@
     musicVolume() { return this.preference.musicVolume; }
     persist(next) {
       this.preference = normalizeAudioPreference(next);
-      try { this.storage?.setItem?.(this.key, JSON.stringify(this.preference)); } catch { /* Audio preference never blocks play. */ }
+      if (!this.persistenceBlocked) try { this.storage.setItem(this.key, JSON.stringify(this.preference)); } catch { /* Audio preference never blocks play. */ }
       return this.snapshot();
     }
     setEnabled(enabled) {
