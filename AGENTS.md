@@ -31,9 +31,21 @@
 4. Check browser console errors and warnings.
 5. Report changed files, assumptions, validation, and deferred findings.
 
+## PM and coder workflow
+
+- The PM owns project scope, roadmap sequencing, coder prompts, report review, task status, and Git publication.
+- Every newly approved roadmap task defaults to a fresh coder task. Continue the same coder task only for review questions or corrections within that task's unchanged scope.
+- Before every coder prompt, state the recommended ChatGPT model, thinking level, and whether to use a fresh or existing coder task.
+- Every coder prompt must name the objective, files to inspect first, required behavior, explicit out-of-scope work, acceptance checks, and validation proportional to risk.
+- The coder must finish with exactly one overall status: `PASS`, `FAIL`, or `BLOCKED`, followed by its summary, changed files, validation evidence, assumptions, and deferred or out-of-scope findings.
+- The PM reviews the report, actual diff, and validation. A failed or incomplete result returns to the same coder task with a focused correction prompt.
+- Ask the owner to test only when a meaningful batch is ready or when a critical behavior needs immediate owner confirmation. Give a short procedure and expected result.
+- When the PM approves the coder result and owner testing is not needed, the PM commits and pushes the scoped changes.
+- Coders must not commit, push, change roadmap scope, or edit `coder-tasks.json` unless the PM explicitly authorizes it.
+
 ## Handoff
 
 - Run `npm.cmd run handoff` before starting a roadmap task.
 - Work on only the printed task.
-- Update that task's `status` in `coder-tasks.json` only after its acceptance checks pass.
+- The PM updates task status only after reviewing the coder report, diff, and required evidence.
 - Do not begin the next task in the same run unless the user explicitly asks.

@@ -30,7 +30,7 @@
   },
   {
     "id": 15,
-    "status": "next",
+    "status": "complete",
     "title": "After the Stars owner acceptance and defect-only follow-up",
     "model": "Use an efficient reviewer context with medium reasoning; use a coding context only if a defect is confirmed",
     "freshChat": true,
@@ -40,6 +40,27 @@
       "The final completion card is readable before it collapses",
       "Dawnthread Workshop unlocks, can be selected, and can be reversed without changing economy",
       "Any confirmed defect passes npm.cmd run check and targeted phone-size browser QA before merging"
+    ]
+  },
+  {
+    "id": 16,
+    "status": "next",
+    "title": "Storage resilience and truthful save feedback",
+    "model": "GPT-5.3-Codex with Medium thinking",
+    "freshChat": true,
+    "prompt": "Do not read archive/. Run npm.cmd run handoff, then work only on Task 16. Inspect AGENTS.md, app.js, platform-adapters.js, audio-feedback.js, platform-adapters.test.cjs, audio-feedback.test.cjs, release-lifecycle.test.cjs, save-compatibility.test.cjs, package.json, and only other active files directly required by the implementation. Objective: ensure failures in the game's existing local-storage boundaries cannot crash normal play or falsely report that a manual save succeeded. Guard acquisition of browser storage plus current save-related getItem, setItem, and removeItem paths against unavailable or throwing storage. Preserve safe startup and normal in-memory play when persistence is unavailable. Return or propagate an accurate save result: show Workshop saved only after a confirmed successful write; keep the future-version protection result distinct; and show a clear, non-destructive message when storage cannot be written. A failed later write must leave the last valid stored save intact. Preserve current successful saves, gameplay schema migration, future-version overwrite protection, rollback compatibility, platform state, and audio preference behavior. Add deterministic tests for throwing or unavailable storage, including read, write, and relevant removal paths and preservation of a prior valid value. Prefer the smallest testable change within existing storage boundaries; add no dependency, remote service, account, cloud save, analytics, or new production subsystem. Do not edit GAMEPLAY_ROADMAP.md, coder-tasks.json, release documents, or archive/. Do not commit or push. Explicitly out of scope: hostile numeric normalization; above-level active-brew recovery; daily rollover; achievement or lifetime-coin accounting; idle or Stardust economy changes; Welcome Back redesign; mobile action hierarchy; narrative or content additions; release, monetization, accounts, analytics, cloud saves, or native platform work. Run npm.cmd run check. Test manual Save Now at 390x844 and 360x740 with no horizontal overflow and check browser console errors and warnings. Finish with STATUS: PASS, FAIL, or BLOCKED, then report summary, changed files, validation evidence, assumptions, and deferred or out-of-scope findings. Do not start another task.",
+    "acceptance": [
+      "Throwing or unavailable storage does not crash startup or normal play",
+      "Failed manual saves never display a success result",
+      "Successful manual saves retain the current success behavior",
+      "A failed write does not erase or replace the last valid save",
+      "Future-version overwrite protection still passes",
+      "Existing migrations and rollback-reader compatibility still pass",
+      "Deterministic tests cover storage read, write, and relevant removal failure behavior",
+      "npm.cmd run check passes",
+      "Manual Save Now is tested at 390x844 and 360x740 with no horizontal overflow",
+      "Browser console errors and warnings are checked",
+      "The coder reports changed files, assumptions, validation, deferred findings, and one PASS, FAIL, or BLOCKED status"
     ]
   }
 ]
