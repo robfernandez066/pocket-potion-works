@@ -30,13 +30,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 25 meaningful-choice measurement
+## Now - Task 26 idle-return candidate simulation
 
-Tasks 15 through 24 are complete. Task 25 is the only released execution task.
+Tasks 15 through 25 are complete. Task 26 is the only released execution task.
 
-Measure, without tuning, whether the four same-level potion pairs and five existing upgrades create meaningfully different choices in realistic active and idle-return scenarios. The evidence must separate ingredient availability, order completion, cycle timing, coins, and storage pressure so the next task can select at most one bounded improvement rather than changing the whole economy at once.
+Task 25 found no broad same-level recipe-pair failure: all eight measured recipes completed their request within ten minutes, with average delivery times from 109.0 to 175.8 seconds. In its representative active loop, Copper Cauldron and Golden Ledger produced clear throughput or coin effects, while ingredient upgrades mainly increased stock. Moonlit Garden added 2.8 active ingredients on average but no orders and no additional 60- or 120-minute offline ingredients because both cases reached the existing reserve cap.
 
-Do not change gameplay values, UI, saves, runtime assets, release gates, or cache identity in this measurement task. Its output is evidence for PM review, not automatic authorization to retune a recipe or upgrade.
+Compare the current offline formula with a small fixed set of slower or diminishing candidate curves across early, mid, and late-game storage states. Measure the useful return window, Moonlit Garden's marginal effect, Pantry Shelves interaction, and remaining room for charged harvests. Do not change live gameplay values, saves, UI, runtime files, release gates, or cache identity. Candidate results require owner approval before any implementation task.
 
 ## Confirmed economy risks requiring design and simulation
 
@@ -45,7 +45,7 @@ Do not change gameplay values, UI, saves, runtime assets, release gates, or cach
 
 ## Near-term existing-loop and playtest candidates
 
-- **Meaningful choice:** use Task 25 evidence to choose at most one bounded recipe-pair or upgrade-path pilot. Do not introduce branches, loadouts, currencies, or another recurring system.
+- **Meaningful choice:** Task 25 did not support a broad recipe retune. Revisit an upgrade-path change only after Task 26 resolves the overlapping idle-return evidence; do not introduce branches, loadouts, currencies, or another recurring system.
 - **Mobile action hierarchy:** measure the full path to ordinary-order delivery at 390x844 and 360x740 before prescribing a redesign. Distinguish onboarding, an ordinary order not ready, an ordinary order ready, Daily Goal completion, and Rolling Request completion; account for the existing Workshop ready-delivery shortcut.
 - **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
 
