@@ -25,7 +25,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Mira's first trust heart now produces one brief inline authored delivery payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and remains a one-villager pilot until natural owner play establishes that it improves delivery feel.
 - Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
 - All eight achievements now unlock on the action that satisfies them while remaining manual one-time Journal claims. Lifetime coins now prospectively include every non-purchased gameplay coin grant while excluding starting coins, spending, and bundle currency.
-- The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. New content must keep first-cycle progression inside this tested envelope unless owner playtests justify retuning it.
+- The current seeded first cycle reaches level 7 in 2,540-2,660 seconds with 31-32 orders. Treat these fixed-seed results as comparison baselines, not exact invariants: an RNG-affecting experiment may vary by up to 5% in completion time and one order per seed without retuning values. Larger movement requires owner review before adoption.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
 ## Now - Task 22 need-aware Request Mix gathering pilot
@@ -34,7 +34,7 @@ Tasks 15 through 21 are complete. Task 22 is the only released implementation ta
 
 Rename untargeted charged gathering from Smart Mix to Request Mix and describe it honestly as random items weighted toward active requests. Give every unlocked ingredient a base chance, then add a small capped weight for ingredient deficits across active requested potions after accounting for bottled potions and Pantry stock. Recompute between rolls so the weighting responds to what was just gathered. Preserve exact ingredient targeting as the reliable alternative.
 
-Apply this weighting only to untargeted charged harvests. Passive and offline gathering remain unchanged. Preserve current charges, recharge, yield, storage, save version, rewards, and progression values. The three documented first-cycle seeds must remain inside the current 2,540-2,660 second envelope.
+Apply this weighting only to untargeted charged harvests. Passive and offline gathering remain unchanged. Preserve current charges, recharge, yield, storage, save version, rewards, and progression values. Compare seeds 7, 42, and 2026 with their Task 21 baselines; each may vary by at most 5% in completion time and one order without retuning values.
 
 ## Confirmed economy risks requiring design and simulation
 
