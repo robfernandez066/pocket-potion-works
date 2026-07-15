@@ -27,18 +27,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - All eight achievements now unlock on the action that satisfies them while remaining manual one-time Journal claims. Lifetime coins now prospectively include every non-purchased gameplay coin grant while excluding starting coins, spending, and bundle currency.
 - Untargeted charged gathering is now Request Mix: every unlocked ingredient remains possible, while active-request deficits receive a small capped weight after bottled potions and Pantry stock are considered. Exact ingredient targeting, passive gathering, and offline gathering remain unchanged.
 - Ordinary order boards now avoid villagers already visible when alternatives remain. Every eligible villager stays possible, while someone one delivery from an unearned trust heart receives a small capped weight. Reserved orders, trust rules, and saved state remain unchanged.
+- Ordinary not-ready orders now provide one state-aware route to Gather, Brew, View brew, or Collect brew. These controls navigate and focus the exact existing Workshop action without performing gameplay; ready delivery and unavailable reserved orders remain unchanged.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 29 actionable not-ready orders
+## Now - Task 30 Stardust scaling simulation
 
-Tasks 15 through 28 are complete. Task 28 found that the existing Workshop ready-delivery shortcut works well once a potion is bottled. Its clearest bounded friction was the shorter 360x740 Orders view: an ordinary order that is not ready sits below the recurring-goal cards and ends in a disabled `Not ready` control, so reaching the card still does not provide a direct next action.
+Tasks 15 through 29 are complete. Each Stardust currently adds an unbounded 10% to order-coin value, while Daily Goals can add Stardust independently of rebirth. Build development-only evidence comparing the shipped formula with three fixed bounded candidates that preserve the current multiplier through five Stardust. Measure first-cycle, post-rebirth, and long-run daily accumulation without changing runtime behavior, earned Stardust, rewards, saves, or UI.
 
-Replace only that dead ordinary-order control with a state-aware route to the existing Workshop action: gather when ingredients are insufficient, reveal and focus the requested recipe when it is affordable, or show the occupied cauldron when a brew must finish or be collected first. Keep ready `Deliver` behavior unchanged. Navigation must not gather, brew, collect, or spend automatically, and must not reorder the Orders page or add another shortcut, banner, or navigation layer.
-
-## Confirmed economy risks requiring design and simulation
-
-- **Stardust scaling:** each Stardust currently adds 10% order-coin value, and daily rewards can add Stardust independently of rebirth. Evaluate a cap or reshaped economic effect while preserving earned counts and sources where practical, define save migration, and revalidate the seeded first-cycle envelope. Do not choose or implement a formula without simulation and owner approval.
+The simulation must make long-run differences and migration implications explicit. It may rank candidates transparently, but no candidate becomes product direction until the owner reviews the evidence and approves a formula in a later task.
 
 ## Near-term existing-loop and playtest candidates
 

@@ -320,9 +320,7 @@ function goToTutorialTarget(quest) {
     if (!target) return;
     document.querySelectorAll(".tutorial-target").forEach(node => node.classList.remove("tutorial-target"));
     target.classList.add("tutorial-target");
-    target.scrollIntoView({ behavior: motionBehavior(), block: "center" });
-    if (!target.matches("button, [href], input, select, textarea, [tabindex]")) target.setAttribute("tabindex", "-1");
-    target.focus({ preventScroll: true });
+    focusTarget(target);
     setTimeout(() => target.classList.remove("tutorial-target"), 2200);
   });
 }
@@ -566,7 +564,9 @@ function renderOrders() {
   document.querySelector("#orderList").innerHTML = state.orders.map(order => {
     const recipe = recipeById(order.recipeId);
     const owned = state.potions[recipe.id];
-    const canFill = owned >= order.quantity;
+    const action = Logic.orderAction(state, order);
+    const label = { gather: "Gather", brew: "Brew", "view-brew": "View brew", "collect-brew": "Collect brew" }[action];
+    const html = action === "deliver" ? `<button class="fulfill-button" data-order="${order.id}">Deliver</button>` : label ? `<button class="fulfill-button" data-next="${order.id}">${label}</button>` : `<button class="fulfill-button" data-order="${order.id}" disabled>Not ready</button>`;
     const customer = state.customers[order.customerId] || { deliveries: 0, hearts: 0 };
     const towardHeart = customer.deliveries % CUSTOMER_CONFIG.deliveriesPerHeart;
     const reward = orderReward(order);
@@ -577,10 +577,32 @@ function renderOrders() {
     return `<article class="order-card ${commission ? "is-commission" : questStep ? "is-after-stars" : ""}">${questRibbon}
       ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
       <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
-      <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div><button class="fulfill-button" data-order="${order.id}" ${canFill ? "" : "disabled"}>${canFill ? "Deliver" : "Not ready"}</button></div>
+      <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div>${html}</div>
     </article>`;
   }).join("");
-  document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.order), "orders")));
+  document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", ()=>fulfillOrder(Number(button.dataset.order), "orders")));
+  document.querySelectorAll("[data-next]").forEach(button => button.addEventListener("click", ()=>routeOrderAction(Number(button.dataset.next))));
+}
+
+function focusTarget(target) {
+  if (!target) return;
+  if (!target.matches("button, [href], input, select, textarea, [tabindex]")) target.tabIndex = -1;
+  target.scrollIntoView({behavior: motionBehavior(), block: "center"});
+  target.focus({ preventScroll: true });
+}
+
+function routeOrderAction(orderId) {
+  switchView("workshop");
+  requestAnimationFrame(() => {
+    const order = state.orders.find(item => item.id === orderId);
+    const action = Logic.orderAction(state, order);
+    if (!action || action === "deliver") return;
+    if (action === "brew") setDisclosure("recipes", true);
+    const selector = action === "gather" ? "#gatherButton"
+      : action === "brew" ? `[data-brew="${order.recipeId}"]`
+      : action === "view-brew" ? "#brewSlot" : "#collectBrewButton";
+    focusTarget(document.querySelector(selector));
+  });
 }
 
 function renderNarrativeDelivery() {
@@ -1171,7 +1193,11 @@ function tick() {
     passiveBank -= whole;
     if (added > 0) { renderIngredients(); document.querySelector("#pantryTotal").textContent = `${formatNumber(totalIngredients())} / ${storageCap()} items`; }
   }
-  if (state.brew) renderBrew();
+  if (state.brew) {
+    const previouslyAnnouncedReadyBrew = announcedReadyBrew;
+    renderBrew();
+    if (announcedReadyBrew !== previouslyAnnouncedReadyBrew) renderOrders();
+  }
   renderBoostStatus(now);
   renderGatherButton();
   renderBeginnerQuest();

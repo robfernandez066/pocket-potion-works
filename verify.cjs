@@ -28,6 +28,8 @@ if (absentIds.length) throw new Error(`JavaScript references absent HTML IDs: ${
 if (!html.includes('id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"')) throw new Error("Brew transitions require one stable atomic live status node.");
 for (const id of ["workshopNarrativeDelivery", "ordersNarrativeDelivery"]) if (!html.includes(`id="${id}" role="status" aria-live="polite" aria-atomic="true"`)) throw new Error("Narrative delivery surfaces require stable atomic live status nodes.");
 if (!app.includes('fulfillOrder(Number(button.dataset.quickDeliver), "workshop")') || !app.includes('fulfillOrder(Number(button.dataset.order), "orders")')) throw new Error("Narrative delivery must retain its originating surface.");
+if (!app.includes('Logic.orderAction(state, order)') || !app.includes('data-next') || !app.includes('function routeOrderAction(orderId)')) throw new Error("Ordinary not-ready orders must use the state-aware navigation route.");
+if (!app.includes('function focusTarget(target)') || !app.includes('setDisclosure("recipes", true)')) throw new Error("Ordinary order guidance must retain Workshop target focus.");
 if (app.includes('class="active-brew" aria-live=')) throw new Error("The per-second brew countdown must remain outside live regions.");
 
 JSON.parse(fs.readFileSync("manifest.webmanifest", "utf8"));

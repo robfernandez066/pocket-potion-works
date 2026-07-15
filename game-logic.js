@@ -667,6 +667,18 @@
     return Boolean(recipe) && Object.entries(recipe.ingredients).every(([id, count]) => state.ingredients[id] >= count);
   }
 
+  function orderAction(state, order, now = Date.now()) {
+    if (!order || isReservedOrder(order) || !Number.isInteger(order.id) || !Number.isInteger(order.quantity) || order.quantity < 1) return null;
+    const recipe = recipeById(order.recipeId);
+    if (!recipe || !Number.isFinite(state?.potions?.[recipe.id])) return null;
+    if (state.potions[recipe.id] >= order.quantity) return "deliver";
+    if (state.brew) {
+      if (!recipeById(state.brew.recipeId) || !Number.isFinite(state.brew.endsAt)) return null;
+      return state.brew.endsAt <= now ? "collect-brew" : "view-brew";
+    }
+    return canAffordRecipe(state, recipe) ? "brew" : "gather";
+  }
+
   function startBrew(state, recipeId, now = Date.now()) {
     const recipe = recipeById(recipeId);
     if (state.brew || !recipe || recipe.unlock > state.level || !canAffordRecipe(state, recipe)) return false;
@@ -1059,7 +1071,7 @@
     SAVE_VERSION, OFFLINE_CAP_SECONDS, BASE_PASSIVE_RATE, PASSIVE_STORAGE_RATIO, GATHER_CONFIG, FINISH_BREW_CONFIG, MASTERY_CONFIG, CUSTOMER_CONFIG, DELIVERY_NARRATIVE_PILOTS, COMPLETION_CARD_CONFIG, JOURNAL_REWARDS, PRESTIGE_CONFIG, WEEKLY_CHAINS, COSMETICS, COLLECTION_GOALS, SAMPLER_IDS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE, ACHIEVEMENTS, BEGINNER_QUESTS, SAVE_LIMITS,
     clamp, todayKey, defaultState, normalizeState, parseSave, shouldBlockSaveWrite, recipeById, upgradeById, customerOrderLine, customerStoryStatus, recipeLoreStatus, markJournalRead, journalClaimableCounts, evaluateAchievements, grantGameplayCoins, claimJournalReward, beginnerQuest, tutorialTransitionPrompt, unlocksAtLevel, xpNeeded, ordinaryOrderCustomerPool,
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
-    unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
+    unlockedIngredients, totalIngredients, canAffordRecipe, orderAction, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
     resetDailyIfNeeded, foregroundDailyTransition, addRandomIngredients, requestMixPool, addRequestMixIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, offlineIngredientQuantity, grantOfflineIngredients, activeElapsedSeconds,
   });

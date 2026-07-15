@@ -301,7 +301,7 @@
   },
   {
     "id": 29,
-    "status": "next",
+    "status": "complete",
     "title": "Actionable not-ready ordinary orders",
     "model": "5.6 Terra with Medium effort",
     "freshChat": true,
@@ -316,6 +316,24 @@
       "Cache advances once to v58 with no budget increase",
       "npm.cmd run check and both portrait browser checks pass without overflow or console warnings or errors",
       "The coder reports one PASS, FAIL, or BLOCKED status with all required sections"
+    ]
+  },
+  {
+    "id": 30,
+    "status": "next",
+    "title": "Stardust scaling simulation",
+    "model": "5.6 Terra with High effort",
+    "freshChat": true,
+    "prompt": "Task #30\n\nWork in:\n\nC:\\Users\\robbi\\Documents\\Projects\\newgame\n\nDo not read archive/.\n\nRun npm.cmd run handoff and confirm it prints Task 30. Work only on Task 30.\n\nObjective: Build a deterministic development-only simulation comparing the shipped unbounded Stardust order-coin multiplier with three fixed bounded candidates. Produce evidence for owner selection; do not change runtime gameplay or select a formula as product direction.\n\nInspect first: AGENTS.md, GAMEPLAY_ROADMAP.md, game-logic.js, game-logic.test.cjs, economy-simulation.cjs, monetization-simulation.cjs, choice-simulation.cjs, idle-return-simulation.cjs, package.json, and only other active files directly needed for deterministic harness conventions.\n\nUse nonnegative finite Stardust s and compare exactly these arms: shipped = 1 + 0.10s; hard-cap-10 = 1 + 0.10 min(s,10), maximum 2.0x; tiered-2.5 = 1 + 0.10 min(s,5) + 0.05 min(max(s-5,0),10) + 0.02 min(max(s-15,0),25), maximum 2.5x at 40; soft-cap-2.5 = shipped through s=5, then 1.5 + (s-5)/(s+15), asymptotically below 2.5x. Do not alter these formulas or add candidates.\n\nCreate stardust-simulation.cjs using the shipped logic and existing deterministic conventions wherever possible. Use fixed UTC time and seeds 7, 42, 2026, 99, and 1234. Cover Stardust counts 0, 1, 3, 5, 10, 20, 30, 40, 90, 180, and the current save cap 100000. Report multiplier, representative order reward effects, and fixed active-session outcomes sufficient to show coins, orders, upgrades, and recovery consequences. Include the current first-cycle level-7 scenario, post-rebirth recovery to level 3 at representative counts, and clearly labeled daily-only 30/90/180-day projections assuming one successfully claimed Daily Goal per day. The daily projections are mathematical scenarios, not claims about player behavior. Keep daily and rebirth Stardust sources visible separately where the harness reports accumulation.\n\nStructurally assert shipped-formula parity; finite nonnegative outputs; monotonic candidate behavior; exact parity of every candidate with shipped behavior from 0 through 5 Stardust; stated 2.0x/2.5x long-run bounds; safe behavior at the save cap; and complete seed/count/arm matrices. Preserve the exact Task 24 first-cycle locks: seed 7 = 2615 seconds / 33 orders / 5997 lifetime coins; seed 42 = 2695 / 31 / 6501; seed 2026 = 2600 / 32 / 6231. Preserve the Task 27 idle-return hash 921B52870E1CB2C78BC1E19A80A3C1699643B4EF99B3AD042D3BB002A3FCF8C8. Do not retune another value to force results.\n\nNormal mode must emit stable complete JSON. Add --check mode that builds and validates the full report but emits a concise deterministic summary containing scenario counts, candidate bounds, ranking, and a SHA-256 of the complete report. Run each mode twice and prove byte-identical output. Add the --check invocation to npm.cmd run check. Keep output concise enough that routine validation is usable.\n\nRank the three candidates transparently using only declared criteria: early parity through five Stardust, bounded long-run multiplier, continued but diminishing post-five value, and measured economy distortion. Do not mark a candidate approved or modify active product direction. Include a factual migration note: identify whether preserving the existing integer Stardust count would require a save-schema migration for each formula, but do not implement a migration.\n\nExplicitly out of scope: No change to coinMultiplier, orderMultiplier, Daily Goal or rebirth rewards, Stardust counts or sources, runtime game logic, UI, copy, save shape or version, migration, economy values, recipes, orders, gathering, brewing, upgrades, trust, achievements, mastery, cosmetics, narrative, cache identity, service worker, release gates, budgets, assets, dependencies, monetization, analytics, accounts, cloud saves, native packaging, or public release work. Do not edit AGENTS.md, GAMEPLAY_ROADMAP.md, coder-tasks.json, README.md, release/readiness prose, or archive/. Do not stage, commit, or push. Do not start another task.\n\nAcceptance checks: One reproducible harness covers all four exact formulas, five seeds, the complete Stardust matrix, first-cycle parity, post-rebirth recovery, fixed active sessions, and labeled 30/90/180-day daily-only projections. Assertions prove parity through five, monotonicity, bounds, save-cap safety, shipped parity, and matrix completeness. Full and --check outputs are separately byte-identical across two runs. npm.cmd run check passes with Task 24 outputs and Task 27 hash unchanged. No browser QA is required because no browser-facing file may change.\n\nFinish with exactly one overall status: PASS, FAIL, or BLOCKED, followed by Summary, Changed files, Validation evidence, formula/outcome comparison, transparent ranking, migration note, hashes, Assumptions, and Deferred or out-of-scope findings.",
+    "acceptance": [
+      "A deterministic development-only harness compares the shipped multiplier with the three exact bounded candidates",
+      "All formulas cover five seeds and Stardust counts 0, 1, 3, 5, 10, 20, 30, 40, 90, 180, and 100000",
+      "Evidence includes first-cycle parity, representative active sessions, post-rebirth recovery, and labeled 30/90/180-day daily-only projections",
+      "Assertions prove shipped parity, candidate parity through five Stardust, monotonicity, finite outputs, stated bounds, save-cap safety, and matrix completeness",
+      "Normal and --check outputs are deterministic, byte-identical across repeat runs, and include a complete-report SHA-256",
+      "Task 24 exact outputs and the Task 27 idle-return hash remain unchanged",
+      "No runtime, save, UI, cache, release, budget, reward, or product-direction change is made",
+      "The coder reports one PASS, FAIL, or BLOCKED status with comparison, ranking, migration note, hashes, assumptions, and deferred findings"
     ]
   }
 ]

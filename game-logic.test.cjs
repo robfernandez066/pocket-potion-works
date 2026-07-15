@@ -1519,4 +1519,32 @@ test("the deterministic gather-brew-collect-deliver-upgrade loop succeeds", () =
   assert.equal(state.upgrades.garden, 1);
 });
 
+test("ordinary order actions are state-aware and never mutate gameplay", () => {
+  const state = game.defaultState(NOW);
+  state.orders = [{ id: 41, recipeId: "tonic", quantity: 1, reward: 20, xp: 11 }];
+  const order = state.orders[0];
+  const expectAction = (expected, candidate = order) => {
+    const snapshot = JSON.stringify(state);
+    assert.equal(game.orderAction(state, candidate, NOW), expected);
+    assert.equal(JSON.stringify(state), snapshot, `${expected || "no"} action decision must not mutate gameplay state`);
+  };
+
+  state.potions.tonic = 1;
+  expectAction("deliver");
+  state.potions.tonic = 0;
+  state.brew = { recipeId: "clarity", startedAt: NOW, endsAt: NOW + 1, durationMs: 1000, assisted: false };
+  expectAction("view-brew");
+  state.brew.endsAt = NOW;
+  expectAction("collect-brew");
+  state.brew = null;
+  state.ingredients = { herb: 3, mushroom: 1, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
+  expectAction("brew");
+  state.ingredients.mushroom = 0;
+  expectAction("gather");
+
+  const reserved = { ...order, commissionId: "mira-dawn" };
+  expectAction(null, reserved);
+  expectAction(null, { id: "stale", recipeId: "unknown", quantity: 1 });
+});
+
 console.log(`All ${passed} game logic tests passed.`);
