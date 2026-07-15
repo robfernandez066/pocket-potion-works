@@ -3,6 +3,7 @@
   "files": {
     "index.html": 16000,
     "style.css": 58000,
+    "content-data.js": 16000,
     "game-logic.js": 80000,
     "platform-adapters.js": 24000,
     "audio-feedback.js": 22000,

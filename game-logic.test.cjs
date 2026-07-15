@@ -1,13 +1,45 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const content = require("./content-data.js");
 const game = require("./game-logic.js");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
+const CONTENT_KEYS = ["DELIVERY_NARRATIVE_PILOTS", "CUSTOMER_CONTENT", "SIGNATURE_COMMISSIONS", "AFTER_STARS_STEPS", "RECIPE_LORE"];
 let passed = 0;
 function test(name, fn) {
   fn(); passed += 1; console.log(`ok ${passed} - ${name}`);
 }
+
+function assertDeepFrozen(value, seen = new Set()) {
+  if (!value || typeof value !== "object" || seen.has(value)) return;
+  seen.add(value);
+  assert.equal(Object.isFrozen(value), true);
+  for (const nested of Object.values(value)) assertDeepFrozen(nested, seen);
+}
+
+test("content catalog exposes the same deeply frozen objects through CommonJS and PPWLogic", () => {
+  assert.equal(Object.isFrozen(content), true);
+  assert.equal(Object.isFrozen(game), true);
+  assert.deepEqual(Object.keys(content), CONTENT_KEYS);
+  for (const key of CONTENT_KEYS) {
+    assert.strictEqual(game[key], content[key]);
+    assertDeepFrozen(content[key]);
+  }
+});
+
+test("content catalog exposes one browser global and game logic requires it", () => {
+  const contentSource = fs.readFileSync("content-data.js", "utf8");
+  const logicSource = fs.readFileSync("game-logic.js", "utf8");
+  const browser = vm.createContext({});
+  vm.runInContext(contentSource, browser, { filename: "content-data.js" });
+  assert.ok(browser.PPWContent);
+  vm.runInContext(logicSource, browser, { filename: "game-logic.js" });
+  for (const key of CONTENT_KEYS) assert.strictEqual(browser.PPWLogic[key], browser.PPWContent[key]);
+  assert.throws(() => vm.runInNewContext(logicSource, {}, { filename: "game-logic.js" }), /content catalog is unavailable/);
+});
 
 test("exact ingredient cost starts a brew and consumes exactly the cost", () => {
   const state = game.defaultState(NOW);

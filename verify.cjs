@@ -1,7 +1,7 @@
 const fs = require("fs");
 const vm = require("vm");
 
-const files = ["index.html", "style.css", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
+const files = ["index.html", "style.css", "content-data.js", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
 const missing = files.filter(file => !fs.existsSync(file));
 if (missing.length) throw new Error(`Missing files: ${missing.join(", ")}`);
 
@@ -12,14 +12,16 @@ if (!combined.includes("Pocket Potion Works") || !combined.includes("pocket-poti
 
 const html = fs.readFileSync("index.html", "utf8");
 const normalizedHtml = html.replace(/\r\n/g, "\n");
+const content = fs.readFileSync("content-data.js", "utf8");
 const app = fs.readFileSync("app.js", "utf8");
 if (!app.includes("already been added to the Pantry")) throw new Error("Welcome Back must state that offline ingredients were already added to the Pantry.");
 if (!app.includes('label: "Back to workshop", primary: true')) throw new Error("Welcome Back must use a non-claiming return action.");
 if (app.includes('label: "Collect ingredients"')) throw new Error("Welcome Back must not offer a second ingredient collection step.");
+if (!html.includes('<script src="content-data.js"></script>')) throw new Error("Content data must load before pure game logic.");
 if (!html.includes('<script src="game-logic.js"></script>')) throw new Error("Pure game logic must load before the browser adapter.");
 if (!html.includes('<script src="platform-adapters.js"></script>')) throw new Error("Platform adapters must load before the browser adapter.");
 if (!html.includes('<script src="audio-feedback.js"></script>')) throw new Error("Audio helpers must load before the browser adapter.");
-if (!normalizedHtml.includes('game-logic.js"></script>\n    <script src="platform-adapters.js"></script>\n    <script src="audio-feedback.js"></script>\n    <script src="app.js')) throw new Error("Browser scripts must load in dependency order.");
+if (!normalizedHtml.includes('content-data.js"></script>\n    <script src="game-logic.js"></script>\n    <script src="platform-adapters.js"></script>\n    <script src="audio-feedback.js"></script>\n    <script src="app.js')) throw new Error("Browser scripts must load in dependency order.");
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 const queriedIds = [...app.matchAll(/querySelector\(["'`]#([A-Za-z0-9_-]+)["'`]\)/g)].map(match => match[1]);
 const dynamicIds = new Set(["collectBrewButton"]);
@@ -33,5 +35,6 @@ if (!app.includes('function focusTarget(target)') || !app.includes('setDisclosur
 if (app.includes('class="active-brew" aria-live=')) throw new Error("The per-second brew countdown must remain outside live regions.");
 
 JSON.parse(fs.readFileSync("manifest.webmanifest", "utf8"));
+new vm.Script(content, { filename: "content-data.js" });
 new vm.Script(app, { filename: "app.js" });
 console.log(`Verification passed: ${files.length} required files, ${ids.size} UI IDs, product identity and syntax checks passed.`);

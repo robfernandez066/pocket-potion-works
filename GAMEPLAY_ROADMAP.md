@@ -29,23 +29,22 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Ordinary order boards now avoid villagers already visible when alternatives remain. Every eligible villager stays possible, while someone one delivery from an unearned trust heart receives a small capped weight. Reserved orders, trust rules, and saved state remain unchanged.
 - Ordinary not-ready orders now provide one state-aware route to Gather, Brew, View brew, or Collect brew. These controls navigate and focus the exact existing Workshop action without performing gameplay; ready delivery and unavailable reserved orders remain unchanged.
 - Stardust now preserves its original 10% order-coin gain through five, then follows the owner-approved diminishing formula `1.5 + (stardust - 5) / (stardust + 15)`, remaining below a 2.5x Stardust multiplier without changing earned counts or sources.
+- The five immutable narrative catalogs now live in the dependency-free `content-data.js` offline module. Browser and CommonJS consumers still receive the same recursively frozen objects through `PPWLogic`, and gameplay behavior is unchanged.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 32 content catalog boundary
+## Now - Task 33 Mira village-chapter pilot
 
-Tasks 15 through 31 are complete. `game-logic.js` and `app.js` are both within 100 bytes of their existing file caps, so adding the planned permanent village chapter directly would force compressed code or an unapproved budget increase.
+Tasks 15 through 32 are complete. The catalog boundary restored readable logic headroom without changing existing content or raising the total runtime budget.
 
-Extract only the existing immutable narrative catalogs into one small offline runtime module while preserving the current public game-logic API and every behavior. Keep the 24,000,000-byte total cap unchanged and use the freed `game-logic.js` headroom for the bounded village-chapter pilot in the following task. This is a prerequisite refactor, not authorization to add or rewrite content yet.
+Add one permanent, non-recurring Mira chapter, **The Village Loaf**, after the player reaches level 4, earns Mira's third heart, and completes Mira's existing Flour-Sun Pin Special Request. It uses three authored one-bottle deliveries—Meadow Tonic, Clarity Elixir, then Bottled Sunrise—to fill the blank final page already established in Mira's Journal story. Each delivery keeps normal order rewards and progression; completing the chapter adds only the reversible, economy-neutral **Firstlight Bakery** Workshop Look.
+
+Use the single existing reserved order slot and always preserve two ordinary orders. Existing After the Stars work has priority, followed by a selected Villager Special Request, then this chapter; lower-priority progress waits and resumes without loss. Invitations remain saved and otherwise unchanged. Reuse the existing reserved-story tracker and inline delivery payoff patterns instead of adding navigation, currency, recurrence, a second order slot, or another content framework. Persist and validate the finite chapter progress through the smallest readable save-schema update, preserve it through Starry Rebirth, and keep all runtime file and total-budget caps unchanged.
 
 ## Near-term existing-loop and playtest candidates
 
 - **Meaningful choice:** Task 25 did not support a broad recipe retune, and Task 27 resolved the overlapping idle-return behavior. Revisit an upgrade-path change only after owner play evidence identifies a concrete weak choice; do not introduce branches, loadouts, currencies, or another recurring system.
 - **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
-
-## Unselected content candidates
-
-- A future permanent village-chapter pilot must use approximately three-to-five normal one-bottle deliveries, define unlock timing and reserved-slot arbitration, preserve two ordinary orders, coexist explicitly with Villager Special Requests and After the Stars, grant an economy-neutral reward, and leave invitations untouched unless separately approved.
 
 Do not extend the level curve, add a second cauldron, introduce another recurring system, or produce new raster or audio packs without evidence and an explicit runtime-budget decision.
 
