@@ -31,11 +31,11 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 30 Stardust scaling simulation
+## Now - Task 31 bounded Stardust scaling
 
-Tasks 15 through 29 are complete. Each Stardust currently adds an unbounded 10% to order-coin value, while Daily Goals can add Stardust independently of rebirth. Build development-only evidence comparing the shipped formula with three fixed bounded candidates that preserve the current multiplier through five Stardust. Measure first-cycle, post-rebirth, and long-run daily accumulation without changing runtime behavior, earned Stardust, rewards, saves, or UI.
+Tasks 15 through 30 are complete. The owner approved Task 30's recommended soft-cap-2.5 formula: preserve the shipped 10% per Stardust through five, then use `1.5 + (stardust - 5) / (stardust + 15)`. The multiplier continues increasing with diminishing returns and remains below 2.5x.
 
-The simulation must make long-run differences and migration implications explicit. It may rank candidates transparently, but no candidate becomes product direction until the owner reviews the evidence and approves a formula in a later task.
+Implement only this order-coin multiplier interpretation while preserving every earned Stardust count and source, save schema v8, Daily Goal and rebirth rewards, boosts, Ledger and mastery behavior, and the first-cycle regression envelope. Replace candidate-selection evidence with shipped-versus-approved regression coverage and make the existing rebirth explanation truthful without adding a new UI surface.
 
 ## Near-term existing-loop and playtest candidates
 
