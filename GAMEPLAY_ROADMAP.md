@@ -18,7 +18,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Daily goals do not use streaks. Rolling request chains do not expire. All recurring and one-time rewards are bounded.
 - Eight reversible, economy-neutral Workshop Looks include the original look plus seven earned looks. Twelvefold Mastery derives completion from all twelve recipes at mastery rank 3 and unlocks the Masterwork Alcove without a claim or economy reward.
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
-- Gameplay saves use schema v8 with v1-v7 migration, future-v9 overwrite protection, and frozen-reader rollback coverage.
+- Gameplay saves use schema v9 with v1-v8 migration, future-v10 overwrite protection, and frozen-reader rollback coverage through v8.
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
 - Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
 - Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
@@ -30,16 +30,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Ordinary not-ready orders now provide one state-aware route to Gather, Brew, View brew, or Collect brew. These controls navigate and focus the exact existing Workshop action without performing gameplay; ready delivery and unavailable reserved orders remain unchanged.
 - Stardust now preserves its original 10% order-coin gain through five, then follows the owner-approved diminishing formula `1.5 + (stardust - 5) / (stardust + 15)`, remaining below a 2.5x Stardust multiplier without changing earned counts or sources.
 - The five immutable narrative catalogs now live in the dependency-free `content-data.js` offline module. Browser and CommonJS consumers still receive the same recursively frozen objects through `PPWLogic`, and gameplay behavior is unchanged.
+- Mira's permanent three-delivery chapter, **The Village Loaf**, unlocks after level 4, Mira's third heart, and her Flour-Sun Pin Special Request. Each chapter delivery presents an acknowledgement-controlled story scene; completion unlocks the reversible, economy-neutral **Firstlight Bakery** Workshop Look. The chapter shares the existing reserved slot without displacing its two ordinary orders and persists through Starry Rebirth.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 33 Mira village-chapter pilot
+## Now - Task 34 Mira portrait integration
 
-Tasks 15 through 32 are complete. The catalog boundary restored readable logic headroom without changing existing content or raising the total runtime budget.
+Tasks 15 through 33 are complete and owner-accepted.
 
-Add one permanent, non-recurring Mira chapter, **The Village Loaf**, after the player reaches level 4, earns Mira's third heart, and completes Mira's existing Flour-Sun Pin Special Request. It uses three authored one-bottle deliveries—Meadow Tonic, Clarity Elixir, then Bottled Sunrise—to fill the blank final page already established in Mira's Journal story. Each delivery keeps normal order rewards and progression; completing the chapter adds only the reversible, economy-neutral **Firstlight Bakery** Workshop Look.
+Integrate the owner-approved Mira headshot into the existing Mira surfaces: order cards, Villager Special Request choice, Mira's Journal relationship card, and The Village Loaf payoff modal. Preserve every other villager's current avatar and all gameplay behavior.
 
-Use the single existing reserved order slot and always preserve two ordinary orders. Existing After the Stars work has priority, followed by a selected Villager Special Request, then this chapter; lower-priority progress waits and resumes without loss. Invitations remain saved and otherwise unchanged. Reuse the existing reserved-story tracker and inline delivery payoff patterns instead of adding navigation, currency, recurrence, a second order slot, or another content framework. Persist and validate the finite chapter progress through the smallest readable save-schema update, preserve it through Starry Rebirth, and keep all runtime file and total-budget caps unchanged.
+The supplied 256x256 transparent PNG is a source asset, not a runtime-size decision. Preserve that original outside the deployed image library and derive one crisp transparent runtime portrait sized for its actual 44-72px mobile presentation. Add the runtime asset to the offline shell and release inventory without raising the 24,000,000-byte total budget. Keep the portrait decorative where Mira's name is already present, retain accessible names and focus behavior, and avoid a general avatar framework or broader art pass.
 
 ## Near-term existing-loop and playtest candidates
 
@@ -52,6 +53,14 @@ Do not extend the level curve, add a second cauldron, introduce another recurrin
 
 - Task 6 public-release evidence: implementation is shipped; the broader manual release matrix is intentionally deferred.
 - Task 10 public beta and monetization decision: no real ads, billing, analytics transmission, accounts, cloud saves, native wrapper, or store submission until the owner resumes release work.
+
+### Owner-preferred monetization concept - not implementation authorization
+
+- A future second brewing slot may be offered temporarily through an optional rewarded ad so free players can experience the feature before deciding whether to purchase it. The working duration is approximately 30 minutes, but duration, stacking, cooldowns, daily limits, and whether time pauses outside active play remain unselected tuning inputs.
+- A one-time **Master Alchemist Upgrade** may permanently unlock the second brewing slot and replace existing rewarded-ad watches with immediate ad-free bonus claims that retain their normal caps and cooldowns. It must be a restorable entitlement; it must not grant every bonus continuously or introduce exclusive recipes.
+- If temporary access expires during a brew, that potion must remain safe and collectible while the second slot refuses a new brew until access returns. A free earnable route to the permanent slot remains preferred, and Stardust must not become purchasable premium currency.
+- Before selection or implementation, simulate the effect of two simultaneous brews on ingredients, orders, coins, trust, mastery, and progression; establish truthful purchase restoration beyond a fragile local-only entitlement; and validate that the second slot improves later play without erasing the meaningful choice of what to brew next.
+- This concept does not select a price, duration, store, billing implementation, ad provider, release date, or Task 10 scope. Task 10 remains on hold until the owner explicitly resumes it.
 
 ## Later
 

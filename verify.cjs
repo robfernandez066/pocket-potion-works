@@ -29,9 +29,24 @@ const absentIds = [...new Set(queriedIds.filter(id => !ids.has(id) && !dynamicId
 if (absentIds.length) throw new Error(`JavaScript references absent HTML IDs: ${absentIds.join(", ")}`);
 if (!html.includes('id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"')) throw new Error("Brew transitions require one stable atomic live status node.");
 for (const id of ["workshopNarrativeDelivery", "ordersNarrativeDelivery"]) if (!html.includes(`id="${id}" role="status" aria-live="polite" aria-atomic="true"`)) throw new Error("Narrative delivery surfaces require stable atomic live status nodes.");
+if (!html.includes('id="reservedStoryKicker"') || !app.includes("Logic.reservedStoryTracker(state)")) throw new Error("The reserved-story tracker must support After the Stars and The Village Loaf through one surface.");
+if (!app.includes("Village Chapter") || !fs.readFileSync("style.css", "utf8").includes('data-cosmetic="firstlight"')) throw new Error("The Village Loaf ribbon and Firstlight Bakery look must remain wired.");
 if (!app.includes('fulfillOrder(Number(button.dataset.quickDeliver), "workshop")') || !app.includes('fulfillOrder(Number(button.dataset.order), "orders")')) throw new Error("Narrative delivery must retain its originating surface.");
 if (!app.includes('Logic.orderAction(state, order)') || !app.includes('data-next') || !app.includes('function routeOrderAction(orderId)')) throw new Error("Ordinary not-ready orders must use the state-aware navigation route.");
 if (!app.includes('function focusTarget(target)') || !app.includes('setDisclosure("recipes", true)')) throw new Error("Ordinary order guidance must retain Workshop target focus.");
+const chapterPayoffStart = app.indexOf("function showChapterPayoff(result, surface)");
+const chapterPayoffEnd = app.indexOf("function openModal(", chapterPayoffStart);
+const chapterPayoffPath = app.slice(chapterPayoffStart, chapterPayoffEnd);
+if ((content.match(/payoff: Object\.freeze\(/g) || []).length !== 3 || chapterPayoffStart < 0 || chapterPayoffEnd < 0 || !app.includes("if (result.chapter) showChapterPayoff(result, surface);")) throw new Error("All three authored chapter payoffs must use the surface-aware modal acknowledgement path.");
+for (const field of ["kicker", "title", "body", "footer"]) if (!chapterPayoffPath.includes(`result.narrative.${field}`)) throw new Error(`Chapter payoff modal must present its authored ${field}.`);
+if (chapterPayoffPath.includes("setTimeout") || chapterPayoffPath.includes("beginCompletionState")) throw new Error("Chapter payoff acknowledgement must not auto-dismiss.");
+if (!app.includes('if (result.narrative && !result.chapter) beginCompletionState(surface === "workshop" ? "narrativeWorkshop" : "narrativeOrders", result.narrative);')) throw new Error("Non-chapter narrative behavior must retain its originating passive surface.");
+const chapterClose = chapterPayoffPath.indexOf("closeModal();");
+const chapterOrdersView = chapterPayoffPath.indexOf('switchView("orders")');
+const chapterTarget = chapterPayoffPath.indexOf(".order-card.is-chapter");
+if (!app.includes('if (result.chapter) showChapterPayoff(result, surface);\n  else if (restoreReservedFocus)') || !chapterPayoffPath.includes('"Continue the chapter"') || !(chapterClose < chapterOrdersView && chapterOrdersView < chapterTarget)) throw new Error("Continue must close the modal, open Orders, then focus the next chapter target.");
+if (!chapterPayoffPath.includes("lastFocus = $(surface === \"orders\" ? \"#ordersView h1\" : '[data-nav=\"workshop\"]');") || !chapterPayoffPath.includes('if (surface === "orders") lastFocus.tabIndex = -1;')) throw new Error("Chapter dismissal must return to the Orders heading or a visible Workshop control.");
+if (!chapterPayoffPath.includes('"View Workshop Looks"') || !chapterPayoffPath.includes('switchView("journal")') || !chapterPayoffPath.includes('button[data-cosmetic="firstlight"]') || !app.includes('focusTarget($(`button[data-cosmetic="${cosmeticId}"]`));')) throw new Error("The final chapter action and Workshop Look selections must retain focus on Firstlight Bakery.");
 if (app.includes('class="active-brew" aria-live=')) throw new Error("The per-second brew countdown must remain outside live regions.");
 
 JSON.parse(fs.readFileSync("manifest.webmanifest", "utf8"));

@@ -46,6 +46,17 @@
     Object.freeze({ id: "dawnthread-hem", title: "The Dawnthread Hem", customerId: "customer-9", recipeId: "sun", request: "Bottled sunrise for the final golden hem of a dawnthread banner." }),
   ]);
 
+  const VILLAGE_CHAPTER = Object.freeze({
+    id: "mira-village-loaf",
+    title: "The Village Loaf",
+    customerId: "customer-0",
+    steps: Object.freeze([
+      Object.freeze({ id: "steady-first-line", title: "A Steady First Line", recipeId: "tonic", request: "A Meadow Tonic for a steady first line on the notebook's blank final page.", payoff: Object.freeze({ kicker: "THE VILLAGE LOAF · 1 OF 3", title: "The first line", body: "Mira writes the tonic beside a sketch of the village's shared loaf. The blank page finally has a beginning.", footer: "Next: Notes in the Margin" }) }),
+      Object.freeze({ id: "notes-in-margin", title: "Notes in the Margin", recipeId: "clarity", request: "A Clarity Elixir for gathering every neighbor's flour-smudged notes in the margin.", payoff: Object.freeze({ kicker: "THE VILLAGE LOAF · 2 OF 3", title: "Room for every hand", body: "Clear notes gather around Mira's first line—small ideas from every kitchen in the village.", footer: "Next: A Shared Sunrise" }) }),
+      Object.freeze({ id: "shared-sunrise", title: "A Shared Sunrise", recipeId: "sun", request: "A Bottled Sunrise for the shared loaf's final warm, golden line.", payoff: Object.freeze({ kicker: "THE VILLAGE LOAF · COMPLETE", title: "A shared sunrise", body: "Mira fills the final page with a loaf shaped by the whole village. The Firstlight Bakery Workshop Look was unlocked.", footer: "Firstlight Bakery is ready in Journal" }) }),
+    ]),
+  });
+
   const RECIPE_LORE = Object.freeze({
     tonic: "A meadow remedy first brewed for gardeners who forgot to stop for lunch.",
     clarity: "Its square shimmer is said to put wandering thoughts back on the same path.",
@@ -61,5 +72,5 @@
     aurora: "This nectar keeps dawn colors for late celebrations.",
   });
 
-  return Object.freeze({ DELIVERY_NARRATIVE_PILOTS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, RECIPE_LORE });
+  return Object.freeze({ DELIVERY_NARRATIVE_PILOTS, CUSTOMER_CONTENT, SIGNATURE_COMMISSIONS, AFTER_STARS_STEPS, VILLAGE_CHAPTER, RECIPE_LORE });
 });

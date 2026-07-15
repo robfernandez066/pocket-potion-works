@@ -7,7 +7,7 @@ const content = require("./content-data.js");
 const game = require("./game-logic.js");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
-const CONTENT_KEYS = ["DELIVERY_NARRATIVE_PILOTS", "CUSTOMER_CONTENT", "SIGNATURE_COMMISSIONS", "AFTER_STARS_STEPS", "RECIPE_LORE"];
+const CONTENT_KEYS = ["DELIVERY_NARRATIVE_PILOTS", "CUSTOMER_CONTENT", "SIGNATURE_COMMISSIONS", "AFTER_STARS_STEPS", "VILLAGE_CHAPTER", "RECIPE_LORE"];
 let passed = 0;
 function test(name, fn) {
   fn(); passed += 1; console.log(`ok ${passed} - ${name}`);
@@ -948,6 +948,7 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   state.weekly.cycle = 1;
   state.commissions.completedIds = game.SIGNATURE_COMMISSIONS.map(commission => commission.id);
   state.afterStars.step = game.AFTER_STARS_STEPS.length;
+  state.chapterProgress = game.VILLAGE_CHAPTER.steps.length;
   const visualStates = {};
   for (const cosmetic of game.COSMETICS) {
     assert.equal(game.selectCosmetic(state, cosmetic.id), true);
@@ -961,7 +962,7 @@ test("collection cosmetics are few, durable, and have no economy effects", () =>
   assert.equal(game.selectCosmetic(state, "midnight"), false, "selecting the current look is a no-op");
   const reloaded = game.normalizeState(state, NOW);
   assert.equal(reloaded.customization.selected, "midnight");
-  assert.ok(game.COSMETICS.length <= 8);
+  assert.ok(game.COSMETICS.length <= 9);
 });
 
 test("Twelvefold Mastery unlocks only at the twelfth rank-three recipe and stays cosmetic", () => {
@@ -1454,6 +1455,140 @@ test("cross-view tutorial prompts only when the next target changes views", () =
   assert.equal(game.tutorialTransitionPrompt(before, null, "workshop"), null);
 });
 
+function chapterReadyState() {
+  const state = game.defaultState(NOW);
+  state.level = 4;
+  state.customers["customer-0"] = { deliveries: 9, hearts: 3 };
+  state.commissions.completedIds = ["mira-dawn"];
+  return state;
+}
+
+test("The Village Loaf is one immutable three-step chapter with exact unlock boundaries", () => {
+  assert.deepEqual({ id: game.VILLAGE_CHAPTER.id, title: game.VILLAGE_CHAPTER.title, steps: game.VILLAGE_CHAPTER.steps.map(step => [step.recipeId, step.title]) }, {
+    id: "mira-village-loaf", title: "The Village Loaf", steps: [["tonic", "A Steady First Line"], ["clarity", "Notes in the Margin"], ["sun", "A Shared Sunrise"]],
+  });
+  const ready = chapterReadyState();
+  assert.equal(game.chapterStatus(ready).active, true);
+  for (const blocked of [
+    { ...ready, level: 3 },
+    { ...ready, customers: { ...ready.customers, "customer-0": { deliveries: 8, hearts: 2 } } },
+    { ...ready, commissions: { ...ready.commissions, completedIds: [] } },
+  ]) {
+    game.ensureOrders(blocked, () => 0);
+    assert.equal(game.chapterStatus(blocked).eligible, false);
+    assert.equal(blocked.orders.some(game.isChapterOrder), false);
+  }
+  game.ensureOrders(ready, () => 0);
+  assert.equal(ready.orders.filter(game.isChapterOrder).length, 1);
+  assert.equal(ready.orders.filter(order => !game.isReservedOrder(order)).length, 2);
+  assert.deepEqual(game.reservedStoryTracker(ready), ["THE VILLAGE LOAF", "A Steady First Line", "1 / 3", "Mira is waiting for one Meadow Tonic."]);
+});
+
+test("The Village Loaf delivers canonical ordinary economics and one authored payoff per reloaded step", () => {
+  let state = chapterReadyState();
+  state.commissions.invitations = 2;
+  game.ensureOrders(state, () => 0);
+  for (let stepIndex = 0; stepIndex < game.VILLAGE_CHAPTER.steps.length; stepIndex += 1) {
+    const authored = game.VILLAGE_CHAPTER.steps[stepIndex];
+    const recipe = game.recipeById(authored.recipeId);
+    const order = state.orders.find(game.isChapterOrder);
+    assert.deepEqual({ chapterId: order.chapterId, chapterStep: order.chapterStep, customerId: order.customerId, recipeId: order.recipeId, quantity: order.quantity, reward: order.reward, xp: order.xp }, {
+      chapterId: game.VILLAGE_CHAPTER.id, chapterStep: stepIndex, customerId: "customer-0", recipeId: authored.recipeId, quantity: 1,
+      reward: Math.round(recipe.sell * (1.45 + .4 * .25)), xp: Math.round(8 + recipe.unlock * 3 + 3),
+    });
+    const before = { coins: state.coins, xp: state.xp, orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered[recipe.id], trust: state.customers["customer-0"].deliveries, invitations: state.commissions.invitations };
+    state.potions[recipe.id] = 1;
+    const result = game.fulfillOrder(state, order.id, NOW + stepIndex * 1000, () => 0);
+    assert.deepEqual(result.chapter, { step: stepIndex, title: authored.title, complete: stepIndex === game.VILLAGE_CHAPTER.steps.length - 1 });
+    assert.deepEqual(result.narrative, authored.payoff);
+    assert.deepEqual({ coins: state.coins, xp: state.xp, orders: state.stats.orders, daily: state.daily.orders, weekly: state.weekly.progress, delivered: state.discovery.delivered[recipe.id], trust: state.customers["customer-0"].deliveries, invitations: state.commissions.invitations }, {
+      coins: before.coins + result.reward, xp: before.xp + order.xp, orders: before.orders + 1, daily: before.daily + 1, weekly: before.weekly + 1, delivered: before.delivered + 1, trust: before.trust + 1, invitations: before.invitations,
+    });
+    const after = JSON.stringify(state);
+    assert.equal(game.fulfillOrder(state, order.id, NOW, () => 0), null, "a completed chapter step never replays");
+    assert.equal(JSON.stringify(state), after);
+    state = game.parseSave(JSON.stringify(state), NOW + stepIndex + 1).state;
+    assert.equal(state.chapterProgress, stepIndex + 1);
+    assert.ok(state.orders.filter(order => !game.isReservedOrder(order)).length >= 2);
+  }
+  assert.equal(state.orders.some(game.isChapterOrder), false);
+  assert.equal(game.cosmeticUnlocked(state, "firstlight"), true);
+});
+
+test("reserved priority pauses and resumes the chapter without touching pending invitations", () => {
+  const state = chapterReadyState();
+  state.commissions.invitations = 3;
+  game.ensureOrders(state, () => 0);
+  assert.ok(state.orders.some(game.isChapterOrder));
+  assert.ok(game.selectSignatureCommission(state, "moss-rainpath"));
+  assert.equal(state.commissions.invitations, 2);
+  assert.ok(state.orders.some(game.isSignatureOrder));
+  assert.equal(state.orders.some(game.isChapterOrder), false);
+  state.stats.prestiges = 1;
+  game.ensureOrders(state, () => 0);
+  assert.equal(state.orders.filter(game.isAfterStarsOrder).length, 1);
+  assert.equal(state.orders.filter(game.isSignatureOrder).length, 0);
+  assert.equal(state.commissions.selectedId, "moss-rainpath", "the selected request waits without being cancelled");
+  assert.equal(state.commissions.invitations, 2);
+  assert.equal(state.chapterProgress, 0);
+  assert.equal(state.orders.filter(order => !game.isReservedOrder(order)).length, 2);
+  state.afterStars.step = game.AFTER_STARS_STEPS.length;
+  game.ensureOrders(state, () => 0);
+  const special = state.orders.find(game.isSignatureOrder);
+  assert.equal(special.commissionId, "moss-rainpath");
+  assert.equal(state.commissions.invitations, 2);
+  state.potions.moon = 1;
+  assert.equal(game.fulfillOrder(state, special.id, NOW, () => 0).commission.id, "moss-rainpath");
+  assert.equal(state.orders.filter(game.isChapterOrder).length, 1, "the chapter resumes after higher-priority work finishes");
+  assert.equal(state.commissions.invitations, 2);
+});
+
+test("malformed and duplicate chapter orders recover canonically without progress or rewards", () => {
+  const state = chapterReadyState();
+  state.orders = [
+    { id: 70, chapterId: game.VILLAGE_CHAPTER.id, chapterStep: 0, customerId: "customer-11", customer: "Forgery", recipeId: "sun", quantity: 2, reward: 999999, xp: 999999 },
+    { id: 71, chapterId: game.VILLAGE_CHAPTER.id, chapterStep: 0, customerId: "customer-0", recipeId: "tonic", quantity: 1, reward: 1, xp: 1 },
+    { id: 72, customerId: "customer-2", recipeId: "tonic", quantity: 1, reward: 20, xp: 12 },
+    { id: 73, customerId: "customer-3", recipeId: "clarity", quantity: 1, reward: 40, xp: 17 },
+  ];
+  const before = { progress: state.chapterProgress, coins: state.coins, xp: state.xp, orders: state.stats.orders };
+  game.ensureOrders(state, () => 0);
+  const restored = state.orders.filter(game.isChapterOrder);
+  assert.equal(restored.length, 1);
+  assert.deepEqual({ customerId: restored[0].customerId, recipeId: restored[0].recipeId, quantity: restored[0].quantity, reward: restored[0].reward, xp: restored[0].xp }, { customerId: "customer-0", recipeId: "tonic", quantity: 1, reward: 22, xp: 14 });
+  assert.equal(state.orders.filter(order => !game.isReservedOrder(order)).length, 2);
+  assert.deepEqual({ progress: state.chapterProgress, coins: state.coins, xp: state.xp, orders: state.stats.orders }, before);
+});
+
+test("chapter progress and Firstlight normalize, persist, reverse, and survive rebirth without economy effects", () => {
+  assert.equal(game.SAVE_VERSION, 9);
+  for (const [value, expected] of [[-9, 0], [2.9, 2], [999, 3]]) {
+    const hostile = chapterReadyState();
+    hostile.chapterProgress = value;
+    hostile.customization.selected = "firstlight";
+    const normalized = game.normalizeState(hostile, NOW);
+    assert.equal(normalized.chapterProgress, expected);
+    assert.equal(normalized.customization.selected, expected === 3 ? "firstlight" : "midnight");
+  }
+  const state = chapterReadyState();
+  state.level = game.PRESTIGE_CONFIG.unlockLevel;
+  state.chapterProgress = 3;
+  const baseline = { coins: state.coins, xp: state.xp, stardust: state.stardust, order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) };
+  assert.equal(game.selectCosmetic(state, "firstlight"), true);
+  assert.equal(game.selectCosmetic(state, "midnight"), true);
+  assert.equal(game.selectCosmetic(state, "firstlight"), true);
+  assert.deepEqual({ coins: state.coins, xp: state.xp, stardust: state.stardust, order: game.orderMultiplier(state, NOW, "tonic"), brew: game.brewSpeedMultiplier(state), gather: game.manualGatherAmount(state) }, baseline);
+  const reloaded = game.parseSave(JSON.stringify(state), NOW + 1).state;
+  assert.equal(reloaded.customization.selected, "firstlight");
+  const reborn = game.performPrestige(reloaded, 3, NOW + 2);
+  assert.equal(reborn.chapterProgress, 3);
+  assert.equal(reborn.customization.selected, "firstlight");
+  assert.equal(game.cosmeticUnlocked(reborn, "firstlight"), true);
+  const reverseLocked = game.normalizeState({ ...state, chapterProgress: 2, customization: { selected: "firstlight" } }, NOW);
+  assert.equal(reverseLocked.customization.selected, "midnight");
+  assert.equal(game.defaultState(NOW).chapterProgress, 0, "a full owner reset starts with no chapter progress");
+});
+
 test("After the Stars is a dormant ordered four-step post-rebirth quest", () => {
   assert.deepEqual(game.AFTER_STARS_STEPS.map(step => [step.customerId, step.recipeId, step.title]), [
     ["customer-0", "tonic", "The Oven Remembers"],
@@ -1510,8 +1645,9 @@ test("After the Stars shares the reserved slot and canonicalizes missing or forg
   assert.ok(game.selectSignatureCommission(specialFirst, "mira-dawn"));
   specialFirst.stats.prestiges = 1;
   game.ensureOrders(specialFirst, () => 0);
-  assert.equal(specialFirst.orders.filter(game.isSignatureOrder).length, 1);
-  assert.equal(specialFirst.orders.filter(game.isAfterStarsOrder).length, 0);
+  assert.equal(specialFirst.orders.filter(game.isSignatureOrder).length, 0);
+  assert.equal(specialFirst.orders.filter(game.isAfterStarsOrder).length, 1);
+  assert.equal(specialFirst.commissions.selectedId, "mira-dawn", "the lower-priority selected request waits without being cancelled");
   assert.equal(specialFirst.orders.filter(order => !game.isReservedOrder(order)).length, 2);
   assert.equal(specialFirst.commissions.invitations, 0);
 
@@ -1579,7 +1715,78 @@ test("the deterministic gather-brew-collect-deliver-upgrade loop succeeds", () =
   assert.equal(state.upgrades.garden, 1);
 });
 
-test("ordinary order actions are state-aware and never mutate gameplay", () => {
+test("reserved order actions deliver only current canonical ready orders without navigation or mutation", () => {
+  const chapter = chapterReadyState();
+  game.ensureOrders(chapter, () => 0);
+  const special = game.defaultState(NOW);
+  special.level = 4;
+  special.commissions.invitations = 1;
+  game.ensureOrders(special, () => 0);
+  assert.ok(game.selectSignatureCommission(special, "mira-dawn"));
+  const afterStars = game.defaultState(NOW);
+  afterStars.level = 4;
+  afterStars.stats.prestiges = 1;
+  game.ensureOrders(afterStars, () => 0);
+
+  const expectPureAction = (state, order, expected, detail) => {
+    const snapshot = JSON.stringify(state);
+    assert.equal(game.orderAction(state, order, NOW), expected, detail);
+    assert.equal(JSON.stringify(state), snapshot, `${detail} must not mutate the complete state`);
+  };
+  for (const [label, state, predicate] of [
+    ["Village Chapter", chapter, game.isChapterOrder],
+    ["Villager Special Request", special, game.isSignatureOrder],
+    ["After the Stars", afterStars, game.isAfterStarsOrder],
+  ]) {
+    const order = state.orders.find(predicate);
+    const recipe = game.recipeById(order.recipeId);
+    state.potions[recipe.id] = 0;
+    state.ingredients = Object.fromEntries(Object.keys(state.ingredients).map(id => [id, 0]));
+    state.brew = null;
+    expectPureAction(state, order, null, `${label} does not receive Gather`);
+    for (const [id, count] of Object.entries(recipe.ingredients)) state.ingredients[id] = count;
+    expectPureAction(state, order, null, `${label} does not receive Brew`);
+    state.brew = { recipeId: recipe.id, startedAt: NOW, endsAt: NOW + 1000, durationMs: 1000, assistUses: 0 };
+    expectPureAction(state, order, null, `${label} does not receive View brew`);
+    state.brew.endsAt = NOW;
+    expectPureAction(state, order, null, `${label} does not receive Collect brew`);
+    state.potions[recipe.id] = order.quantity;
+    expectPureAction(state, order, "deliver", `${label} exposes Deliver when ready`);
+  }
+
+  const unknownCommission = game.defaultState(NOW);
+  unknownCommission.potions.tonic = 1;
+  unknownCommission.orders = [{ id: 71, commissionId: "forged-request", recipeId: "tonic", quantity: 1, reward: 20, xp: 14 }];
+  assert.equal(game.isReservedOrder(unknownCommission.orders[0]), true);
+  expectPureAction(unknownCommission, unknownCommission.orders[0], null, "an unknown commission marker stays disabled");
+
+  const staleQuest = game.defaultState(NOW);
+  staleQuest.level = 4;
+  staleQuest.stats.prestiges = 1;
+  game.ensureOrders(staleQuest, () => 0);
+  staleQuest.orders[0] = { ...staleQuest.orders[0], afterStarsStep: 1 };
+  staleQuest.potions.tonic = 1;
+  expectPureAction(staleQuest, staleQuest.orders[0], null, "a stale After the Stars marker stays disabled");
+
+  const forgedChapter = chapterReadyState();
+  game.ensureOrders(forgedChapter, () => 0);
+  forgedChapter.orders[0] = { ...forgedChapter.orders[0], quantity: 2 };
+  forgedChapter.potions.tonic = 2;
+  expectPureAction(forgedChapter, forgedChapter.orders[0], null, "a noncanonical chapter requirement stays disabled");
+
+  const mixedMarkers = chapterReadyState();
+  game.ensureOrders(mixedMarkers, () => 0);
+  mixedMarkers.orders[0] = { ...mixedMarkers.orders[0], commissionId: "mira-dawn" };
+  mixedMarkers.potions.tonic = 1;
+  expectPureAction(mixedMarkers, mixedMarkers.orders[0], null, "mixed reserved markers stay disabled");
+
+  const currentChapter = chapterReadyState();
+  game.ensureOrders(currentChapter, () => 0);
+  currentChapter.potions.tonic = 1;
+  expectPureAction(currentChapter, { ...currentChapter.orders[0] }, null, "an off-board reserved copy stays disabled");
+});
+
+test("ordinary order actions preserve every state-aware branch and never mutate gameplay", () => {
   const state = game.defaultState(NOW);
   state.orders = [{ id: 41, recipeId: "tonic", quantity: 1, reward: 20, xp: 11 }];
   const order = state.orders[0];
@@ -1602,8 +1809,6 @@ test("ordinary order actions are state-aware and never mutate gameplay", () => {
   state.ingredients.mushroom = 0;
   expectAction("gather");
 
-  const reserved = { ...order, commissionId: "mira-dawn" };
-  expectAction(null, reserved);
   expectAction(null, { id: "stale", recipeId: "unknown", quantity: 1 });
 });
 

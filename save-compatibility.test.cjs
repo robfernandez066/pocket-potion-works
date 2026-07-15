@@ -10,6 +10,7 @@ const v4Reader = require("./fixtures/rollback/game-save-reader-v4.cjs");
 const v5Reader = require("./fixtures/rollback/game-save-reader-v5.cjs");
 const v6Reader = require("./fixtures/rollback/game-save-reader-v6.cjs");
 const v7Reader = require("./fixtures/rollback/game-save-reader-v7.cjs");
+const v8Reader = require("./fixtures/rollback/game-save-reader-v8.cjs");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
 const fixture = name => fs.readFileSync(`fixtures/saves/${name}`, "utf8");
@@ -44,13 +45,13 @@ test("historical pre-release v1 fixture preserves durable progress, brew, and or
 });
 
 test("future-version fixture is detected and cannot be normalized for overwrite", () => {
-  const raw = fixture("future-version-v9.json");
+  const raw = fixture("future-version-v10.json");
   const result = game.parseSave(raw, NOW);
-  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 9 });
+  assert.deepEqual(result, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 10 });
   assert.equal(game.shouldBlockSaveWrite(result), true);
   let stored = raw;
   if (!game.shouldBlockSaveWrite(result)) stored = JSON.stringify(result.state);
-  assert.equal(stored, raw, "v8 tooling must preserve the unsupported future save byte-for-byte");
+  assert.equal(stored, raw, "v9 tooling must preserve the unsupported future save byte-for-byte");
 });
 
 test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () => {
@@ -72,7 +73,7 @@ test("the frozen v1 reader blocks a Task 8 v2 save without overwriting it", () =
   assert.deepEqual(reloaded.customers["customer-0"], { deliveries: 4, hearts: 1 });
 });
 
-test("Task 8 v2 migrates to current v8 and the frozen v2 reader blocks Task 9 v3", () => {
+test("Task 8 v2 migrates to current v9 and the frozen v2 reader blocks Task 9 v3", () => {
   const task8 = game.defaultState(NOW);
   task8.version = 2;
   delete task8.weekly;
@@ -80,7 +81,7 @@ test("Task 8 v2 migrates to current v8 and the frozen v2 reader blocks Task 9 v3
   task8.mastery.tonic = 8;
   task8.customers["customer-0"] = { deliveries: 4, hearts: 1 };
   const migrated = game.parseSave(JSON.stringify(task8), NOW).state;
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.deepEqual(migrated.weekly, { cycle: 0, progress: 0, claimedSteps: 0 });
   assert.deepEqual(migrated.customization, { selected: "midnight" });
   assert.equal(migrated.mastery.tonic, 8);
@@ -102,7 +103,7 @@ test("Task 8 v2 migrates to current v8 and the frozen v2 reader blocks Task 9 v3
   assert.equal(raw, JSON.stringify(task9), "the v3 save remains byte-for-byte available to the current reader");
 });
 
-test("current v8 and malformed saves retain their existing compatibility behavior", () => {
+test("current v9 and malformed saves retain their existing compatibility behavior", () => {
   const current = game.defaultState(NOW);
   current.stardust = 4;
   assert.equal(game.parseSave(JSON.stringify(current), NOW).state.stardust, 4);
@@ -126,7 +127,7 @@ test("pre-expansion version-three saves acquire safe zeroed content entries", ()
     delete priorV3.discovery.delivered[id];
   }
   const loaded = game.parseSave(JSON.stringify(priorV3), NOW).state;
-  assert.equal(loaded.version, 8);
+  assert.equal(loaded.version, 9);
   assert.equal(loaded.coins, 812);
   assert.equal(loaded.mastery.tonic, 15);
   assert.equal(loaded.discovery.delivered.tonic, 9);
@@ -171,7 +172,7 @@ test("version-four journal progress migrates without replaying read entries and 
   priorV4.journal = { readStories: ["customer-0:1"], readRecipes: ["tonic"] };
   priorV4.achievements = { firstBrew: NOW - 1000 };
   const migrated = game.parseSave(JSON.stringify(priorV4), NOW).state;
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.deepEqual(migrated.journal, { readStories: ["customer-0:1"], readRecipes: ["tonic"], claimedAchievements: [] });
   assert.deepEqual(game.journalClaimableCounts(migrated), { story: 0, recipe: 0, achievement: 1, total: 1 });
   assert.deepEqual(game.claimJournalReward(migrated, "achievement", "firstBrew"), { kind: "achievement", id: "firstBrew", reward: 10 });
@@ -201,7 +202,7 @@ test("the frozen v4 reader blocks and preserves a populated v5 journal save", ()
   assert.deepEqual(reloaded.journal.claimedAchievements, ["firstBrew"]);
 });
 
-test("a populated version-five save migrates to v8 with safe empty special-request and quest state", () => {
+test("a populated version-five save migrates to v9 with safe empty special-request and quest state", () => {
   const priorV5 = game.defaultState(NOW);
   priorV5.version = 5;
   delete priorV5.commissions;
@@ -214,7 +215,7 @@ test("a populated version-five save migrates to v8 with safe empty special-reque
   priorV5.journal.claimedAchievements = ["firstBrew"];
   priorV5.orders = [{ id: 41, customerId: "customer-5", customer: game.CUSTOMERS[5][0], recipeId: "quiet", quantity: 1, reward: 140, xp: 24 }];
   const migrated = game.parseSave(JSON.stringify(priorV5), NOW).state;
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.equal(migrated.coins, 735);
   assert.equal(migrated.ingredients.mint, 11);
   assert.equal(migrated.mastery.aurora, 4);
@@ -225,7 +226,7 @@ test("a populated version-five save migrates to v8 with safe empty special-reque
   assert.equal(migrated.orders[0].recipeId, "quiet");
 });
 
-test("a populated v6 commission save migrates to v8 without inventing invitations", () => {
+test("a populated v6 commission save migrates to v9 without inventing invitations", () => {
   const current = game.defaultState(NOW);
   current.level = 7;
   current.customers["customer-0"].deliveries = 2;
@@ -291,7 +292,7 @@ test("current v7 invitations round-trip and the frozen v6 reader protects them",
   assert.equal(reloaded.orders[0].commissionId, "mira-dawn");
 });
 
-test("a populated v7 save migrates to v8 and the frozen v7 reader protects quest progress", () => {
+test("a populated v7 save migrates to v9 and the frozen v7 reader protects quest progress", () => {
   const priorV7 = game.defaultState(NOW);
   priorV7.version = 7;
   delete priorV7.afterStars;
@@ -299,12 +300,13 @@ test("a populated v7 save migrates to v8 and the frozen v7 reader protects quest
   priorV7.stats.prestiges = 1;
   priorV7.commissions.invitations = 2;
   const migrated = game.parseSave(JSON.stringify(priorV7), NOW).state;
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.deepEqual(migrated.afterStars, { step: 0 });
   assert.equal(migrated.orders.find(game.isAfterStarsOrder).recipeId, "tonic");
   assert.equal(migrated.commissions.invitations, 2);
 
   const current = structuredClone(migrated);
+  current.version = 8;
   current.afterStars.step = 2;
   current.orders = [];
   game.ensureOrders(current, () => 0);
@@ -316,6 +318,43 @@ test("a populated v7 save migrates to v8 and the frozen v7 reader protects quest
   if (!v7Reader.shouldBlockSaveWrite(downlevel)) stored = JSON.stringify(downlevel.state);
   assert.equal(stored, raw, "the frozen v7 reader must preserve the v8 quest save byte-for-byte");
   assert.equal(game.parseSave(stored, NOW).state.afterStars.step, 2);
+});
+
+test("v1-v8 saves start with zero chapter progress while preserving an older valid look", () => {
+  for (let version = 1; version <= 8; version += 1) {
+    const prior = game.defaultState(NOW);
+    prior.version = version;
+    prior.chapterProgress = 3;
+    prior.stats.brewed = 10;
+    prior.customization.selected = "fern";
+    const migrated = game.parseSave(JSON.stringify(prior), NOW).state;
+    assert.equal(migrated.version, 9);
+    assert.equal(migrated.chapterProgress, 0, `v${version} cannot invent chapter completion`);
+    assert.equal(migrated.customization.selected, "fern");
+  }
+});
+
+test("v9 chapter progress and Firstlight selection round-trip", () => {
+  const current = game.defaultState(NOW);
+  current.chapterProgress = 3;
+  current.customization.selected = "firstlight";
+  const reloaded = game.parseSave(JSON.stringify(current), NOW + 1).state;
+  assert.equal(reloaded.version, 9);
+  assert.equal(reloaded.chapterProgress, 3);
+  assert.equal(reloaded.customization.selected, "firstlight");
+});
+
+test("the frozen v8 reader blocks and preserves a populated v9 chapter save", () => {
+  const raw = fixture("future-version-v9.json");
+  const downlevel = v8Reader.parseSave(raw);
+  assert.deepEqual(downlevel, { state: null, recovered: false, blocked: true, reason: "unsupported-future-version", sourceVersion: 9 });
+  assert.equal(v8Reader.shouldBlockSaveWrite(downlevel), true);
+  let stored = raw;
+  if (!v8Reader.shouldBlockSaveWrite(downlevel)) stored = JSON.stringify(downlevel.state);
+  assert.equal(stored, raw, "the frozen v8 reader must preserve the v9 chapter save byte-for-byte");
+  const reloaded = game.parseSave(stored, NOW).state;
+  assert.equal(reloaded.chapterProgress, 3);
+  assert.equal(reloaded.customization.selected, "firstlight");
 });
 
 console.log(`All ${passed} historical and rollback save compatibility tests passed.`);

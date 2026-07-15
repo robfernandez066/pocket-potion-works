@@ -11,6 +11,7 @@ const POTION_SPRITES = new Set(RECIPES.map(recipe => recipe.id));
 const ingredientSpriteAttr = id => INGREDIENT_SPRITES.has(id) ? ` data-ingredient-sprite="${id}"` : "";
 const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
 const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionSpriteAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
+const $ = document.querySelector.bind(document);
 function browserStorage() {
   try { return window.localStorage; }
   catch (_) { return null; }
@@ -243,8 +244,8 @@ function renderAll() {
   const hour = new Date().getHours();
   document.querySelector("#dayGreeting").textContent = `${hour < 12 ? "GOOD MORNING" : hour < 18 ? "GOOD AFTERNOON" : "GOOD EVENING"}, ALCHEMIST`;
   document.querySelector("#workshopStatus").textContent = state.brew ? `${recipeById(state.brew.recipeId).name} is brewing` : "The kettle is warm";
-  document.querySelector("#marketButton").disabled = false;
-  document.querySelector("#marketButton").title = state.stats.orders < 1 ? "Complete your first order to unlock the market" : "Open Moonlight Market";
+  $("#marketButton").disabled = false;
+  $("#marketButton").title = state.stats.orders < 1 ? "Complete your first order to unlock the market" : "Open Moonlight Market";
   renderWorkshopLook();
   renderBoostStatus();
   document.querySelector("#orderDot").hidden = !state.orders.some(order => state.potions[order.recipeId] >= order.quantity);
@@ -266,7 +267,7 @@ function renderAll() {
 }
 
 function renderWorkshopLook() {
-  const scene = document.querySelector(".workshop-scene");
+  const scene = $(".workshop-scene");
   const decoration = Logic.workshopDecorationState(state);
   scene.dataset.cosmetic = decoration.selected;
   scene.classList.toggle("has-keepsake", decoration.keepsake);
@@ -279,13 +280,13 @@ function renderBoostStatus(now = Date.now()) {
   const active = remaining > 0;
   const minutes = Math.floor(remaining / 60000);
   const seconds = Math.floor(remaining % 60000 / 1000);
-  document.querySelector("#coinResource").classList.toggle("is-boosted", active);
-  document.querySelector("#coinStatus").textContent = active ? `2× charm ${minutes}:${String(seconds).padStart(2, "0")}` : "coins";
+  $("#coinResource").classList.toggle("is-boosted", active);
+  $("#coinStatus").textContent = active ? `2× charm ${minutes}:${String(seconds).padStart(2, "0")}` : "coins";
 }
 
 function renderGatherButton() {
   Logic.rechargeGather(state);
-  const button = document.querySelector("#gatherButton");
+  const button = $("#gatherButton");
   const charges = state.gather.charges;
   const target = state.gather.targetId ? INGREDIENTS[state.gather.targetId] : null;
   button.disabled = charges < 1 || totalIngredients() >= storageCap();
@@ -295,7 +296,7 @@ function renderGatherButton() {
 
 function renderBeginnerQuest() {
   const quest = Logic.beginnerQuest(state);
-  const card = document.querySelector("#beginnerQuestCard");
+  const card = $("#beginnerQuestCard");
   card.hidden = !quest;
   if (!quest) { hideTutorialBanner(); return; }
   card.dataset.targetView = quest.view;
@@ -306,7 +307,7 @@ function renderBeginnerQuest() {
   document.querySelector("#beginnerQuestButton").textContent = quest.buttonLabel;
 }
 
-function activeView() { return document.querySelector(".view.is-active")?.dataset.view || "workshop"; }
+function activeView() { return $(".view.is-active")?.dataset.view || "workshop"; }
 function motionBehavior() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"; }
 
 function goToTutorialTarget(quest) {
@@ -407,7 +408,7 @@ function renderReadyDeliverStrip() {
       ready.push(order);
     }
   }
-  const strip = document.querySelector("#readyDeliverStrip");
+  const strip = $("#readyDeliverStrip");
   strip.hidden = ready.length === 0;
   strip.innerHTML = ready.length ? `<div><span class="eyebrow">READY TO DELIVER</span><strong>${ready.length} order${ready.length === 1 ? "" : "s"} waiting</strong></div><div class="ready-deliver-actions">${ready.slice(0, 2).map(order => {
     const recipe = recipeById(order.recipeId);
@@ -546,18 +547,10 @@ function renderOrders() {
   document.querySelector("#commissionChoiceSummary").textContent = `${invitations} invitation${invitations === 1 ? "" : "s"} saved. ${questOrderActive ? "Complete the After the Stars errand first; your invitation stays saved." : activeRequest ? "Finish the request on the board, then choose another." : "Choose a villager, build trust, and earn their named keepsake."}`;
   const afterStarsCard = document.querySelector("#afterStarsCard");
   const finalQuestState = transientCompletions.afterStars;
-  afterStarsCard.hidden = !afterStars.active || afterStars.complete && !finalQuestState;
-  if (finalQuestState) {
-    document.querySelector("#afterStarsTitle").textContent = "Dawnthread Workshop unlocked";
-    document.querySelector("#afterStarsProgress").textContent = "4 / 4";
-    document.querySelector("#afterStarsDetail").textContent = "The four errands are complete. You can use the new Workshop Look from the Journal.";
-  } else if (afterStars.active && !afterStars.complete) {
-    document.querySelector("#afterStarsTitle").textContent = afterStars.current.title;
-    document.querySelector("#afterStarsProgress").textContent = `${afterStars.step + 1} / ${afterStars.total}`;
-    document.querySelector("#afterStarsDetail").textContent = afterStars.recipeLocked
-      ? `Next: reach level ${afterStars.recipe.unlock} to rediscover ${afterStars.recipe.name}.`
-      : questOrderActive ? `${CUSTOMERS[Number(afterStars.current.customerId.slice(9))][0]} is waiting for one ${afterStars.recipe.name}.` : "This starborn errand will appear when the reserved request slot is free.";
-  }
+  const reservedStory = finalQuestState ? ["AFTER THE STARS", "Dawnthread Workshop unlocked", "4 / 4", "The four errands are complete. You can use the new Workshop Look from the Journal."]
+    : Logic.reservedStoryTracker(state);
+  afterStarsCard.hidden = !reservedStory;
+  if (reservedStory) ["reservedStoryKicker", "afterStarsTitle", "afterStarsProgress", "afterStarsDetail"].forEach((id, index) => { document.getElementById(id).textContent = reservedStory[index]; });
   const specialCompletion = document.querySelector("#specialRequestComplete");
   specialCompletion.hidden = !transientCompletions.special;
   specialCompletion.innerHTML = transientCompletions.special ? `<p class="eyebrow">VILLAGER SPECIAL REQUEST COMPLETE</p><h2>${transientCompletions.special.title}</h2><p>${transientCompletions.special.customer} gave you the <strong>${transientCompletions.special.keepsake}</strong>.</p>` : "";
@@ -573,9 +566,11 @@ function renderOrders() {
     const trust = customer.hearts >= CUSTOMER_CONFIG.maxHearts ? `${"♥".repeat(customer.hearts)} trusted friend` : `${"♥".repeat(customer.hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - customer.hearts)} · ${towardHeart}/${CUSTOMER_CONFIG.deliveriesPerHeart} toward next favor`;
     const commission = Logic.commissionById(order.commissionId);
     const questStep = Logic.isAfterStarsOrder(order) ? Logic.AFTER_STARS_STEPS[order.afterStarsStep] : null;
+    const chapterStep = Logic.isChapterOrder(order);
     const questRibbon = questStep ? `<div class="commission-ribbon">After the Stars · ${questStep.title}</div>` : "";
-    return `<article class="order-card ${commission ? "is-commission" : questStep ? "is-after-stars" : ""}">${questRibbon}
+    return `<article class="order-card ${commission ? "is-commission" : questStep ? "is-after-stars" : chapterStep ? "is-chapter" : ""}">${questRibbon}
       ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
+      ${chapterStep ? `<div class="commission-ribbon">Village Chapter</div>` : ""}
       <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
       <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div>${html}</div>
     </article>`;
@@ -586,9 +581,9 @@ function renderOrders() {
 
 function focusTarget(target) {
   if (!target) return;
-  if (!target.matches("button, [href], input, select, textarea, [tabindex]")) target.tabIndex = -1;
-  target.scrollIntoView({behavior: motionBehavior(), block: "center"});
+  if (target.tabIndex < 0) target.tabIndex = -1;
   target.focus({ preventScroll: true });
+  target.scrollIntoView({behavior: motionBehavior(), block: "center"});
 }
 
 function routeOrderAction(orderId) {
@@ -606,8 +601,9 @@ function routeOrderAction(orderId) {
 }
 
 function renderNarrativeDelivery() {
-  for (const [id, detail] of [["workshopNarrativeDelivery", transientCompletions.narrativeWorkshop], ["ordersNarrativeDelivery", transientCompletions.narrativeOrders]]) {
-    const card = document.querySelector(`#${id}`);
+  for (const surface of ["Workshop", "Orders"]) {
+    const detail = transientCompletions[`narrative${surface}`];
+    const card = document.getElementById(`${surface.toLowerCase()}NarrativeDelivery`);
     card.hidden = !detail;
     card.innerHTML = detail ? `<p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small>` : "";
   }
@@ -733,14 +729,14 @@ function renderJournal() {
     if (earned && !claimed) return `<button type="button" class="achievement-card is-claimable" data-journal-achievement="${achievement.id}"><span class="achievement-icon">${achievement.icon}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">+${Logic.JOURNAL_REWARDS.achievement} · Claim</span></button>`;
     return `<article class="achievement-card ${earned ? "" : "is-locked"}"><span class="achievement-icon">${earned ? achievement.icon : "?"}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">${earned ? "Claimed" : "Locked"}</span></article>`;
   }).join("");
-  document.querySelector("#collectionList").innerHTML = COLLECTION_GOALS.map(goal => {
+  $("#collectionList").innerHTML = COLLECTION_GOALS.map(goal => {
     const progress = Logic.collectionGoalProgress(state, goal.id);
     const complete = progress.current >= progress.target;
     const cosmetic = COSMETICS.find(item => item.id === goal.cosmeticId);
     return `<article class="collection-card"><div><strong>${goal.name}</strong><small>Unlocks the ${cosmetic.name} Workshop Look</small></div><span>${complete ? "Unlocked" : `${progress.current} / ${progress.target}`}</span></article>`;
   }).join("");
   const journalCosmetics = COSMETICS.filter(cosmetic => cosmetic.id !== "dawnthread" || state.stats.prestiges > 0);
-  document.querySelector("#cosmeticList").innerHTML = journalCosmetics.map(cosmetic => {
+  $("#cosmeticList").innerHTML = journalCosmetics.map(cosmetic => {
     const unlocked = Logic.cosmeticUnlocked(state, cosmetic.id);
     const selected = state.customization.selected === cosmetic.id;
     return `<button class="cosmetic-button" data-cosmetic="${cosmetic.id}" aria-pressed="${selected}" ${unlocked ? "" : "disabled"}><div><strong>${cosmetic.name}</strong><small>${cosmetic.description}</small></div><span>${selected ? "In use" : unlocked ? "Use" : "Locked"}</span></button>`;
@@ -770,6 +766,7 @@ function selectCosmetic(cosmeticId) {
   if (!Logic.selectCosmetic(state, cosmeticId)) return;
   feedback("Workshop look updated.", { tone: "reward", soundName: "tap", target: ".workshop-card" });
   renderAll();
+  focusTarget($(`button[data-cosmetic="${cosmeticId}"]`));
 }
 
 function claimWeekly() {
@@ -809,11 +806,12 @@ function collectBrew() {
 function fulfillOrder(orderId, surface = "orders") {
   const tutorialBefore = Logic.beginnerQuest(state);
   const viewBeforeAction = activeView();
+  const restoreReservedFocus = surface === "orders" && Logic.isReservedOrder(state.orders.find(order => order.id === orderId));
   const result = window.PPWLogic.fulfillOrder(state, orderId, Date.now());
   if (!result) return;
   if (result.commission) beginCompletionState("special", { title: result.commission.title, customer: CUSTOMERS[Number(result.commission.customerId.slice(9))][0], keepsake: result.commission.keepsake.name });
   if (result.afterStars?.complete) beginCompletionState("afterStars", result.afterStars);
-  if (result.narrative) beginCompletionState(surface === "workshop" ? "narrativeWorkshop" : "narrativeOrders", result.narrative);
+  if (result.narrative && !result.chapter) beginCompletionState(surface === "workshop" ? "narrativeWorkshop" : "narrativeOrders", result.narrative);
   announceLevels(result.levels);
   announceAchievements(result.achievements);
   const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";
@@ -821,6 +819,8 @@ function fulfillOrder(orderId, surface = "orders") {
   renderAll();
   playCoinArrivals(result.reward);
   showTutorialTransition(tutorialBefore, viewBeforeAction);
+  if (result.chapter) showChapterPayoff(result, surface);
+  else if (restoreReservedFocus) focusTarget($('.order-card[class*="is-"] .fulfill-button:not(:disabled)') || $("#ordersView h1"));
 }
 
 function addXp(amount) {
@@ -879,7 +879,7 @@ function prestigeReward() { return Logic.prestigeReward(state); }
 function confirmPrestige() {
   if (state.level < PRESTIGE_CONFIG.unlockLevel) return;
   const reward = prestigeReward();
-  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active Villager Special Request.</p><p>Saved invitations, friendships, keepsakes, mastery, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>. The first five add 10% each; later gains taper toward a 2.5x Stardust order-coin multiplier.</p>`, actions: [
+  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active Villager Special Request.</p><p>Saved invitations, friendships, keepsakes, mastery, rolling requests, village chapter progress, cosmetics, today's daily state, and achievements stay. Your first rebirth leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>. The first five add 10% each; later gains taper toward a 2.5x Stardust order-coin multiplier.</p>`, actions: [
     { label: "Not yet" },
     { label: `Rebirth for ${reward} stardust`, primary: true, onClick: () => performPrestige(reward) },
   ] });
@@ -920,14 +920,14 @@ function switchView(view) {
 }
 
 function updateBrewShortcut(now = Date.now()) {
-  const shortcut = document.querySelector("#brewShortcut");
+  const shortcut = $("#brewShortcut");
   if (!state.brew) {
     shortcut.hidden = true;
     delete shortcut.dataset.sprite;
     document.body.classList.remove("brew-shortcut-visible");
     return;
   }
-  const slot = document.querySelector("#brewSlot");
+  const slot = $("#brewSlot");
   const rect = slot.getBoundingClientRect();
   const slotVisible = activeView() === "workshop" && rect.bottom > 0 && rect.top < innerHeight;
   const remaining = Math.max(0, state.brew.endsAt - now);
@@ -941,36 +941,52 @@ function updateBrewShortcut(now = Date.now()) {
 
 function goToBrewSlot() {
   switchView("workshop");
-  requestAnimationFrame(() => document.querySelector("#brewSlot").scrollIntoView({ behavior: motionBehavior(), block: "center" }));
+  requestAnimationFrame(() => $("#brewSlot").scrollIntoView({ behavior: motionBehavior(), block: "center" }));
 }
 
-function openModal({ icon = "✦", kicker = "POCKET POTION WORKS", title, body, actions = [] }) {
-  if (document.querySelector("#modalBackdrop").hidden) lastFocus = document.activeElement;
-  document.querySelector("#modalIcon").textContent = icon;
-  document.querySelector("#modalKicker").textContent = kicker;
-  document.querySelector("#modalTitle").textContent = title;
-  document.querySelector("#modalBody").innerHTML = body;
-  const actionsNode = document.querySelector("#modalActions");
+function showChapterPayoff(result, surface) {
+  const final = result.chapter.complete;
+  openModal({ kicker: result.narrative.kicker, title: result.narrative.title,
+    icon: "✦", body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
+    actions: [{ label: final ? "View Workshop Looks" : "Continue the chapter", primary: true, onClick: () => {
+      closeModal();
+      if (final) switchView("journal"); else switchView("orders");
+      const target = final ? 'button[data-cosmetic="firstlight"]' : ".order-card.is-chapter .fulfill-button:not(:disabled)";
+      requestAnimationFrame(()=>requestAnimationFrame(()=>focusTarget($(target) || $(final ? "#journalView h1" : "#ordersView h1"))));
+    } }],
+  });
+  lastFocus = $(surface === "orders" ? "#ordersView h1" : '[data-nav="workshop"]');
+  if (surface === "orders") lastFocus.tabIndex = -1;
+}
+
+function openModal({ icon, kicker, title, body, actions }) {
+  const backdrop = $("#modalBackdrop");
+  if (backdrop.hidden) lastFocus = document.activeElement;
+  $("#modalIcon").textContent = icon;
+  $("#modalKicker").textContent = kicker;
+  $("#modalTitle").textContent = title;
+  $("#modalBody").innerHTML = body;
+  const actionsNode = $("#modalActions");
   actionsNode.innerHTML = "";
-  (actions.length ? actions : [{ label: "Back to the workshop", primary: true }]).forEach(action => {
+  actions.forEach(action => {
     const button = document.createElement("button");
     button.className = action.primary ? "primary-button" : "secondary-button";
     button.textContent = action.label;
-    if (typeof action.ariaPressed === "boolean") button.setAttribute("aria-pressed", String(action.ariaPressed));
-    button.addEventListener("click", action.onClick || closeModal);
-    actionsNode.appendChild(button);
+    if ("ariaPressed" in action) button.setAttribute("aria-pressed", action.ariaPressed);
+    button.onclick = action.onClick || closeModal;
+    actionsNode.append(button);
   });
-  document.querySelector("#modalBackdrop").hidden = false;
-  document.querySelector(".game-shell").inert = true;
+  backdrop.hidden = false;
+  $(".game-shell").inert = true;
   document.body.style.overflow = "hidden";
-  document.querySelector("#modalClose").focus();
+  $("#modalClose").focus();
 }
 
 function closeModal() {
-  document.querySelector("#modalBackdrop").hidden = true;
-  document.querySelector(".game-shell").inert = false;
+  $("#modalBackdrop").hidden = true;
+  $(".game-shell").inert = false;
   document.body.style.overflow = "";
-  if (lastFocus?.focus) lastFocus.focus();
+  lastFocus?.focus?.();
 }
 
 function toast(message, tone = "info") {
@@ -1232,8 +1248,8 @@ document.querySelector("#marketButton").addEventListener("click", showMarket);
 document.querySelector("#settingsButton").addEventListener("click", showSettings);
 document.querySelector("#clearPantryButton").addEventListener("click", showPantryCleanup);
 document.querySelector("#resetSaveButton").addEventListener("click", confirmReset);
-document.querySelector("#modalClose").addEventListener("click", closeModal);
-document.querySelector("#modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
+$("#modalClose").addEventListener("click", closeModal);
+$("#modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
 document.addEventListener("click", event => {
   const button = event.target.closest?.("button");
   if (button && !button.disabled) sound.play("tap");
@@ -1241,9 +1257,9 @@ document.addEventListener("click", event => {
 window.addEventListener("scroll", () => updateBrewShortcut(), { passive: true });
 document.addEventListener("visibilitychange", () => music.setPaused(document.hidden));
 document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && !document.querySelector("#modalBackdrop").hidden) closeModal();
-  if (event.key === "Tab" && !document.querySelector("#modalBackdrop").hidden) {
-    const focusable = [...document.querySelector("#modalBackdrop").querySelectorAll("button:not([disabled]), input:not([disabled])")];
+  if (event.key === "Escape" && !$("#modalBackdrop").hidden) closeModal();
+  if (event.key === "Tab" && !$("#modalBackdrop").hidden) {
+    const focusable = [...$("#modalBackdrop").querySelectorAll("button:not([disabled]), input:not([disabled])")];
     if (!focusable.length) return;
     const first = focusable[0], last = focusable.at(-1);
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }

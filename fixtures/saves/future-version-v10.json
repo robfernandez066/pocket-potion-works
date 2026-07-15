@@ -1,12 +1,11 @@
 {
-  "version": 9,
+  "version": 10,
   "coins": 999,
   "xp": 12,
   "level": 9,
   "stardust": 22,
   "chapterProgress": 3,
   "customization": { "selected": "firstlight" },
-  "ingredients": { "herb": 50, "mint": 8 },
-  "task33State": { "chapter": "mira-village-loaf" },
+  "futureFeature": { "irreversibleState": true, "schema": "unknown-to-v9" },
   "lastSeen": 1783857600000
 }
