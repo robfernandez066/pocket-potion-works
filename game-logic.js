@@ -9,6 +9,11 @@
   const OFFLINE_CAP_SECONDS = 4 * 60 * 60;
   const BASE_PASSIVE_RATE = .08;
   const PASSIVE_STORAGE_RATIO = .6;
+  const OFFLINE_GATHER_WINDOWS = Object.freeze([
+    Object.freeze({ seconds: 15 * 60, rateMultiplier: .20 }),
+    Object.freeze({ seconds: 105 * 60, rateMultiplier: .10 }),
+    Object.freeze({ seconds: 120 * 60, rateMultiplier: .05 }),
+  ]);
   const GATHER_CONFIG = Object.freeze({ maxCharges: 3, rechargeSeconds: 30, amountPerCharge: 3 });
   const FINISH_BREW_CONFIG = Object.freeze({ minRemainingSeconds: 45, remainingMultiplier: .6, maxUsesPerBrew: 1 });
   const MASTERY_CONFIG = Object.freeze({ thresholds: Object.freeze([3, 8, 15]), coinBonusPerRank: .04 });
@@ -1029,11 +1034,21 @@
   }
 
   function offlineElapsedSeconds(state, now = Date.now()) { return clamp((now - finite(state.lastSeen, now)) / 1000, 0, OFFLINE_CAP_SECONDS); }
+  function offlineIngredientQuantity(state, elapsedSeconds) {
+    let remaining = clamp(finite(elapsedSeconds), 0, OFFLINE_CAP_SECONDS);
+    let accumulated = 0;
+    for (const window of OFFLINE_GATHER_WINDOWS) {
+      const seconds = Math.min(remaining, window.seconds);
+      accumulated += seconds * gatherRate(state) * window.rateMultiplier;
+      remaining -= seconds;
+    }
+    return Math.floor(accumulated);
+  }
   function grantOfflineIngredients(state, elapsedSeconds, random = Math.random) {
     if (state.stats.orders < 1) return 0;
     const softCap = passiveStorageCap(state);
     const availableSpace = Math.max(0, softCap - totalIngredients(state));
-    const requested = Math.min(availableSpace, Math.floor(clamp(finite(elapsedSeconds), 0, OFFLINE_CAP_SECONDS) * gatherRate(state) * .65));
+    const requested = Math.min(availableSpace, offlineIngredientQuantity(state, elapsedSeconds));
     return grantPassiveIngredients(state, requested, random);
   }
   function activeElapsedSeconds(lastTickAt, now = Date.now(), hidden = false) {
@@ -1046,6 +1061,6 @@
     storageCap, gatherRate, passiveStorageCap, manualGatherAmount, coinMultiplier, recipeMasteryRank, recipeMasteryProgress, orderMultiplier, brewSpeedMultiplier,
     unlockedIngredients, totalIngredients, canAffordRecipe, startBrew, finishBrewAssistStatus, applyFinishBrewAssist, collectBrew, addXp,
     generateOrder, ensureOrders, fulfillOrder, commissionById, commissionEligible, unfinishedCommissionCount, refreshCommissionChoices, selectSignatureCommission, isSignatureOrder, afterStarsStatus, ensureAfterStarsOrder, isAfterStarsOrder, isReservedOrder, upgradeCost, upgradePreview, buyUpgrade, claimDaily, completionCardPhase, collectionGoalProgress, cosmeticUnlocked, selectCosmetic, workshopDecorationState, weeklyChainStatus, recordWeeklyDelivery, claimWeeklyStep, prestigeReward, performPrestige, refreshOrder,
-    resetDailyIfNeeded, foregroundDailyTransition, addRandomIngredients, requestMixPool, addRequestMixIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, grantOfflineIngredients, activeElapsedSeconds,
+    resetDailyIfNeeded, foregroundDailyTransition, addRandomIngredients, requestMixPool, addRequestMixIngredients, grantPassiveIngredients, rechargeGather, chargedGather, setGatherTarget, discardIngredient, offlineElapsedSeconds, offlineIngredientQuantity, grantOfflineIngredients, activeElapsedSeconds,
   });
 });

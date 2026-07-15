@@ -1,8 +1,8 @@
 "use strict";
 
-// Development-only evidence harness for Task 26. It deliberately leaves the
-// shipped offline implementation untouched and models only the three proposed
-// accumulation curves before delegating storage and distribution to game logic.
+// Current-formula regression evidence for the approved frontloaded diminishing
+// offline return. The independent reference retains the selected formula while
+// the shipped arm exercises grantOfflineIngredients directly.
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const game = require("./game-logic.js");
@@ -21,15 +21,19 @@ const STARTING_STATES = Object.freeze(["empty", "half-passive-cap", "one-below-p
 const ELAPSED_MINUTES = Object.freeze([15, 30, 60, 90, 120, 240]);
 const INGREDIENT_IDS = Object.freeze(Object.keys(game.INGREDIENTS));
 const BASE_CHARGED_HARVEST_ROOM = game.GATHER_CONFIG.maxCharges * game.GATHER_CONFIG.amountPerCharge;
+const SELECTED_SEGMENTS = Object.freeze([
+  Object.freeze({ seconds: 15 * 60, rateMultiplier: .20 }),
+  Object.freeze({ seconds: 105 * 60, rateMultiplier: .10 }),
+  Object.freeze({ seconds: 120 * 60, rateMultiplier: .05 }),
+]);
 const ARMS = Object.freeze([
-  Object.freeze({ id: "baseline", label: "Current baseline" }),
-  Object.freeze({ id: "flat-10", label: "flat-10" }),
-  Object.freeze({ id: "frontloaded-diminishing", label: "frontloaded-diminishing" }),
-  Object.freeze({ id: "gentle-diminishing", label: "gentle-diminishing" }),
+  Object.freeze({ id: "shipped", label: "Shipped grantOfflineIngredients" }),
+  Object.freeze({ id: "selected-reference", label: "Selected-model reference: 20% for 15m, 10% through 120m, 5% through 240m" }),
 ]);
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function round(value) { return Math.round(value * 1000) / 1000; }
+function finite(value, fallback = 0) { return Number.isFinite(Number(value)) ? Number(value) : fallback; }
 function emptyIngredients() { return Object.fromEntries(INGREDIENT_IDS.map(id => [id, 0])); }
 function pantryStock(state) { return Object.fromEntries(INGREDIENT_IDS.map(id => [id, state.ingredients[id]])); }
 
@@ -69,25 +73,27 @@ function elapsedSecondsFor(source, minutes) {
   return game.offlineElapsedSeconds(state, START);
 }
 
-function requestedUnits(armId, state, elapsedSeconds) {
-  const elapsed = Math.max(0, Math.min(game.OFFLINE_CAP_SECONDS, elapsedSeconds));
-  const rate = game.gatherRate(state);
-  if (armId === "baseline") return Math.floor(elapsed * rate * .65);
-  const minutes = elapsed / 60;
-  if (armId === "flat-10") return Math.floor(rate * .10 * elapsed);
-  if (armId === "frontloaded-diminishing") {
-    return Math.floor(rate * (Math.min(minutes, 15) * 60 * .20 + Math.max(0, Math.min(minutes, 120) - 15) * 60 * .10 + Math.max(0, Math.min(minutes, 240) - 120) * 60 * .05));
+function selectedRequestedUnits(state, elapsedSeconds) {
+  let remaining = Math.min(game.OFFLINE_CAP_SECONDS, Math.max(0, finite(elapsedSeconds)));
+  let accumulated = 0;
+  for (const segment of SELECTED_SEGMENTS) {
+    const seconds = Math.min(remaining, segment.seconds);
+    accumulated += seconds * game.gatherRate(state) * segment.rateMultiplier;
+    remaining -= seconds;
   }
-  if (armId === "gentle-diminishing") {
-    return Math.floor(rate * (Math.min(minutes, 30) * 60 * .15 + Math.max(0, Math.min(minutes, 120) - 30) * 60 * .08 + Math.max(0, Math.min(minutes, 240) - 120) * 60 * .04));
-  }
-  assert.fail(`Unknown arm: ${armId}`);
+  return Math.floor(accumulated);
 }
 
-function firstPassiveCapMinute(armId, source) {
+function selectedReferenceGrant(state, elapsedSeconds, random) {
+  if (state.stats.orders < 1) return 0;
+  const availableSpace = Math.max(0, game.passiveStorageCap(state) - game.totalIngredients(state));
+  return game.grantPassiveIngredients(state, Math.min(availableSpace, selectedRequestedUnits(state, elapsedSeconds)), random);
+}
+
+function firstPassiveCapMinute(source) {
   const availableSpace = game.passiveStorageCap(source) - game.totalIngredients(source);
   for (let minute = 1; minute <= game.OFFLINE_CAP_SECONDS / 60; minute += 1) {
-    if (requestedUnits(armId, source, minute * 60) >= availableSpace) return minute;
+    if (selectedRequestedUnits(source, minute * 60) >= availableSpace) return minute;
   }
   return null;
 }
@@ -97,18 +103,17 @@ function runArm(arm, source, elapsedSeconds, seed) {
   const state = clone(source);
   const passiveCap = game.passiveStorageCap(state);
   const storageCap = game.storageCap(state);
-  const availablePassiveSpace = Math.max(0, passiveCap - game.totalIngredients(state));
-  const rawRequested = requestedUnits(arm.id, state, elapsedSeconds);
-  const storageLimitedRequest = Math.min(availablePassiveSpace, rawRequested);
+  const rawRequested = selectedRequestedUnits(state, elapsedSeconds);
+  const storageLimitedRequest = Math.min(Math.max(0, passiveCap - game.totalIngredients(state)), rawRequested);
   const random = seededRandom(seed);
-  const grantedIngredients = arm.id === "baseline"
+  const grantedIngredients = arm.id === "shipped"
     ? game.grantOfflineIngredients(state, elapsedSeconds, random)
-    : game.grantPassiveIngredients(state, storageLimitedRequest, random);
+    : selectedReferenceGrant(state, elapsedSeconds, random);
   assert.equal(JSON.stringify(source), before, `${arm.id} must not mutate its source state`);
   const finalPantryTotal = game.totalIngredients(state);
   const absoluteRoomBelowFullStorage = storageCap - finalPantryTotal;
   const keepsAllBaseChargedHarvestRoom = absoluteRoomBelowFullStorage >= BASE_CHARGED_HARVEST_ROOM;
-  assert.ok(finalPantryTotal <= passiveCap, `${arm.id} overflowed passive cap`);
+  assert.ok(finalPantryTotal <= passiveCap, `${arm.id} overflowed the passive reserve`);
   assert.ok(keepsAllBaseChargedHarvestRoom, `${arm.id} removed charged-harvest room`);
   return {
     requestedUnitsBeforeStorageLimiting: rawRequested,
@@ -119,15 +124,18 @@ function runArm(arm, source, elapsedSeconds, seed) {
     passiveCapFillPercent: round(finalPantryTotal / passiveCap * 100),
     absoluteRoomBelowFullStorage,
     keepsAllBaseChargedHarvestRoom,
-    firstPassiveCapMinute: firstPassiveCapMinute(arm.id, source),
+    firstPassiveCapMinute: firstPassiveCapMinute(source),
   };
 }
 
-function verifyBaselineParity(source, elapsedSeconds, seed, actual) {
-  const expectedState = clone(source);
-  const expectedGranted = game.grantOfflineIngredients(expectedState, elapsedSeconds, seededRandom(seed));
-  assert.equal(actual.grantedIngredients, expectedGranted, "baseline granted amount must match grantOfflineIngredients");
-  assert.deepEqual(actual.finalPantry, pantryStock(expectedState), "baseline final Pantry must match grantOfflineIngredients");
+function assertParity(shipped, selected, context) {
+  assert.equal(shipped.grantedIngredients, selected.grantedIngredients, `${context}: granted quantity differs from selected reference`);
+  assert.deepEqual(shipped.finalPantry, selected.finalPantry, `${context}: per-ingredient Pantry result differs from selected reference`);
+  assert.deepEqual(
+    { requestedUnitsBeforeStorageLimiting: shipped.requestedUnitsBeforeStorageLimiting, storageLimitedRequest: shipped.storageLimitedRequest, finalPantryTotal: shipped.finalPantryTotal, absoluteRoomBelowFullStorage: shipped.absoluteRoomBelowFullStorage, keepsAllBaseChargedHarvestRoom: shipped.keepsAllBaseChargedHarvestRoom, firstPassiveCapMinute: shipped.firstPassiveCapMinute },
+    { requestedUnitsBeforeStorageLimiting: selected.requestedUnitsBeforeStorageLimiting, storageLimitedRequest: selected.storageLimitedRequest, finalPantryTotal: selected.finalPantryTotal, absoluteRoomBelowFullStorage: selected.absoluteRoomBelowFullStorage, keepsAllBaseChargedHarvestRoom: selected.keepsAllBaseChargedHarvestRoom, firstPassiveCapMinute: selected.firstPassiveCapMinute },
+    `${context}: derived result differs from selected reference`,
+  );
 }
 
 function buildMatrix() {
@@ -138,8 +146,8 @@ function buildMatrix() {
       const sourceSnapshot = JSON.stringify(source);
       const elapsedSeconds = elapsedSecondsFor(source, minutes);
       const arms = Object.fromEntries(ARMS.map(arm => [arm.id, runArm(arm, source, elapsedSeconds, seed)]));
-      assert.equal(JSON.stringify(source), sourceSnapshot, "all arms must receive equivalent isolated source states");
-      verifyBaselineParity(source, elapsedSeconds, seed, arms.baseline);
+      assert.equal(JSON.stringify(source), sourceSnapshot, "both arms must receive equivalent isolated source states");
+      assertParity(arms.shipped, arms["selected-reference"], `matrix ${level}/${garden}/${shelves}/${startingState}/${minutes}/${seed}`);
       rows.push({ level, gardenLevel: garden, shelvesLevel: shelves, startingState, elapsedMinutes: minutes, seed, elapsedSeconds, startingPantry: pantryStock(source), startingPantryTotal: game.totalIngredients(source), arms });
     }
   }
@@ -149,7 +157,7 @@ function buildMatrix() {
 }
 
 function findRow(rows, level, gardenLevel, shelvesLevel, startingState, elapsedMinutes, seed) {
-  const row = rows.find(candidate => candidate.level === level && candidate.gardenLevel === gardenLevel && candidate.shelvesLevel === shelvesLevel && candidate.startingState === startingState && candidate.elapsedMinutes === elapsedMinutes && candidate.seed === seed);
+  const row = rows.find(entry => entry.level === level && entry.gardenLevel === gardenLevel && entry.shelvesLevel === shelvesLevel && entry.startingState === startingState && entry.elapsedMinutes === elapsedMinutes && entry.seed === seed);
   assert.ok(row, "required matrix row missing");
   return row;
 }
@@ -158,16 +166,13 @@ function average(values) { return round(values.reduce((sum, value) => sum + valu
 
 function buildMarginalEffects(rows) {
   const measures = ["grantedIngredients", "finalPantryTotal", "passiveCapFillPercent", "absoluteRoomBelowFullStorage"];
-  const effect = (name, leftConfig, rightConfig) => ELAPSED_MINUTES.filter(minutes => [60, 90, 120].includes(minutes)).map(minutes => {
+  const effect = (leftConfig, rightConfig) => ELAPSED_MINUTES.filter(minutes => [60, 90, 120].includes(minutes)).map(minutes => {
     const perSeed = SEEDS.map(seed => {
       const left = findRow(rows, 4, leftConfig.garden, leftConfig.shelves, "empty", minutes, seed);
       const right = findRow(rows, 4, rightConfig.garden, rightConfig.shelves, "empty", minutes, seed);
       return {
         seed,
-        arms: Object.fromEntries(ARMS.map(arm => {
-          const delta = Object.fromEntries(measures.map(key => [key, round(right.arms[arm.id][key] - left.arms[arm.id][key])]));
-          return [arm.id, { delta }];
-        })),
+        arms: Object.fromEntries(ARMS.map(arm => [arm.id, { delta: Object.fromEntries(measures.map(key => [key, round(right.arms[arm.id][key] - left.arms[arm.id][key])])) }])),
       };
     });
     return {
@@ -177,8 +182,8 @@ function buildMarginalEffects(rows) {
     };
   });
   return {
-    moonlitGardenLevel1Minus0: effect("garden", { garden: 0, shelves: 0 }, { garden: 1, shelves: 0 }),
-    pantryShelvesLevel1Minus0: effect("shelves", { garden: 0, shelves: 0 }, { garden: 0, shelves: 1 }),
+    moonlitGardenLevel1Minus0: effect({ garden: 0, shelves: 0 }, { garden: 1, shelves: 0 }),
+    pantryShelvesLevel1Minus0: effect({ garden: 0, shelves: 0 }, { garden: 0, shelves: 1 }),
   };
 }
 
@@ -186,73 +191,52 @@ function buildBoundaryChecks() {
   const source = makeSource({ level: 4, garden: 0, shelves: 0, startingState: "empty", seed: SEEDS[0] });
   const future = clone(source); future.lastSeen = START + 60_000;
   const beyondCap = clone(source); beyondCap.lastSeen = START - 8 * 60 * 60 * 1000;
-  const malformedCases = [
-    ["string-last-seen", "not-a-time"],
-    ["null-last-seen", null],
-    ["infinite-last-seen", Infinity],
-  ].map(([label, lastSeen]) => {
+  const malformedLastSeen = [["string-last-seen", "not-a-time"], ["null-last-seen", null], ["infinite-last-seen", Infinity]].map(([label, lastSeen]) => {
     const state = clone(source); state.lastSeen = lastSeen;
     const elapsedSeconds = game.offlineElapsedSeconds(state, START);
-    const grantedIngredients = game.grantOfflineIngredients(state, elapsedSeconds, seededRandom(SEEDS[0]));
-    assert.ok(Number.isFinite(elapsedSeconds) && elapsedSeconds >= 0 && elapsedSeconds <= game.OFFLINE_CAP_SECONDS, `${label} must remain a safe elapsed value`);
-    return { label, elapsedSeconds, grantedIngredients };
+    assert.ok(Number.isFinite(elapsedSeconds) && elapsedSeconds >= 0 && elapsedSeconds <= game.OFFLINE_CAP_SECONDS, `${label} must remain safe and bounded`);
+    return { label, elapsedSeconds, grantedIngredients: game.grantOfflineIngredients(state, elapsedSeconds, seededRandom(SEEDS[0])) };
   });
-  const fullReserve = makeSource({ level: 4, garden: 0, shelves: 0, startingState: "one-below-passive-cap", seed: SEEDS[0] });
+  const malformedElapsed = [-1, Infinity, NaN, "not-a-duration", {}, null].map((elapsedSeconds, index) => {
+    const shipped = runArm(ARMS[0], source, elapsedSeconds, SEEDS[0]);
+    const selected = runArm(ARMS[1], source, elapsedSeconds, SEEDS[0]);
+    assertParity(shipped, selected, `malformed elapsed ${index}`);
+    return { label: String(elapsedSeconds), grantedIngredients: shipped.grantedIngredients };
+  });
+  const fullReserve = clone(source);
   const cap = game.passiveStorageCap(fullReserve);
-  for (const id of INGREDIENT_IDS) fullReserve.ingredients[id] = 0;
+  fullReserve.ingredients = emptyIngredients();
   fullReserve.ingredients[game.unlockedIngredients(fullReserve)[0]] = cap;
   const noDelivery = makeSource({ level: 4, garden: 0, shelves: 0, startingState: "empty", seed: SEEDS[0], delivered: false });
-  const noDeliveryBefore = JSON.stringify(noDelivery);
   const noDeliveryResults = Object.fromEntries(ARMS.map(arm => [arm.id, runArm(arm, noDelivery, 3600, SEEDS[0]).grantedIngredients]));
-  assert.equal(JSON.stringify(noDelivery), noDeliveryBefore, "first-delivery gate check must preserve source");
-  assert.ok(Object.values(noDeliveryResults).every(value => value === 0), "first-delivery gate must remain exact");
   const fullReserveResults = Object.fromEntries(ARMS.map(arm => [arm.id, runArm(arm, fullReserve, 3600, SEEDS[0]).grantedIngredients]));
+  assert.ok(Object.values(noDeliveryResults).every(value => value === 0), "first-delivery gate must remain exact");
   assert.ok(Object.values(fullReserveResults).every(value => value === 0), "full passive reserve must block grants");
   const futureElapsedSeconds = game.offlineElapsedSeconds(future, START);
   const cappedElapsedSeconds = game.offlineElapsedSeconds(beyondCap, START);
   assert.equal(futureElapsedSeconds, 0, "future timestamps must earn zero elapsed time");
   assert.equal(cappedElapsedSeconds, game.OFFLINE_CAP_SECONDS, "elapsed time beyond four hours must cap exactly");
-  const fourHourResults = Object.fromEntries(ARMS.map(arm => [arm.id, runArm(arm, source, cappedElapsedSeconds, SEEDS[0])])) ;
-  const beyondCapResults = Object.fromEntries(ARMS.map(arm => [arm.id, runArm(arm, source, game.offlineElapsedSeconds(beyondCap, START), SEEDS[0])])) ;
-  assert.deepEqual(beyondCapResults, fourHourResults, "beyond-cap elapsed results must match four-hour results");
-  return { negativeElapsedFromFutureTimestamp: { elapsedSeconds: futureElapsedSeconds }, beyondFourHours: { elapsedSeconds: cappedElapsedSeconds, arms: fourHourResults }, fullPassiveReserve: fullReserveResults, noCompletedDelivery: noDeliveryResults, malformedInputs: malformedCases };
+  const fourHourResults = Object.fromEntries(ARMS.map(arm => [arm.id, runArm(arm, source, cappedElapsedSeconds, SEEDS[0])]));
+  assertParity(fourHourResults.shipped, fourHourResults["selected-reference"], "four-hour cap");
+  return { negativeElapsedFromFutureTimestamp: { elapsedSeconds: futureElapsedSeconds }, beyondFourHours: { elapsedSeconds: cappedElapsedSeconds, arms: fourHourResults }, fullPassiveReserve: fullReserveResults, noCompletedDelivery: noDeliveryResults, malformedLastSeen, malformedElapsed };
 }
 
-function buildCriteria(rows, boundaryChecks) {
-  const results = ARMS.map(arm => {
-    const at = minutes => SEEDS.map(seed => findRow(rows, 4, 0, 0, "empty", minutes, seed).arms[arm.id]);
-    const atGardenOne = minutes => SEEDS.map(seed => findRow(rows, 4, 1, 0, "empty", minutes, seed).arms[arm.id]);
-    const at15 = at(15), at60 = at(60), at120 = at(120), at240 = at(240), garden60 = atGardenOne(60);
-    const gardenAdvantages = garden60.map((row, index) => round((row.grantedIngredients - at60[index].grantedIngredients) / at60[index].grantedIngredients * 100));
-    const baseline240 = SEEDS.map(seed => findRow(rows, 4, 0, 0, "empty", 240, seed).arms.baseline.grantedIngredients);
-    const criteria = {
-      belowPassiveCapAt15Minutes: at15.every(row => row.finalPantryTotal < game.passiveStorageCap(makeSource({ level: 4, garden: 0, shelves: 0, startingState: "empty", seed: SEEDS[0] }))),
-      granted24To45At60Minutes: at60.every(row => row.grantedIngredients >= 24 && row.grantedIngredients <= 45),
-      granted45To54At120Minutes: at120.every(row => row.grantedIngredients >= 45 && row.grantedIngredients <= 54),
-      passiveCapReached60To120Minutes: at60.every(row => row.firstPassiveCapMinute !== null && row.firstPassiveCapMinute >= 60 && row.firstPassiveCapMinute <= 120),
-      nineSpacesRemainBelowFullStorage: at120.every(row => row.absoluteRoomBelowFullStorage >= BASE_CHARGED_HARVEST_ROOM),
-      gardenLevel1AdvantagePositiveAndAtMost25PercentAt60Minutes: gardenAdvantages.every(value => value > 0 && value <= 25),
-      noMoreAtFourHoursThanCurrentBaseline: at240.every((row, index) => row.grantedIngredients <= baseline240[index]),
-      firstDeliveryGatingExact: Object.values(boundaryChecks.noCompletedDelivery).every(value => value === 0),
-      fourHourCappingExact: boundaryChecks.beyondFourHours.elapsedSeconds === game.OFFLINE_CAP_SECONDS,
-    };
-    return {
-      arm: arm.id,
-      criteria,
-      satisfiesEveryCriterion: Object.values(criteria).every(Boolean),
-      representative: {
-        grantedAt15Minutes: at15[0].grantedIngredients,
-        grantedAt60Minutes: at60[0].grantedIngredients,
-        grantedAt120Minutes: at120[0].grantedIngredients,
-        grantedAt240Minutes: at240[0].grantedIngredients,
-        firstPassiveCapMinute: at60[0].firstPassiveCapMinute,
-        gardenLevel1AdvantagePercentAt60Minutes: gardenAdvantages[0],
-      },
-    };
-  });
-  const passing = results.filter(result => result.satisfiesEveryCriterion);
-  const rankedCandidates = passing.sort((left, right) => Math.abs(left.representative.firstPassiveCapMinute - 90) - Math.abs(right.representative.firstPassiveCapMinute - 90) || left.representative.grantedAt15Minutes - right.representative.grantedAt15Minutes).map((result, index) => ({ rank: index + 1, arm: result.arm, distanceFrom90MinuteCap: Math.abs(result.representative.firstPassiveCapMinute - 90), grantedAt15Minutes: result.representative.grantedAt15Minutes }));
-  return { criteriaByArm: results, satisfiesEveryCriterion: passing.map(result => result.arm), rankedRecommendation: rankedCandidates, interpretation: "Ranking is a transparent simulation recommendation only and is not implementation authorization." };
+function buildRegressionLocks(rows, boundaryChecks) {
+  const at = (garden, minutes) => SEEDS.map(seed => findRow(rows, 4, garden, 0, "empty", minutes, seed).arms.shipped);
+  const representative = {
+    grantedAt15Minutes: at(0, 15)[0].grantedIngredients,
+    grantedAt60Minutes: at(0, 60)[0].grantedIngredients,
+    grantedAt120Minutes: at(0, 120)[0].grantedIngredients,
+    firstPassiveCapMinute: at(0, 60)[0].firstPassiveCapMinute,
+    gardenLevel1GrantedAt60Minutes: at(1, 60)[0].grantedIngredients,
+  };
+  assert.deepEqual(representative, { grantedAt15Minutes: 14, grantedAt60Minutes: 36, grantedAt120Minutes: 54, firstPassiveCapMinute: 98, gardenLevel1GrantedAt60Minutes: 45 });
+  for (const minutes of [15, 60, 120]) assert.ok(at(0, minutes).every(row => row.grantedIngredients === representative[`grantedAt${minutes}Minutes`]), `all seeds must lock the ${minutes}-minute representative result`);
+  assert.ok(at(1, 60).every(row => row.grantedIngredients === 45), "all seeds must lock the Garden level-one result");
+  assert.ok(rows.every(row => row.arms.shipped.keepsAllBaseChargedHarvestRoom), "every matrix result must retain all three base charged harvests");
+  assert.ok(Object.values(boundaryChecks.noCompletedDelivery).every(value => value === 0), "first delivery must gate every arm");
+  assert.equal(boundaryChecks.beyondFourHours.elapsedSeconds, game.OFFLINE_CAP_SECONDS, "four-hour cap must stay locked");
+  return { representative, retainedChargedHarvestRoom: true, firstDeliveryGate: true, fourHourCapSeconds: game.OFFLINE_CAP_SECONDS };
 }
 
 function buildReport() {
@@ -268,11 +252,12 @@ function buildReport() {
     fixedUtcStart: new Date(START).toISOString(),
     seeds: SEEDS,
     arms: ARMS,
+    selectedModel: { segments: SELECTED_SEGMENTS, floorAfterCompleteSum: true, elapsedCapSeconds: game.OFFLINE_CAP_SECONDS },
     matrixDefinition: { levels: LEVELS, moonlitGardenLevels: GARDEN_LEVELS, pantryShelvesLevels: SHELVES_LEVELS, startingPantryStates: STARTING_STATES, elapsedMinutes: ELAPSED_MINUTES, rowsPerArm: matrix.length },
     scenarios: matrix,
     marginalEffects: buildMarginalEffects(matrix),
     boundaryChecks,
-    productCriteria: buildCriteria(matrix, boundaryChecks),
+    regressionLocks: buildRegressionLocks(matrix, boundaryChecks),
   };
   assertFiniteOutcomes(report);
   return report;
@@ -281,15 +266,10 @@ function buildReport() {
 const firstSerialized = JSON.stringify(buildReport());
 const secondSerialized = JSON.stringify(buildReport());
 assert.equal(secondSerialized, firstSerialized, "second in-process run must serialize byte-for-byte identically");
+const sha256 = crypto.createHash("sha256").update(firstSerialized).digest("hex").toUpperCase();
 if (process.argv.includes("--check")) {
   const report = JSON.parse(firstSerialized);
-  const summary = JSON.stringify({
-    harness: report.harness,
-    scenariosPerArm: report.matrixDefinition.rowsPerArm,
-    passingCandidates: report.productCriteria.satisfiesEveryCriterion,
-    rankedRecommendation: report.productCriteria.rankedRecommendation,
-    sha256: crypto.createHash("sha256").update(firstSerialized).digest("hex").toUpperCase(),
-  });
+  const summary = JSON.stringify({ harness: report.harness, scenariosPerArm: report.matrixDefinition.rowsPerArm, arms: report.arms.map(arm => arm.id), regressionLocks: report.regressionLocks, sha256 });
   assert.ok(Buffer.byteLength(summary) <= 1000, "check summary must stay within 1,000 bytes");
   console.log(summary);
 } else {

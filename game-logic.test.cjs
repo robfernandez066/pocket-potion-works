@@ -613,7 +613,7 @@ test("Frostmint participates in smart passive and offline gathering after unlock
   assert.equal(game.grantPassiveIngredients(state, 1, () => .999999), 1);
   assert.equal(state.ingredients.mint, 1);
   state.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
-  assert.equal(game.grantOfflineIngredients(state, 31, () => .999999), 1);
+  assert.equal(game.grantOfflineIngredients(state, 63, () => .999999), 1);
   assert.equal(state.ingredients.mint, 1);
 });
 
@@ -1124,6 +1124,54 @@ test("offline ingredients wait for the first delivery and preserve harvest space
   assert.equal(game.grantOfflineIngredients(state, 3600, () => 0), 0);
 });
 
+test("offline ingredients use the frontloaded diminishing curve and preserve Pantry safeguards", () => {
+  const makeState = ({ garden = 0, shelves = 0, stock = 0, delivered = true } = {}) => {
+    const state = game.defaultState(NOW);
+    state.level = 4;
+    state.ingredients = Object.fromEntries(Object.keys(game.INGREDIENTS).map(id => [id, 0]));
+    state.ingredients.herb = stock;
+    state.upgrades.garden = garden;
+    state.upgrades.shelves = shelves;
+    state.stats.orders = delivered ? 1 : 0;
+    return state;
+  };
+  const quantity = seconds => game.offlineIngredientQuantity(makeState(), seconds);
+
+  assert.deepEqual(
+    [899, 900, 901, 7199, 7200, 7201, 14399, 14400, 14401].map(seconds => [seconds, quantity(seconds)]),
+    [[899, 14], [900, 14], [901, 14], [7199, 64], [7200, 64], [7201, 64], [14399, 93], [14400, 93], [14401, 93]],
+    "the bounded 15-, 120-, and 240-minute segment edges must remain exact",
+  );
+  assert.equal(quantity(17 * 60), 15, "segment fractions must be summed before one final floor");
+  assert.equal(quantity(game.OFFLINE_CAP_SECONDS), quantity(game.OFFLINE_CAP_SECONDS * 2), "over-four-hour values must not increase the requested quantity");
+  for (const malformed of [-1, Infinity, NaN, "not-a-duration", {}, null]) assert.equal(quantity(malformed), 0, "malformed elapsed values must safely grant zero");
+
+  for (const [minutes, expected] of [[15, 14], [60, 36], [120, 54]]) {
+    const state = makeState();
+    assert.equal(game.grantOfflineIngredients(state, minutes * 60, () => 0), expected, `level-four empty Pantry must grant ${expected} at ${minutes} minutes`);
+  }
+  let firstReserveMinute = null;
+  for (let minute = 1; minute <= 240; minute += 1) {
+    const state = makeState();
+    if (game.grantOfflineIngredients(state, minute * 60, () => 0) === game.passiveStorageCap(state)) { firstReserveMinute = minute; break; }
+  }
+  assert.equal(firstReserveMinute, 98, "the representative passive reserve must first fill at minute 98");
+
+  const garden = makeState({ garden: 1 });
+  assert.equal(game.grantOfflineIngredients(garden, 60 * 60, () => 0), 45, "Moonlit Garden level one must retain its gather-rate benefit");
+  const shelves = makeState({ shelves: 1 });
+  assert.equal(game.grantOfflineIngredients(shelves, 120 * 60, () => 0), 64, "Pantry Shelves must extend the passive reserve without changing the curve");
+  assert.equal(game.grantOfflineIngredients(makeState({ shelves: 1 }), 240 * 60, () => 0), 69, "Pantry Shelves must still respect their enlarged passive reserve");
+
+  const partial = makeState({ stock: 20 });
+  assert.equal(game.grantOfflineIngredients(partial, 60 * 60, () => 0), 34, "existing Pantry stock must only reduce the available grant");
+  assert.ok(partial.ingredients.herb >= 20, "existing ingredient stock must never be overwritten");
+  const nearReserve = makeState({ stock: 53 });
+  assert.equal(game.grantOfflineIngredients(nearReserve, 240 * 60, () => 0), 1);
+  assert.equal(game.grantOfflineIngredients(makeState({ stock: 54 }), 240 * 60, () => 0), 0);
+  assert.equal(game.grantOfflineIngredients(makeState({ delivered: false }), 240 * 60, () => 0), 0, "offline gathering must still wait for a completed delivery");
+});
+
 test("automatic gathering is slow, waits for a delivery, and never fills manual harvest space", () => {
   const state = game.defaultState(NOW);
   assert.equal(Math.round(game.gatherRate(state) * 600) / 10, 4.8);
@@ -1224,7 +1272,7 @@ test("passive and offline gathering stay on their uniform random path", () => {
   offline.stats.orders = 1;
   offline.ingredients = { herb: 0, mushroom: 0, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 };
   offline.orders = [{ id: 1, recipeId: "clarity", quantity: 1 }];
-  assert.equal(game.grantOfflineIngredients(offline, 20, () => .5), 1);
+  assert.equal(game.grantOfflineIngredients(offline, 63, () => .5), 1);
   assert.deepEqual(offline.ingredients, { herb: 0, mushroom: 1, crystal: 0, mist: 0, ember: 0, mint: 0, lavender: 0 });
 });
 

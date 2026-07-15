@@ -263,7 +263,7 @@
   },
   {
     "id": 27,
-    "status": "next",
+    "status": "complete",
     "title": "Frontloaded diminishing idle return",
     "model": "5.6 Terra with High effort",
     "freshChat": true,
@@ -279,6 +279,24 @@
       "Service-worker identity advances once to v57 and all existing runtime and asset budgets remain unchanged",
       "npm.cmd run check and both mobile core-loop checks pass without overflow or console warnings or errors",
       "The coder reports changed files, validation, exact outputs, hashes, assumptions, deferred findings, and one PASS, FAIL, or BLOCKED status"
+    ]
+  },
+  {
+    "id": 28,
+    "status": "next",
+    "title": "Mobile action hierarchy audit",
+    "model": "5.6 Luna with High effort",
+    "freshChat": true,
+    "prompt": "Task #28\n\nWork in:\n\nC:\\Users\\robbi\\Documents\\Projects\\newgame\n\nDo not read archive/.\n\nRun npm.cmd run handoff and confirm it prints Task 28. Work only on Task 28.\n\nObjective: Produce a bounded, evidence-only audit of the current mobile action hierarchy from ordinary-order discovery through delivery, while distinguishing nearby Daily Goal and Rolling Request completion states. Do not implement or redesign anything.\n\nInspect first: AGENTS.md, GAMEPLAY_ROADMAP.md, index.html, app.js, style.css, game-logic.js, game-logic.test.cjs, verify.cjs, package.json, and only other active files directly needed to identify current navigation, completion-card, shortcut, focus, and responsive behavior.\n\nRequired audit states: (1) first-session onboarding before the first brew; (2) an ordinary order visible while its potion is unavailable or not ready; (3) an ordinary order ready for delivery, checked from both the Workshop ready-delivery shortcut and the Orders surface; (4) a newly completed, unclaimed Daily Goal and its claimed/fading state; and (5) a newly completed, unclaimed Rolling Request step and its claimed/fading state. Do not conflate a ready brew, a bottled potion, and a deliverable order.\n\nAt both 390x844 and 360x740, record for each applicable state: starting view; whether the next required action is visible without scrolling; exact button or navigation label; number of taps or view changes to reach it; vertical scroll needed, reported as zero or an approximate CSS-pixel distance; any banner, completion card, tutorial prompt, or competing primary action occupying the same region; target dimensions; focus after activation where observable; and whether the player can return to the core loop without hunting. Measure the Workshop shortcut separately from the Orders path. Check horizontal overflow and browser console warnings or errors.\n\nUse a fresh isolated browser origin for the onboarding and ordinary-order paths. You may use temporary local browser state only to reach Daily Goal or Rolling Request completion efficiently if the browser surface permits it; do not add a shipped debug control or commit QA state, and remove or abandon the temporary origin afterward. If browser state injection is unavailable, gather live evidence for the ordinary not-ready and ready paths at both sizes, then supplement the inaccessible completion states with a clearly labeled source-backed path trace from the current render and event code. That limitation is a confidence note, not by itself a BLOCKED status. Do not claim a source-backed trace was live browser evidence.\n\nProduce one concise comparison table covering all five states and both portrait sizes. Separate observed friction from interpretation. End with at most one bounded recommendation for the next implementation task, naming the exact state and surface it would improve; if evidence does not support a change, recommend no change. Do not recommend a navigation layer, currency, timer, recurring system, backend, or broad redesign.\n\nExplicitly out of scope: No changes to runtime code, tests, simulations, HTML, CSS, assets, copy, navigation, tutorial behavior, order behavior, Daily Goals, Rolling Requests, rewards, save schema, cache identity, release evidence, release budgets, dependencies, AGENTS.md, GAMEPLAY_ROADMAP.md, coder-tasks.json, README.md, release/readiness prose, or archive/. Do not stage, commit, or push. Do not start another task. If any tracked file changes, restore only your Task 28 changes before reporting.\n\nAcceptance checks: Both portrait sizes have live ordinary-order not-ready and ready-path evidence, including separate Workshop-shortcut and Orders measurements. Onboarding, Daily Goal, and Rolling Request states are each covered by live evidence where safely reachable or explicitly labeled source-backed traces. The report distinguishes observation from interpretation, includes visibility, actions, scrolling, competing calls to action, target size, focus, overflow, and console results, and makes no more than one bounded recommendation. The worktree is unchanged from the Task 27 baseline.\n\nValidation: Run npm.cmd run handoff. Exercise a normal gather -> brew -> collect -> deliver -> upgrade loop during the audit. Verify 390x844 and 360x740, no horizontal overflow, and no browser console warnings or errors attributable to current behavior. Run git diff --check and report that Task 28 created no tracked diff; do not rerun the full automated suite solely for this evidence-only task beyond the check already performed by handoff.\n\nFinish with exactly one overall status: PASS, FAIL, or BLOCKED, followed by Summary, Changed files, Validation evidence, the required comparison table, Observed friction, Interpretation and bounded recommendation, Assumptions, and Deferred or out-of-scope findings.",
+    "acceptance": [
+      "Both portrait sizes have live not-ready and ready ordinary-order path evidence",
+      "Workshop shortcut and Orders delivery paths are measured separately",
+      "Onboarding, Daily Goal completion, and Rolling Request completion are covered live or clearly labeled as source-backed traces",
+      "Visibility, actions, scrolling, competing calls to action, target size, focus, overflow, and console results are reported",
+      "Observation is separated from interpretation and no more than one bounded next change is recommended",
+      "The normal gather, brew, collect, deliver, and upgrade loop is exercised",
+      "No tracked file, runtime behavior, save, cache, budget, or product scope changes",
+      "The coder reports one PASS, FAIL, or BLOCKED status with all required sections"
     ]
   }
 ]

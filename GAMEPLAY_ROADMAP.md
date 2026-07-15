@@ -14,7 +14,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 
 - Seven ingredients, twelve recipes across levels 1-7, one cauldron, three-rank recipe mastery, five upgrades, and level-7 Starry Rebirth.
 - Twelve recurring villagers with trust, 36 story beats, one-time Villager Special Requests, twelve keepsakes, and bounded first-read Journal rewards.
-- Three charged harvests recharge every 30 seconds and yield 3 base items. A targeted charged harvest guarantees the selected unlocked ingredient for that harvest; it does not guarantee completion of a recipe or order. Request Mix remains substantially random. Passive gathering starts after the first delivery at about 5 items per minute; offline gathering uses a slower rate, stops at 60% of Pantry capacity, and retains a four-hour elapsed-time safety cap.
+- Three charged harvests recharge every 30 seconds and yield 3 base items. A targeted charged harvest guarantees the selected unlocked ingredient for that harvest; it does not guarantee completion of a recipe or order. Request Mix remains substantially random. Passive gathering starts after the first delivery at about 5 items per minute. Offline gathering now uses the approved frontloaded diminishing curve, stops at 60% of Pantry capacity, and retains a four-hour elapsed-time safety cap; the representative level-4 empty Pantry receives 14/36/54 ingredients at 15/60/120 minutes and first reaches its reserve at minute 98.
 - Daily goals do not use streaks. Rolling request chains do not expire. All recurring and one-time rewards are bounded.
 - Eight reversible, economy-neutral Workshop Looks include the original look plus seven earned looks. Twelvefold Mastery derives completion from all twelve recipes at mastery rank 3 and unlocks the Masterwork Alcove without a claim or economy reward.
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
@@ -30,25 +30,19 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 27 frontloaded idle return
+## Now - Task 28 mobile action hierarchy audit
 
-Tasks 15 through 26 are complete. The owner approved frontloaded-diminishing for Task 27.
+Tasks 15 through 27 are complete. Task 27 shipped the owner-approved frontloaded diminishing offline curve and converted its candidate harness into a current-formula regression lock.
 
-Task 25 found no broad same-level recipe-pair failure: all eight measured recipes completed their request within ten minutes, with average delivery times from 109.0 to 175.8 seconds. In its representative active loop, Copper Cauldron and Golden Ledger produced clear throughput or coin effects, while ingredient upgrades mainly increased stock. Moonlit Garden added 2.8 active ingredients on average but no orders and no additional 60- or 120-minute offline ingredients because both cases reached the existing reserve cap.
-
-Task 26 confirmed that the current formula fills the representative passive reserve in 18 minutes. The approved frontloaded-diminishing curve reaches it in 98 minutes with 14/36/54 ingredients at 15/60/120 minutes and a 25% Garden level-1 benefit at 60 minutes.
-
-Implement only that approved curve while preserving the existing first-delivery gate, uniform ingredient distribution, 60% reserve, room for charged harvests, Moonlit Garden multiplier, Pantry Shelves interaction, four-hour elapsed cap, save shape, and one-time offline-award lifecycle. Convert the Task 26 candidate harness into current-formula regression evidence rather than retaining rejected alternatives as active direction.
+Measure the complete mobile path to an ordinary delivery before prescribing another interface change. Distinguish onboarding, an ordinary order that is not ready, an ordinary order that is ready, a newly completed Daily Goal, and a newly completed Rolling Request. Account for both the Workshop ready-delivery shortcut and the Orders surface. Record visibility, navigation actions, scrolling, competing calls to action, labels, focus, and touch-target size at 390x844 and 360x740. This is an evidence task only; it must not redesign the interface or change gameplay.
 
 ## Confirmed economy risks requiring design and simulation
 
-- **Idle return:** the four-hour value remains a safety cap. The owner approved Task 26's frontloaded-diminishing curve for Task 27; revalidate its 98-minute representative reserve target, upgrade interactions, reload lifecycle, and active first-cycle invariance before adoption.
 - **Stardust scaling:** each Stardust currently adds 10% order-coin value, and daily rewards can add Stardust independently of rebirth. Evaluate a cap or reshaped economic effect while preserving earned counts and sources where practical, define save migration, and revalidate the seeded first-cycle envelope. Do not choose or implement a formula without simulation and owner approval.
 
 ## Near-term existing-loop and playtest candidates
 
-- **Meaningful choice:** Task 25 did not support a broad recipe retune. Revisit an upgrade-path change only after Task 26 resolves the overlapping idle-return evidence; do not introduce branches, loadouts, currencies, or another recurring system.
-- **Mobile action hierarchy:** measure the full path to ordinary-order delivery at 390x844 and 360x740 before prescribing a redesign. Distinguish onboarding, an ordinary order not ready, an ordinary order ready, Daily Goal completion, and Rolling Request completion; account for the existing Workshop ready-delivery shortcut.
+- **Meaningful choice:** Task 25 did not support a broad recipe retune, and Task 27 resolved the overlapping idle-return behavior. Revisit an upgrade-path change only after owner play evidence identifies a concrete weak choice; do not introduce branches, loadouts, currencies, or another recurring system.
 - **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
 
 ## Unselected content candidates
