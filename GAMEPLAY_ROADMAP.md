@@ -30,11 +30,11 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 28 mobile action hierarchy audit
+## Now - Task 29 actionable not-ready orders
 
-Tasks 15 through 27 are complete. Task 27 shipped the owner-approved frontloaded diminishing offline curve and converted its candidate harness into a current-formula regression lock.
+Tasks 15 through 28 are complete. Task 28 found that the existing Workshop ready-delivery shortcut works well once a potion is bottled. Its clearest bounded friction was the shorter 360x740 Orders view: an ordinary order that is not ready sits below the recurring-goal cards and ends in a disabled `Not ready` control, so reaching the card still does not provide a direct next action.
 
-Measure the complete mobile path to an ordinary delivery before prescribing another interface change. Distinguish onboarding, an ordinary order that is not ready, an ordinary order that is ready, a newly completed Daily Goal, and a newly completed Rolling Request. Account for both the Workshop ready-delivery shortcut and the Orders surface. Record visibility, navigation actions, scrolling, competing calls to action, labels, focus, and touch-target size at 390x844 and 360x740. This is an evidence task only; it must not redesign the interface or change gameplay.
+Replace only that dead ordinary-order control with a state-aware route to the existing Workshop action: gather when ingredients are insufficient, reveal and focus the requested recipe when it is affordable, or show the occupied cauldron when a brew must finish or be collected first. Keep ready `Deliver` behavior unchanged. Navigation must not gather, brew, collect, or spend automatically, and must not reorder the Orders page or add another shortcut, banner, or navigation layer.
 
 ## Confirmed economy risks requiring design and simulation
 
