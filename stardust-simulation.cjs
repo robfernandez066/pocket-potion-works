@@ -1,8 +1,7 @@
 "use strict";
 
-// Development-only Task 30 evidence. Candidate arms use shipped gameplay
-// actions; only the Stardust factor presented to fulfillOrder is substituted
-// for that one reward calculation, then the saved integer count is restored.
+// Task 31 regression evidence compares the shipped runtime to the approved
+// formula reference without mutating the saved Stardust count.
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const game = require("./game-logic.js");
@@ -22,11 +21,13 @@ const TASK_24_FIRST_CYCLE_LOCKS = Object.freeze({
   42: Object.freeze({ seconds: 2695, orders: 31, coinsEarned: 6501 }),
   2026: Object.freeze({ seconds: 2600, orders: 32, coinsEarned: 6231 }),
 });
+const SELECTED_REPRESENTATIVE_LOCKS = Object.freeze({
+  multipliers: Object.freeze({ 0: 1, 1: 1.1, 5: 1.5, 40: 2.136364, 180: 2.397436, 100000: 2.4998 }),
+  roundedOrderCoins: Object.freeze({ 0: 242, 5: 363, 40: 517, 180: 580, 100000: 605 }),
+});
 const ARMS = Object.freeze([
-  Object.freeze({ id: "shipped", formula: "1 + 0.10s", bound: "unbounded" }),
-  Object.freeze({ id: "hard-cap-10", formula: "1 + 0.10 min(s,10)", maximumMultiplier: 2.0 }),
-  Object.freeze({ id: "tiered-2.5", formula: "1 + 0.10 min(s,5) + 0.05 min(max(s-5,0),10) + 0.02 min(max(s-15,0),25)", maximumMultiplier: 2.5 }),
-  Object.freeze({ id: "soft-cap-2.5", formula: "s <= 5 ? 1 + 0.10s : 1.5 + (s-5)/(s+15)", maximumMultiplier: 2.5, maximumExclusive: true }),
+  Object.freeze({ id: "shipped-runtime", label: "Shipped runtime behavior", formula: "game-logic.js coinMultiplier" }),
+  Object.freeze({ id: "approved-formula-reference", label: "Approved formula reference", formula: "s <= 5 ? 1 + 0.10s : 1.5 + (s-5)/(s+15)", maximumMultiplier: 2.5, maximumExclusive: true }),
 ]);
 
 function seededRandom(seed) {
@@ -35,41 +36,24 @@ function seededRandom(seed) {
 }
 
 function round(value) { return Math.round(value * 1000000) / 1000000; }
-function average(values) { return round(values.reduce((sum, value) => sum + value, 0) / values.length); }
 function upgradeCount(state) { return Object.values(state.upgrades).reduce((sum, value) => sum + value, 0); }
 function assertStardust(value) { assert.ok(Number.isFinite(value) && value >= 0, `Stardust must be finite and nonnegative: ${value}`); }
 
 function multiplierFor(armId, stardust) {
   assertStardust(stardust);
-  if (armId === "shipped") return game.coinMultiplier({ stardust, boostUntil: 0 }, START);
-  if (armId === "hard-cap-10") return 1 + .10 * Math.min(stardust, 10);
-  if (armId === "tiered-2.5") return 1 + .10 * Math.min(stardust, 5) + .05 * Math.min(Math.max(stardust - 5, 0), 10) + .02 * Math.min(Math.max(stardust - 15, 0), 25);
-  if (armId === "soft-cap-2.5") return stardust <= 5 ? 1 + .10 * stardust : 1.5 + (stardust - 5) / (stardust + 15);
+  if (armId === "shipped-runtime") return game.coinMultiplier({ stardust, boostUntil: 0 }, START);
+  if (armId === "approved-formula-reference") return stardust <= 5 ? 1 + .10 * stardust : 1.5 + (stardust - 5) / (stardust + 15);
   assert.fail(`Unknown simulation arm: ${armId}`);
 }
 
-function equivalentShippedStardust(armId, stardust) {
-  return (multiplierFor(armId, stardust) - 1) / .10;
-}
-
 function orderMultiplierForArm(state, armId, now, recipeId) {
-  const savedStardust = state.stardust;
-  state.stardust = equivalentShippedStardust(armId, savedStardust);
-  try {
-    return game.orderMultiplier(state, now, recipeId);
-  } finally {
-    state.stardust = savedStardust;
-  }
+  assert.equal(multiplierFor("shipped-runtime", state.stardust), multiplierFor(armId, state.stardust), `${armId} multiplier parity failed at ${state.stardust}`);
+  return game.orderMultiplier(state, now, recipeId);
 }
 
 function fulfillForArm(state, armId, orderId, now, random) {
-  const savedStardust = state.stardust;
-  state.stardust = equivalentShippedStardust(armId, savedStardust);
-  try {
-    return game.fulfillOrder(state, orderId, now, random);
-  } finally {
-    state.stardust = savedStardust;
-  }
+  assert.equal(multiplierFor("shipped-runtime", state.stardust), multiplierFor(armId, state.stardust), `${armId} multiplier parity failed at ${state.stardust}`);
+  return game.fulfillOrder(state, orderId, now, random);
 }
 
 function chooseUpgrade(state) {
@@ -182,7 +166,7 @@ function buildRepresentativeOrderEffects() {
 function buildFirstCycle() {
   const rows = FIRST_CYCLE_SEEDS.map(seed => {
     const state = game.defaultState(CYCLE_START);
-    const outcome = runToLevel(state, "shipped", seed, game.PRESTIGE_CONFIG.unlockLevel, CYCLE_START, 7200, true);
+    const outcome = runToLevel(state, "shipped-runtime", seed, game.PRESTIGE_CONFIG.unlockLevel, CYCLE_START, 7200, true);
     const expected = TASK_24_FIRST_CYCLE_LOCKS[seed];
     assert.deepEqual({ seconds: outcome.seconds, orders: outcome.orders, coinsEarned: outcome.coinsEarned }, expected, `Task 24 first-cycle lock changed for seed ${seed}`);
     return { seed, ...outcome, stardustSources: { dailyClaims: outcome.dailyClaims, rebirth: 0 } };
@@ -227,8 +211,9 @@ function buildDailyOnlyProjections() {
 
 function assertFormulaContracts(multiplierRows, activeMatrix, recoveryMatrix) {
   for (const stardust of STARDUST_COUNTS) {
-    const shipped = multiplierFor("shipped", stardust);
-    assert.equal(shipped, 1 + .10 * stardust, `shipped parity changed at ${stardust}`);
+    const runtime = multiplierFor("shipped-runtime", stardust);
+    const reference = multiplierFor("approved-formula-reference", stardust);
+    assert.equal(runtime, reference, `runtime/reference multiplier parity changed at ${stardust}`);
     for (const arm of ARMS) assert.ok(Number.isFinite(multiplierFor(arm.id, stardust)) && multiplierFor(arm.id, stardust) >= 0, `${arm.id} must be finite and nonnegative at ${stardust}`);
   }
   for (const arm of ARMS) {
@@ -240,56 +225,29 @@ function assertFormulaContracts(multiplierRows, activeMatrix, recoveryMatrix) {
     }
   }
   for (let stardust = 0; stardust <= 5; stardust += 1) {
-    const shipped = multiplierFor("shipped", stardust);
-    for (const arm of ARMS.filter(arm => arm.id !== "shipped")) assert.equal(multiplierFor(arm.id, stardust), shipped, `${arm.id} must match shipped through ${stardust} Stardust`);
+    assert.equal(multiplierFor("shipped-runtime", stardust), 1 + .10 * stardust, `runtime must preserve the approved early value at ${stardust}`);
   }
-  assert.equal(multiplierFor("hard-cap-10", 10), 2, "hard-cap-10 must reach 2.0x at 10");
-  assert.ok(multiplierFor("hard-cap-10", 100000) <= 2, "hard-cap-10 must not exceed 2.0x");
-  assert.equal(multiplierFor("tiered-2.5", 40), 2.5, "tiered-2.5 must reach 2.5x at 40");
-  assert.ok(multiplierFor("tiered-2.5", 100000) <= 2.5, "tiered-2.5 must not exceed 2.5x");
-  assert.ok(multiplierFor("soft-cap-2.5", 100000) < 2.5, "soft-cap-2.5 must remain below 2.5x at the save cap");
+  assert.ok(multiplierFor("shipped-runtime", 100000) < 2.5, "runtime must remain below 2.5x at the save cap");
   assert.ok(activeMatrix.filter(row => row.stardust === 100000).every(row => Number.isFinite(row.coins) && row.coins >= 0), "save-cap active outcomes must remain safe");
   assert.ok(recoveryMatrix.every(row => Number.isFinite(row.coins) && row.coins >= 0), "recovery outcomes must remain safe");
   assert.ok(multiplierRows.every(row => Object.keys(row.arms).length === ARMS.length), "each multiplier row must include every arm");
+  for (const rows of [activeMatrix, recoveryMatrix]) for (const runtime of rows.filter(row => row.arm === "shipped-runtime")) {
+    const reference = rows.find(row => row.arm === "approved-formula-reference" && row.seed === runtime.seed && (row.stardust ?? row.carriedStardust) === (runtime.stardust ?? runtime.carriedStardust));
+    assert.ok(reference, `missing approved reference scenario for ${runtime.seed}`);
+    const { arm: runtimeArm, ...runtimeOutcome } = runtime;
+    const { arm: referenceArm, ...referenceOutcome } = reference;
+    assert.deepEqual(referenceOutcome, runtimeOutcome, `runtime/reference scenario parity changed for ${runtime.seed}`);
+  }
   return {
-    shippedFormulaParity: true,
+    runtimeReferenceMultiplierParity: true,
+    runtimeReferenceScenarioParity: true,
     finiteNonnegativeOutputs: true,
-    monotonicCandidates: true,
-    exactParityThroughFive: true,
-    hardCap10Maximum: 2.0,
-    tiered25Maximum: 2.5,
-    softCap25BelowMaximumAtSaveCap: true,
+    monotonicRuntime: true,
+    exactEarlyValuesThroughFive: true,
+    below25AtSaveCap: true,
     saveCap: 100000,
     completeActiveMatrix: activeMatrix.length,
     completeRecoveryMatrix: recoveryMatrix.length,
-  };
-}
-
-function buildRanking(activeMatrix) {
-  const distortionCounts = [10, 20, 30, 40, 90, 180];
-  const candidates = ARMS.filter(arm => arm.id !== "shipped").map(arm => {
-    const ratios = [];
-    for (const seed of SEEDS) for (const stardust of distortionCounts) {
-      const shipped = activeMatrix.find(row => row.seed === seed && row.stardust === stardust && row.arm === "shipped");
-      const candidate = activeMatrix.find(row => row.seed === seed && row.stardust === stardust && row.arm === arm.id);
-      assert.ok(shipped && candidate && shipped.coinsEarned > 0, `missing measured distortion row for ${arm.id}/${seed}/${stardust}`);
-      ratios.push(candidate.coinsEarned / shipped.coinsEarned);
-    }
-    const positiveThrough = arm.id === "hard-cap-10" ? 10 : arm.id === "tiered-2.5" ? 40 : 100000;
-    return {
-      arm: arm.id,
-      earlyParityThroughFive: true,
-      longRunMultiplierBound: arm.maximumMultiplier,
-      continuedPostFiveValueThroughStardust: positiveThrough,
-      measuredEconomyDistortion: { activeSessionCounts: distortionCounts, meanCoinsEarnedPercentOfShipped: round(average(ratios) * 100), samples: ratios.length },
-    };
-  });
-  const ordered = [...candidates].sort((left, right) => right.continuedPostFiveValueThroughStardust - left.continuedPostFiveValueThroughStardust || right.measuredEconomyDistortion.meanCoinsEarnedPercentOfShipped - left.measuredEconomyDistortion.meanCoinsEarnedPercentOfShipped || left.longRunMultiplierBound - right.longRunMultiplierBound);
-  return {
-    method: "All candidates first qualify on exact parity through five and a bounded long-run multiplier. Ordering then prefers continued diminishing post-five value, lower measured active-session distortion from shipped at 10-180 Stardust, then the lower stated ceiling. This is evidence ranking only, not product approval.",
-    rows: candidates,
-    order: ordered.map(row => row.arm),
-    productDirectionSelected: false,
   };
 }
 
@@ -303,6 +261,19 @@ function assertFiniteNonnegative(value, path = "report") {
   }
 }
 
+function assertRepresentativeLocks(multipliers, representativeOrderEffects) {
+  for (const [stardust, multiplier] of Object.entries(SELECTED_REPRESENTATIVE_LOCKS.multipliers)) {
+    const row = multipliers.find(entry => entry.stardust === Number(stardust));
+    assert.ok(row, `missing locked multiplier row for ${stardust}`);
+    assert.deepEqual(row.arms, Object.fromEntries(ARMS.map(arm => [arm.id, multiplier])), `locked multiplier changed at ${stardust}`);
+  }
+  for (const [stardust, roundedCoins] of Object.entries(SELECTED_REPRESENTATIVE_LOCKS.roundedOrderCoins)) {
+    const row = representativeOrderEffects.rows.find(entry => entry.stardust === Number(stardust));
+    assert.ok(row, `missing locked representative order row for ${stardust}`);
+    assert.deepEqual(row.arms, Object.fromEntries(ARMS.map(arm => [arm.id, { orderMultiplier: SELECTED_REPRESENTATIVE_LOCKS.multipliers[stardust], roundedCoins }])), `locked representative order changed at ${stardust}`);
+  }
+}
+
 function buildReport() {
   assert.deepEqual(SEEDS, [7, 42, 2026, 99, 1234]);
   assert.deepEqual(STARDUST_COUNTS, [0, 1, 3, 5, 10, 20, 30, 40, 90, 180, 100000]);
@@ -313,7 +284,7 @@ function buildReport() {
   const activeMatrix = buildActiveMatrix();
   const recoveryMatrix = buildRecoveryMatrix();
   const assertions = assertFormulaContracts(multipliers, activeMatrix, recoveryMatrix);
-  const ranking = buildRanking(activeMatrix);
+  assertRepresentativeLocks(multipliers, representativeOrderEffects);
   const report = {
     harness: "stardust-simulation",
     fixedUtcStart: new Date(START).toISOString(),
@@ -323,14 +294,14 @@ function buildReport() {
     multipliers,
     representativeOrderEffects,
     firstCycle,
-    activeSession: { definition: "Ten-minute fixed active session from a fresh shipped state. Daily Goal is deliberately not claimed so each row isolates its listed fixed Stardust count.", seconds: ACTIVE_SECONDS, rows: activeMatrix },
-    postRebirthRecovery: { definition: "Level-seven state rebirths with the shipped base reward, then follows the fixed shipped recovery loop to level 3. Daily claims during recovery remain enabled and are reported separately.", targetLevel: 3, representativeCarriedStardustCounts: RECOVERY_COUNTS, rows: recoveryMatrix },
+    activeSession: { definition: "Ten-minute fixed active session from a fresh runtime state. Daily Goal is deliberately not claimed so each row isolates its listed fixed Stardust count.", seconds: ACTIVE_SECONDS, rows: activeMatrix },
+    postRebirthRecovery: { definition: "Level-seven state rebirths with the existing base reward, then follows the fixed runtime recovery loop to level 3. Daily claims during recovery remain enabled and are reported separately.", targetLevel: 3, representativeCarriedStardustCounts: RECOVERY_COUNTS, rows: recoveryMatrix },
     dailyOnlyProjections: buildDailyOnlyProjections(),
-    ranking,
+    selectedRepresentativeLocks: SELECTED_REPRESENTATIVE_LOCKS,
     migrationNote: {
-      existingSaveField: "stardust is already a preserved integer count; formula selection changes its interpretation only.",
+      existingSaveField: "stardust is already a preserved integer count; this multiplier interpretation changes no saved count.",
       perArm: ARMS.map(arm => ({ arm: arm.id, requiresSaveSchemaMigration: false, reason: "The existing nonnegative integer Stardust count remains sufficient input for this formula." })),
-      implementationStatus: "No migration is implemented by this development-only harness.",
+      implementationStatus: "No migration is required or implemented.",
     },
     assertions,
     regressionLocks: { task24FirstCycle: TASK_24_FIRST_CYCLE_LOCKS, task27IdleReturnSha256: TASK_27_IDLE_RETURN_SHA256 },
@@ -349,8 +320,8 @@ if (process.argv.includes("--check")) {
     harness: report.harness,
     activeScenarios: report.activeSession.rows.length,
     recoveryScenarios: report.postRebirthRecovery.rows.length,
-    candidateBounds: Object.fromEntries(report.arms.filter(arm => arm.id !== "shipped").map(arm => [arm.id, arm.maximumMultiplier])),
-    ranking: report.ranking.order,
+    arms: report.arms.map(arm => arm.id),
+    below25AtSaveCap: report.assertions.below25AtSaveCap,
     sha256,
   });
   assert.ok(Buffer.byteLength(summary) <= 1000, "check summary must stay concise");

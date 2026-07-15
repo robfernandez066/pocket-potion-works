@@ -28,14 +28,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Untargeted charged gathering is now Request Mix: every unlocked ingredient remains possible, while active-request deficits receive a small capped weight after bottled potions and Pantry stock are considered. Exact ingredient targeting, passive gathering, and offline gathering remain unchanged.
 - Ordinary order boards now avoid villagers already visible when alternatives remain. Every eligible villager stays possible, while someone one delivery from an unearned trust heart receives a small capped weight. Reserved orders, trust rules, and saved state remain unchanged.
 - Ordinary not-ready orders now provide one state-aware route to Gather, Brew, View brew, or Collect brew. These controls navigate and focus the exact existing Workshop action without performing gameplay; ready delivery and unavailable reserved orders remain unchanged.
+- Stardust now preserves its original 10% order-coin gain through five, then follows the owner-approved diminishing formula `1.5 + (stardust - 5) / (stardust + 15)`, remaining below a 2.5x Stardust multiplier without changing earned counts or sources.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 31 bounded Stardust scaling
+## Now - Task 32 content catalog boundary
 
-Tasks 15 through 30 are complete. The owner approved Task 30's recommended soft-cap-2.5 formula: preserve the shipped 10% per Stardust through five, then use `1.5 + (stardust - 5) / (stardust + 15)`. The multiplier continues increasing with diminishing returns and remains below 2.5x.
+Tasks 15 through 31 are complete. `game-logic.js` and `app.js` are both within 100 bytes of their existing file caps, so adding the planned permanent village chapter directly would force compressed code or an unapproved budget increase.
 
-Implement only this order-coin multiplier interpretation while preserving every earned Stardust count and source, save schema v8, Daily Goal and rebirth rewards, boosts, Ledger and mastery behavior, and the first-cycle regression envelope. Replace candidate-selection evidence with shipped-versus-approved regression coverage and make the existing rebirth explanation truthful without adding a new UI surface.
+Extract only the existing immutable narrative catalogs into one small offline runtime module while preserving the current public game-logic API and every behavior. Keep the 24,000,000-byte total cap unchanged and use the freed `game-logic.js` headroom for the bounded village-chapter pilot in the following task. This is a prerequisite refactor, not authorization to add or rewrite content yet.
 
 ## Near-term existing-loop and playtest candidates
 

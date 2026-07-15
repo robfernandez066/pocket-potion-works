@@ -485,7 +485,7 @@
   function gatherRate(state) { return BASE_PASSIVE_RATE * (1 + int(state.upgrades?.garden, 0, 0, 8) * .25); }
   function passiveStorageCap(state) { return Math.floor(storageCap(state) * PASSIVE_STORAGE_RATIO); }
   function manualGatherAmount(state) { return GATHER_CONFIG.amountPerCharge + int(state.upgrades?.basket, 0, 0, 6); }
-  function coinMultiplier(state, now = Date.now()) { return (1 + state.stardust * .1) * (now < state.boostUntil ? 2 : 1); }
+  function coinMultiplier(state, now = Date.now()) { const s = state.stardust; return (s <= 5 ? 1 + s * .1 : 1.5 + (s - 5) / (s + 15)) * (now < state.boostUntil ? 2 : 1); }
   function recipeMasteryRank(state, recipeId) {
     const count = int(state.mastery?.[recipeId]);
     return MASTERY_CONFIG.thresholds.filter(threshold => count >= threshold).length;

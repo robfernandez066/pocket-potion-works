@@ -106,7 +106,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 8/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v58`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v59`/);
 assert.match(text["audio-feedback.js"], /function effectsOutputGain\(volume\)/);
 assert.match(text["audio-feedback.js"], /const SYNTH_OUTPUT_BOOST = 8/);
 assert.match(text["style.css"], /workshop-scene:not\(\.is-idle\) \.bubble \{ display: block !important; animation: none !important; opacity: \.82; \}/);
@@ -115,8 +115,8 @@ assert.match(text["index.html"], /id="updateAnnouncement"[^>]+role="status"[^>]+
 assert.match(text["app.js"], /addEventListener\("controllerchange", showUpdate\)/);
 assert.match(text["app.js"], /registration\.update\(\)/);
 assert.match(text["app.js"], /location\.reload\(\)/);
-assert.match(text["index.html"], /Each stardust adds 10% to order coins/);
-assert.match(text["app.js"], /permanently increasing order coins/);
+assert.match(text["index.html"], /The first five add 10% each; later gains taper toward a 2\.5x Stardust order-coin multiplier/);
+assert.match(text["app.js"], /The first five add 10% each; later gains taper toward a 2\.5x Stardust order-coin multiplier/);
 assert.match(text["app.js"], /COSMETICS\.filter\(cosmetic => cosmetic\.id !== "dawnthread" \|\| state\.stats\.prestiges > 0\)/, "Dawnthread must remain absent from the Journal before the first rebirth");
 assert.doesNotMatch(`${text["index.html"]}\n${text["app.js"]}`, /all coin earnings/i, "prestige copy must match its order-reward-only multiplier");
 assert.match(text["app.js"], /pocket-potion-works-v1/);

@@ -390,6 +390,34 @@ test("daily reward is idempotent", () => {
   assert.equal(state.coins, 180); assert.equal(state.stardust, 3);
 });
 
+test("Stardust uses the approved bounded order multiplier without changing sources or saves", () => {
+  const state = game.defaultState(NOW);
+  const values = new Map([[0, 1], [1, 1.1], [2, 1.2], [3, 1.3], [4, 1.4], [5, 1.5], [6, 1.5 + 1 / 21], [10, 1.7], [40, 1.5 + 35 / 55], [180, 1.5 + 175 / 195], [100000, 1.5 + 99995 / 100015]]);
+  let previous = 0;
+  for (let stardust = 0; stardust <= game.SAVE_LIMITS.stardust; stardust += 1) {
+    state.stardust = stardust;
+    const multiplier = game.coinMultiplier(state, NOW);
+    assert.ok(multiplier >= previous && multiplier < 2.5, `Stardust ${stardust} must remain monotonic and below 2.5x`);
+    previous = multiplier;
+  }
+  for (const [stardust, expected] of values) {
+    state.stardust = stardust;
+    assert.equal(game.coinMultiplier(state, NOW), expected, `Stardust ${stardust} has its exact approved multiplier`);
+  }
+  state.stardust = 40; state.boostUntil = NOW + 1;
+  assert.equal(game.coinMultiplier(state, NOW), values.get(40) * 2, "temporary boost remains a separate 2x multiplier");
+  state.boostUntil = 0; state.upgrades.ledger = 2; state.mastery.tonic = game.MASTERY_CONFIG.thresholds.at(-1);
+  assert.equal(game.orderMultiplier(state, NOW, "tonic"), values.get(40) * (1 + 2 * .12 + 3 * game.MASTERY_CONFIG.coinBonusPerRank), "Ledger and recipe mastery retain their existing order stacking");
+  const daily = game.defaultState(NOW); daily.daily.orders = 5;
+  assert.ok(game.claimDaily(daily, NOW)); assert.deepEqual({ coins: daily.coins, stardust: daily.stardust }, { coins: 80, stardust: 1 }, "Daily Goal source remains 50 coins plus one Stardust");
+  const rebirth = game.defaultState(NOW); rebirth.level = game.PRESTIGE_CONFIG.unlockLevel; rebirth.stardust = 180;
+  assert.equal(game.performPrestige(rebirth, undefined, NOW).stardust, 183, "rebirth preserves carried Stardust and grants its existing reward");
+  for (const stardust of [40, 180, 100000]) {
+    const saved = game.defaultState(NOW); saved.stardust = stardust;
+    assert.equal(game.normalizeState(JSON.parse(JSON.stringify(saved)), NOW).stardust, stardust, `save round-trip preserves ${stardust} Stardust`);
+  }
+});
+
 test("daily rollover resets before a post-midnight delivery", () => {
   const yesterday = NOW;
   const midnight = NOW + 86400000;

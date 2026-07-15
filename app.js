@@ -879,7 +879,7 @@ function prestigeReward() { return Logic.prestigeReward(state); }
 function confirmPrestige() {
   if (state.level < PRESTIGE_CONFIG.unlockLevel) return;
   const reward = prestigeReward();
-  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active Villager Special Request.</p><p>Saved special-request invitations, friendships, completed keepsakes, mastery, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth also leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>, permanently increasing order coins by ${reward * 10}%.</p>`, actions: [
+  openModal({ icon: "★", kicker: "STARRY REBIRTH", title: "Begin again, brighter?", body: `<p>This resets coins, level, ingredients, potions, orders, brewing, upgrades, and any active Villager Special Request.</p><p>Saved invitations, friendships, keepsakes, mastery, rolling requests, cosmetics, today's daily state, and achievements stay. Your first rebirth leaves a cosmetic Starglass Keepsake. You gain <strong>${reward} stardust</strong>. The first five add 10% each; later gains taper toward a 2.5x Stardust order-coin multiplier.</p>`, actions: [
     { label: "Not yet" },
     { label: `Rebirth for ${reward} stardust`, primary: true, onClick: () => performPrestige(reward) },
   ] });
