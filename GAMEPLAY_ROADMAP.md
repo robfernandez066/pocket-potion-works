@@ -35,17 +35,18 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Fern's first trust heart now produces one exact data-driven inline payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and retains all Mira narrative and chapter behavior.
 - Fern's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and first-heart inline payoff through the same illustrated-villager seam as Mira. The original 256x256 source is retained outside deployment; one 96x96 transparent WebP is cached for offline play while the other ten villagers retain their emoji avatars.
 - Pure browser presentation helpers now live in the dependency-free `ui-render.js` offline module. `app.js` retains state, DOM, event, focus, storage, audio, save, and gameplay ownership while returning below its fixed per-file cap without changing rendered behavior.
+- Owner mobile acceptance passed for the Mira/Fern presentation batch: the installed update, primary views, portraits beside emoji villagers, and normal interactions remained clear without distracting repetition or crowding.
 - GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 40 owner acceptance checkpoint
+## Now - Task 41 runtime-budget evidence
 
-Tasks 15 through 39 are complete. The public build now includes Mira and Fern's portraits, both first-heart delivery moments, and the behavior-neutral browser presentation split.
+Tasks 15 through 40 are complete. The fixed 24,000,000-byte runtime budget has only 4,603 bytes remaining, while the three background-music files account for nearly all deployed bytes. More content assets should not be authorized until the project has reproducible evidence for recovering headroom without degrading the listening experience.
 
-Before authorizing another character portrait or first-heart pilot, the owner should perform one short installed-phone pass after accepting the update: open Workshop, Orders, Upgrades, and Journal; confirm Mira and Fern look at home beside an emoji villager; open the Villager Special Request chooser if an invitation is already available; and perform a few normal actions. The acceptance question is whether the character art and authored moments feel welcome and noticeable without making routine delivery feel repetitive or visually crowded.
+Create a development-only deterministic audit of the active runtime inventory and the three shipped MP3 tracks. Report actual category totals, track durations and effective bitrates, and clearly labeled size projections for conservative MP3 bitrate targets. This is evidence for an owner decision only: do not alter, re-encode, replace, remove, stream remotely, or change the cache treatment of any live asset.
 
-This checkpoint does not require forcing a rare trust-heart transition or resetting the owner's save. A normal two-to-five-minute session is enough. After acceptance, the next coder task should address the remaining total-runtime constraint before adding another content asset.
+Keep the current runtime, budgets, cache identity, playback behavior, credits, and offline availability unchanged. Any later compression task must preserve all three tracks and require a short owner listening comparison before publication.
 
 ## Near-term existing-loop and playtest candidates
 
