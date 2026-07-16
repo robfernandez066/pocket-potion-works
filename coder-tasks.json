@@ -521,7 +521,7 @@
   },
   {
     "id": 41,
-    "status": "next",
+    "status": "complete",
     "title": "Runtime and music budget evidence",
     "model": "5.6 Luna with High effort",
     "freshChat": true,
@@ -535,6 +535,24 @@
       "Only runtime-budget-audit.cjs and package.json change; runtime, audio, budgets, cache, gameplay, and release evidence remain unchanged",
       "npm.cmd run check, git diff --check, and every existing deterministic lock pass",
       "The coder reports exactly one PASS, FAIL, or BLOCKED status with inventory, measurements, projections, ranking, capability note, hashes, assumptions, and deferred findings"
+    ]
+  },
+  {
+    "id": 42,
+    "status": "next",
+    "title": "192 kbps music listening candidates",
+    "model": "5.6 Luna with High effort",
+    "freshChat": true,
+    "prompt": "Task #42\n\nWork in:\n\nC:\\Users\\robbi\\Documents\\Projects\\newgame\n\nDo not read archive/.\n\nRun npm.cmd run handoff and confirm it prints Task 42. Work only on Task 42.\n\nObjective: Create temporary, non-shipping 192 kbps CBR listening candidates for the three existing background-music tracks and a simple same-position A/B listening page for owner comparison. Do not replace or modify any repository audio or runtime file.\n\nInspect first: AGENTS.md, GAMEPLAY_ROADMAP.md, runtime-budget-audit.cjs, release-budgets.json, ASSET_PROVENANCE.md, assets/audio/music1.mp3, assets/audio/music2.mp3, assets/audio/music3.mp3, the installed Audacity executable at C:\\Program Files\\Audacity\\Audacity.exe, and only other active files directly required by this task.\n\nOutput boundary: Create all Task 42 artifacts only under C:\\tmp\\Pocket-Potion-Works-Task42-audio. Do not add these temporary files to Git or the repository. Preserve the three repository originals byte-for-byte. If the exact output folder already contains unexpected owner files, do not delete them; report BLOCKED.\n\nCandidate encoding: Use only the already installed local Audacity application and its existing MP3 support. Do not install software, download a binary, use a remote converter, or modify Audacity's global preferences. Export exactly three candidates corresponding to music1.mp3, music2.mp3, and music3.mp3 at constant 192 kbps, 44.1 kHz, stereo or joint stereo as supported by the existing source/export path. Apply no trimming, normalization, amplification, fades, effects, resampling beyond what the required MP3 export performs, channel collapse, metadata invention, or content edits. Keep the beginning and ending content intact. Do not overwrite the originals.\n\nVerification: Build a temporary local verification script under the Task 42 output folder, reusing the Task 41 MP3 parsing principles without changing runtime-budget-audit.cjs. Report each original and candidate path, SHA-256, bytes, duration, MPEG version/layer, sample rate, channel mode, frame count, minimum/maximum/average bitrate, and CBR/VBR result. Assert each candidate is MPEG-1 Layer III, 44.1 kHz, stereo or joint stereo, constant 192 kbps, has positive complete frame bounds, and differs from its original hash. Require each candidate duration to remain within one original MP3 frame duration plus 0.01 seconds of its matching original. Report combined actual candidate bytes, actual bytes recovered, hypothetical runtime total, and hypothetical headroom using the current Task 41 runtime total; these are temporary comparison measurements, not authorization to ship.\n\nListening page: Create a small dependency-free local comparison page under the same temporary folder. For each track, provide clearly labeled Original and 192 kbps Candidate controls plus a Toggle A/B control that switches sources while preserving the current playback position and whether playback was active. Ensure only one audio source plays at a time, default volume is the same for both sources, and no automatic playback occurs. Include a brief instruction to compare about 15 seconds near the beginning, middle, and end of each track and record only `Accept 192`, `Prefer original`, or `Unsure` per track. Do not make quality claims or bias the owner toward acceptance.\n\nRun a temporary local server for the comparison page and report its exact local URL. Verify the page opens, all six audio sources load, Toggle A/B preserves position within one second, switching stops the prior source, and there are no console warnings or errors attributable to the page. Leave the server available for the owner's immediate listening test and report how the PM can stop it afterward. Do not expose the server beyond localhost.\n\nRepository protection: Before and after the task, record git status and SHA-256 for all three repository originals. The repository must remain clean and identical to the Task 41 baseline. Do not edit package.json, runtime-budget-audit.cjs, roadmap, queue, runtime files, audio files, budgets, cache identity, service worker, provenance, licenses, release evidence, documentation, or archive/. Do not stage, commit, push, or begin another task.\n\nNo normal game browser QA is required because no repository or runtime file may change. Owner listening is required before any later implementation task.\n\nFinish with exactly one overall status: PASS, FAIL, or BLOCKED, followed by Summary, repository protection evidence, candidate measurement table, actual recovery/headroom table, listening-page evidence and URL, changed temporary files, validation evidence, Assumptions, and Deferred or out-of-scope findings.",
+    "acceptance": [
+      "All three repository originals retain their exact pre-task SHA-256 values and the repository remains clean",
+      "Exactly three temporary candidates are locally encoded as constant 192 kbps MPEG-1 Layer III at 44.1 kHz with stereo presentation and no intentional content processing",
+      "Each candidate retains complete audio content and stays within one original MP3 frame duration plus 0.01 seconds of its matching original",
+      "Actual candidate sizes, recovered bytes, hypothetical runtime total, and hypothetical headroom are measured without changing the shipping budget or files",
+      "A dependency-free localhost A/B page compares original and candidate at the same playback position, never plays two sources together, and makes no quality claim",
+      "The owner receives a short beginning/middle/end listening procedure and must explicitly accept or reject 192 kbps per track before implementation",
+      "No repository file, runtime asset, cache, budget, playback behavior, documentation, or Git state changes",
+      "The coder reports exactly one PASS, FAIL, or BLOCKED status with protection evidence, measurements, listening URL, assumptions, and deferred findings"
     ]
   }
 ]

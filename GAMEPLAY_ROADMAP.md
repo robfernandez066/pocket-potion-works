@@ -40,13 +40,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 41 runtime-budget evidence
+## Now - Task 42 192 kbps music listening candidates
 
-Tasks 15 through 40 are complete. The fixed 24,000,000-byte runtime budget has only 4,603 bytes remaining, while the three background-music files account for nearly all deployed bytes. More content assets should not be authorized until the project has reproducible evidence for recovering headroom without degrading the listening experience.
+Tasks 15 through 41 are complete. The deterministic runtime audit confirms that the three shipped music tracks are 256 kbps CBR and occupy 22,516,295 bytes, or 93.84% of the deployed runtime. The current build has only 4,603 bytes of headroom.
 
-Create a development-only deterministic audit of the active runtime inventory and the three shipped MP3 tracks. Report actual category totals, track durations and effective bitrates, and clearly labeled size projections for conservative MP3 bitrate targets. This is evidence for an owner decision only: do not alter, re-encode, replace, remove, stream remotely, or change the cache treatment of any live asset.
+The least-aggressive modeled option that clears the declared headroom threshold is 192 kbps. Its mathematical projection recovers 5,629,073 bytes and leaves 5,633,676 bytes of runtime headroom, while 160 and 128 kbps would compress more aggressively than the current evidence requires.
 
-Keep the current runtime, budgets, cache identity, playback behavior, credits, and offline availability unchanged. Any later compression task must preserve all three tracks and require a short owner listening comparison before publication.
+Create temporary 192 kbps CBR listening candidates outside the repository using the existing local Audacity installation. Preserve all three originals and every live runtime, cache, budget, credit, and playback behavior. Provide a short same-position A/B comparison for owner listening; only an explicit owner acceptance may authorize replacing the shipped files in a later task.
 
 ## Near-term existing-loop and playtest candidates
 
