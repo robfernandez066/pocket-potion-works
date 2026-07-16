@@ -32,21 +32,22 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The five immutable narrative catalogs now live in the dependency-free `content-data.js` offline module. Browser and CommonJS consumers still receive the same recursively frozen objects through `PPWLogic`, and gameplay behavior is unchanged.
 - Mira's permanent three-delivery chapter, **The Village Loaf**, unlocks after level 4, Mira's third heart, and her Flour-Sun Pin Special Request. Each chapter delivery presents an acknowledgement-controlled story scene; completion unlocks the reversible, economy-neutral **Firstlight Bakery** Workshop Look. The chapter shares the existing reserved slot without displacing its two ordinary orders and persists through Starry Rebirth.
 - Mira's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and Village Chapter payoff scenes. The original 256x256 source is retained outside deployment; one optimized transparent runtime copy is cached for offline play without changing other villagers' avatars.
+- GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 35 Request Mix usefulness evidence
+## Now - Task 37 Fern first-heart narrative pilot
 
-Tasks 15 through 34 are complete and owner-accepted.
+Tasks 15 through 36 are complete. The public-build hotfix restored the complete artifact without changing gameplay or saves.
 
-Measure the shipped Request Mix against the shipped uniform random ingredient path across representative active-order deficits. The evidence must quantify the chance that one charged harvest supplies at least one currently missing ingredient, average deficit reduction, and cases where weighting correctly disappears because bottled potions or Pantry stock already cover the request.
+Add one Fern the Gardener first-trust-heart payoff through the existing data-driven delivery-narrative pilot. This is the smallest next authored-content addition: it deepens an existing villager and relationship milestone without adding another chapter, reward, saved field, modal, navigation surface, or content framework.
 
-This is a development-only evidence task. It must not change gathering, copy, weights, recipes, orders, saves, runtime assets, or player behavior. Use the result to decide whether the current “stays random and favors active-request deficits” explanation is both truthful and useful before authorizing any player-facing adjustment.
+The payoff should connect Fern's first trust heart to the stubborn seed in her blue pot and remain an inline, non-modal moment at the delivery surface that earned it. Preserve the existing Journal story claim, normal friendship favor, order rewards, and every Mira narrative and chapter behavior. Do not expand to the other ten villagers until owner play establishes that two distinct pilots remain welcome rather than repetitive.
 
 ## Near-term existing-loop and playtest candidates
 
 - **Meaningful choice:** Task 25 did not support a broad recipe retune, and Task 27 resolved the overlapping idle-return behavior. Revisit an upgrade-path change only after owner play evidence identifies a concrete weak choice; do not introduce branches, loadouts, currencies, or another recurring system.
-- **Gathering clarity:** validate whether Request Mix feels useful without obscuring its randomness. Targeted gathering continues to guarantee only the selected ingredient.
+- **Gathering clarity:** Task 35 measured a modest but uneven Request Mix advantage: no measured positive-deficit scenario was worse, the average one-harvest hit-rate improvement was 8.957 percentage points, and the predeclared 10-point “noticeable” threshold was not met. The strict “favors” classification also failed because level 1 was already at a 100% uniform hit ceiling. Keep the shipped weights and truthful random/favoring explanation unchanged pending owner feel evidence. Targeted gathering continues to guarantee only the selected ingredient.
 
 Do not extend the level curve, add a second cauldron, introduce another recurring system, or produce new raster or audio packs without evidence and an explicit runtime-budget decision.
 

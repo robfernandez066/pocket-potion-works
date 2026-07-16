@@ -38,7 +38,13 @@ const imageAssets = [
 const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
 assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
-for (const file of streamedAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
+const pagesArtifactStep = pagesWorkflow.match(/- name: Prepare playable artifact only([\s\S]*?)(?=\n      - name:|$)/)?.[1];
+assert.ok(pagesArtifactStep, "GitHub Pages playable artifact step is missing");
+const rootCopyCommand = pagesArtifactStep.match(/^\s*cp\s+(.+?)\s+_site\/$/m);
+assert.ok(rootCopyCommand, "GitHub Pages playable artifact root copy command is missing");
+const copiedRootRuntimeFiles = rootCopyCommand[1].trim().split(/\s+/);
+for (const file of runtimeFiles) assert.ok(copiedRootRuntimeFiles.includes(file), `GitHub Pages artifact root copy is missing runtime file: ${file}`);
+for (const file of streamedAssets) assert.ok(pagesArtifactStep.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
 assert.ok(pagesWorkflow.includes("cp -r assets/images _site/assets/"), "GitHub Pages must copy the complete local image library");
 const miraSource = "assets/source/villagers/mira_head-256.png";
 const miraRuntime = "assets/images/villagers/mira-head.png";
