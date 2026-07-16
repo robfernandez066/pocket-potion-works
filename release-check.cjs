@@ -21,6 +21,7 @@ const imageAssets = [
   "assets/images/misc/workshop-cat.png",
   "assets/images/misc/workshop-cauldron.png",
   "assets/images/villagers/mira-head.png",
+  "assets/images/villagers/fern-head.webp",
   "assets/images/potions/aurora-nectar.png",
   "assets/images/potions/aurora-nectar-animated-12f.png",
   "assets/images/potions/bottled-sunrise.png",
@@ -48,8 +49,12 @@ for (const file of streamedAssets) assert.ok(pagesArtifactStep.includes(file), `
 assert.ok(pagesWorkflow.includes("cp -r assets/images _site/assets/"), "GitHub Pages must copy the complete local image library");
 const miraSource = "assets/source/villagers/mira_head-256.png";
 const miraRuntime = "assets/images/villagers/mira-head.png";
+const fernSource = "assets/source/villagers/fern_head-256.png";
+const fernRuntime = "assets/images/villagers/fern-head.webp";
 assert.ok(fs.existsSync(miraSource), "Mira source artwork must be preserved outside deployed images");
+assert.ok(fs.existsSync(fernSource), "Fern source artwork must be preserved outside deployed images");
 assert.ok(!fs.existsSync("assets/images/villagers/mira_head.png"), "Mira source artwork must not remain in deployed images");
+assert.ok(!fs.existsSync("assets/images/villagers/fern_head.png"), "Fern source artwork must not remain in deployed images");
 assert.ok(!pagesWorkflow.includes("assets/source"), "GitHub Pages artifact must not copy source artwork");
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
 for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v9.json", "fixtures/saves/future-version-v10.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs", "fixtures/rollback/game-save-reader-v4.cjs", "fixtures/rollback/game-save-reader-v5.cjs", "fixtures/rollback/game-save-reader-v6.cjs", "fixtures/rollback/game-save-reader-v7.cjs", "fixtures/rollback/game-save-reader-v8.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
@@ -59,7 +64,18 @@ const miraSourcePng = fs.readFileSync(miraSource);
 assert.ok(miraSourcePng.subarray(0, 8).equals(pngSignature), "Mira source artwork must remain a PNG");
 assert.deepEqual([miraSourcePng.readUInt32BE(16), miraSourcePng.readUInt32BE(20)], [256, 256], "Mira source artwork must remain 256x256");
 assert.equal(miraSourcePng[25], 6, "Mira source artwork must retain transparency");
+const fernSourcePng = fs.readFileSync(fernSource);
+assert.ok(fernSourcePng.subarray(0, 8).equals(pngSignature), "Fern source artwork must remain a PNG");
+assert.deepEqual([fernSourcePng.readUInt32BE(16), fernSourcePng.readUInt32BE(20)], [256, 256], "Fern source artwork must remain 256x256");
+assert.equal(fernSourcePng[25], 6, "Fern source artwork must retain transparency");
 for (const file of imageAssets) {
+  if (file === fernRuntime) {
+    const webp = fs.readFileSync(file);
+    assert.ok(webp.subarray(0, 4).equals(Buffer.from("RIFF")) && webp.subarray(8, 12).equals(Buffer.from("WEBP")) && webp.subarray(12, 16).equals(Buffer.from("VP8X")), "Fern runtime portrait must be a VP8X WebP");
+    assert.deepEqual([webp.readUIntLE(24, 3) + 1, webp.readUIntLE(27, 3) + 1], [96, 96], "Fern runtime portrait must be 96x96");
+    assert.ok(webp[20] & 0x10, "Fern runtime portrait must retain transparency");
+    continue;
+  }
   const png = fs.readFileSync(file);
   assert.ok(png.subarray(0, 8).equals(pngSignature), `${file} is not a valid PNG file`);
   const width = png.readUInt32BE(16);
@@ -91,6 +107,7 @@ for (const file of runtimeFiles.filter(file => file !== "service-worker.js")) as
 for (const file of runtimeAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
 for (const file of imageAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing approved sprite ${file}`);
 assert.ok(!swShell.includes(`./${miraSource}`), "service worker must not cache Mira source artwork");
+assert.ok(!swShell.includes(`./${fernSource}`), "service worker must not cache Fern source artwork");
 assert.ok(swShell.includes("./"), "service worker cache is missing the start URL");
 
 for (const [file, source] of Object.entries(text)) {
@@ -124,7 +141,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v63`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v64`/);
 assert.match(text["audio-feedback.js"], /function effectsOutputGain\(volume\)/);
 assert.match(text["audio-feedback.js"], /const SYNTH_OUTPUT_BOOST = 8/);
 assert.match(text["style.css"], /workshop-scene:not\(\.is-idle\) \.bubble \{ display: block !important; animation: none !important; opacity: \.82; \}/);
@@ -158,7 +175,9 @@ assert.equal(parseByteRange("bytes=1000-", 1000), null);
 
 const budgets = JSON.parse(fs.readFileSync("release-budgets.json", "utf8"));
 assert.equal(budgets.files[miraRuntime], 24000, "Mira runtime portrait must keep its fixed 24 KB cap");
+assert.equal(budgets.files[fernRuntime], 8000, "Fern runtime portrait must keep its fixed 8 KB cap");
 assert.ok(!Object.hasOwn(budgets.files, miraSource), "Mira source artwork must not count toward runtime budgets");
+assert.ok(!Object.hasOwn(budgets.files, fernSource), "Fern source artwork must not count toward runtime budgets");
 const normalizedReleaseBytes = file => {
   const extension = path.extname(file).toLowerCase();
   if (![".html", ".css", ".js", ".json", ".webmanifest", ".svg"].includes(extension)) return fs.statSync(file).size;

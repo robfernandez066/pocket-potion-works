@@ -11,8 +11,9 @@ const POTION_SPRITES = new Set(RECIPES.map(recipe => recipe.id));
 const ingredientSpriteAttr = id => INGREDIENT_SPRITES.has(id) ? ` data-ingredient-sprite="${id}"` : "";
 const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
 const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionSpriteAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
-const MIRA_PORTRAIT_MARKUP = '<span class="mira-portrait" aria-hidden="true"></span>';
-const customerAvatarMarkup = (customerId, avatar, color) => `<span class="customer-avatar" style="--avatar:${color}">${customerId === "customer-0" ? MIRA_PORTRAIT_MARKUP : avatar}</span>`;
+const PORTRAITS = Object.freeze({ "customer-0": "mira", "customer-6": "fern" });
+const portraitMarkup = id => PORTRAITS[id] ? `<span class="villager-portrait ${PORTRAITS[id]}-portrait" aria-hidden="true"></span>` : "";
+const customerAvatarMarkup = (id, avatar, color) => `<span class="customer-avatar" style="--avatar:${color}">${portraitMarkup(id) || avatar}</span>`;
 const $ = document.querySelector.bind(document);
 function browserStorage() {
   try { return window.localStorage; }
@@ -607,7 +608,7 @@ function renderNarrativeDelivery() {
     const detail = transientCompletions[`narrative${surface}`];
     const card = document.getElementById(`${surface.toLowerCase()}NarrativeDelivery`);
     card.hidden = !detail;
-    card.innerHTML = detail ? `<p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small>` : "";
+    card.innerHTML = detail ? `${portraitMarkup(detail.customerId)}<div class="narrative-copy"><p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small></div>` : "";
   }
 }
 
@@ -949,7 +950,7 @@ function goToBrewSlot() {
 function showChapterPayoff(result, surface) {
   const final = result.chapter.complete;
   openModal({ kicker: result.narrative.kicker, title: result.narrative.title,
-    icon: MIRA_PORTRAIT_MARKUP, body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
+    icon: portraitMarkup("customer-0"), body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
     actions: [{ label: final ? "View Workshop Looks" : "Continue the chapter", primary: true, onClick: () => {
       closeModal();
       if (final) switchView("journal"); else switchView("orders");
@@ -966,7 +967,7 @@ function openModal({ icon, kicker, title, body, actions }) {
   if (backdrop.hidden) lastFocus = document.activeElement;
   const modalIcon = $("#modalIcon");
   modalIcon.innerHTML = icon;
-  modalIcon.classList.toggle("is-mira-portrait", icon === MIRA_PORTRAIT_MARKUP);
+  modalIcon.classList.toggle("is-villager-portrait", icon.includes("mira-portrait"));
   $("#modalKicker").textContent = kicker;
   $("#modalTitle").textContent = title;
   $("#modalBody").innerHTML = body;

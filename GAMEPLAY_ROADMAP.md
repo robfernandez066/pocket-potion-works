@@ -33,17 +33,18 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Mira's permanent three-delivery chapter, **The Village Loaf**, unlocks after level 4, Mira's third heart, and her Flour-Sun Pin Special Request. Each chapter delivery presents an acknowledgement-controlled story scene; completion unlocks the reversible, economy-neutral **Firstlight Bakery** Workshop Look. The chapter shares the existing reserved slot without displacing its two ordinary orders and persists through Starry Rebirth.
 - Mira's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and Village Chapter payoff scenes. The original 256x256 source is retained outside deployment; one optimized transparent runtime copy is cached for offline play without changing other villagers' avatars.
 - Fern's first trust heart now produces one exact data-driven inline payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and retains all Mira narrative and chapter behavior.
+- Fern's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and first-heart inline payoff through the same illustrated-villager seam as Mira. The original 256x256 source is retained outside deployment; one 96x96 transparent WebP is cached for offline play while the other ten villagers retain their emoji avatars.
 - GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Fern portrait owner asset step before Task 38
+## Now - Task 39 browser presentation boundary
 
-Tasks 15 through 37 are complete. No coder task is queued until the owner selects and adds one Fern headshot.
+Tasks 15 through 38 are complete. Fern's optimized portrait and shared Mira/Fern presentation are shipped within the existing runtime budget, but `app.js` is now 79,999 of 80,000 bytes. This per-file limit prevents even a small readable browser change.
 
-Generate one front-facing, transparent 256x256 Fern portrait in Sprixen using Mira's preserved source portrait as the style reference. Fern should read as a patient village gardener, remain distinct from Mira, and stay legible at 44px. Do not animate this headshot.
+Create one behavior-neutral offline browser-presentation module by extracting a tightly related set of pure markup and display helpers from `app.js`. Preserve the existing UI, event ownership, state transitions, focus, accessibility, save behavior, gameplay, and public HTML. The purpose is to restore readable implementation headroom before another content task, not to create a framework or add product scope.
 
-After owner selection, add the untouched image as `assets/images/villagers/fern_head.png`. Task 38 will preserve that source outside deployment, derive a budgeted runtime copy, and wire it only to Fern's existing order, Special Request, Journal, and first-heart payoff surfaces. Do not begin portraits or narrative pilots for the other ten villagers until owner play establishes that Mira and Fern remain welcome rather than repetitive.
+Keep the total 24,000,000-byte runtime budget unchanged and limit the new module's overhead. Do not use minification, obscure identifiers, presentation generation in game logic, a build system, a dependency, or a broad rewrite. Owner play of Mira and Fern remains the evidence gate before adding portraits or first-heart pilots for another villager.
 
 ## Near-term existing-loop and playtest candidates
 
