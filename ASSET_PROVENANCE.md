@@ -24,6 +24,8 @@ The owner downloaded all three tracks under the Pixabay Content License on July 
 
 The tracks are used only as part of Pocket Potion Works and must not be offered, claimed, sold, or redistributed as standalone music. The source pages identify the music as AI-generated; at least Violin Alchemy and Emerald Echoes Cries are Content ID registered, so the retained certificates must be kept for possible claim disputes. This evidence does not remove Pixabay's disclaimer concerning third-party rights.
 
+The current runtime copies are the owner-accepted Audacity 3.7.8 constant-192 kbps exports from Task 42: `music1.mp3` `3BDB1FEE54E177AF9C10EE1C837B16940F95FCD2DFD119B238F9E19C6266BFFC`; `music2.mp3` `6138EF693EA321E35B1747A1B7F1EB41A590E7F2EE33598E1FDFEB0B92A449A6`; and `music3.mp3` `7E30FEE8E17B3F8F746AB521E88F7AF88D1D60D4D842EA72EC1A3BDB50274B36`.
+
 ## Synthesized fallback audio
 
 - The fallback sound set in `audio-feedback.js` is original for Pocket Potion Works. It uses nine short, hand-authored Web Audio frequency/duration/volume sequences (`tap`, `gather`, `brewStart`, `brewReady`, `collect`, `delivery`, `upgrade`, `levelUp`, and `reward`). No audio libraries or remote resources are included.
@@ -48,4 +50,4 @@ The tracks are used only as part of Pocket Potion Works and must not be offered,
 
 ## Footprint
 
-The eight wired effects add 199,969 bytes to the offline installation shell. The three music tracks add 22,516,295 bytes and stream from the same origin on demand instead of blocking service-worker installation; completed full-file requests may be cached for later use. `gather.mp3` is a trimmed 9,936-byte file and plays in full. The two parked samples are not requested at runtime. The audio implementation remains dependency-free and makes no remote request.
+The eight wired effects add 199,969 bytes to the offline installation shell. The three music tracks add 16,890,981 bytes and stream from the same origin on demand instead of blocking service-worker installation; completed full-file requests may be cached for later use. `gather.mp3` is a trimmed 9,936-byte file and plays in full. The two parked samples are not requested at runtime. The audio implementation remains dependency-free and makes no remote request.

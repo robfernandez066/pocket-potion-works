@@ -36,17 +36,18 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Fern's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and first-heart inline payoff through the same illustrated-villager seam as Mira. The original 256x256 source is retained outside deployment; one 96x96 transparent WebP is cached for offline play while the other ten villagers retain their emoji avatars.
 - Pure browser presentation helpers now live in the dependency-free `ui-render.js` offline module. `app.js` retains state, DOM, event, focus, storage, audio, save, and gameplay ownership while returning below its fixed per-file cap without changing rendered behavior.
 - Owner mobile acceptance passed for the Mira/Fern presentation batch: the installed update, primary views, portraits beside emoji villagers, and normal interactions remained clear without distracting repetition or crowding.
+- All three background-music tracks now use the exact owner-approved 192 kbps CBR runtime copies. The three tracks remain intact with unchanged playback behavior and provenance, while the fixed 24,000,000-byte runtime now uses 18,370,083 bytes and retains 5,629,917 bytes of headroom; no further compression is required for the current budget goal.
 - GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 43 ship the owner-approved 192 kbps music
+## Now - Task 44 Fern second-heart delivery moment
 
-Tasks 15 through 42 are complete. The owner accepted the 192 kbps A/B candidate for all three background-music tracks. The temporary candidates are exact validated CBR exports with unchanged musical content and a combined size of 16,890,981 bytes.
+Tasks 15 through 43 are complete. Runtime headroom is restored, and Fern already has an owner-approved portrait plus one exact first-heart delivery payoff. Deepen that existing character seam with one bounded second-heart moment rather than adding another system, screen, currency, timer, or asset pack.
 
-Replace only the three shipped 256 kbps runtime copies with the exact owner-approved candidate hashes. This should recover 5,625,314 deployed bytes, reduce the runtime to 18,370,083 bytes, and leave 5,629,917 bytes of headroom without removing a track or changing playback behavior.
+When a genuine successful Fern delivery moves her from one trust heart to two, show one exact inline authored payoff at the originating Workshop or Orders surface. It must use the existing narrative payload, portrait treatment, readable-then-collapse lifecycle, Journal story rules, and ordinary fulfillment paths without adding saved state or rewards.
 
-Keep the 24,000,000-byte total budget fixed, lower the three individual music caps to protect the recovered space, preserve credits and licenses, rotate the offline cache once, and make the active runtime audit state clearly that no further compression is required by the declared headroom threshold. Do not re-encode the approved candidates or extend this task into new music, mix, UI, gameplay, or content work.
+Keep Fern's first-heart moment, Mira's moments and Village Chapter, Special Requests, After the Stars, rebirth behavior, relationship rewards, and every economy value unchanged. This task is one authored transition only; it does not authorize Fern's third-heart payoff, another Village Chapter, another portrait, or a broader dialogue system.
 
 ## Near-term existing-loop and playtest candidates
 

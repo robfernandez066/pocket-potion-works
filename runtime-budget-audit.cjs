@@ -200,6 +200,7 @@ function parseMp3(relativePath) {
     averageEffectiveBitrateKbps: round(bitrates.reduce((sum, bitrate) => sum + bitrate, 0) / bitrates.length),
     frameBitrateMode: new Set(bitrates).size === 1 ? "constant bitrate" : "variable bitrate",
     completeFrameBounds: true,
+    sha256: crypto.createHash("sha256").update(buffer).digest("hex").toUpperCase(),
   };
 }
 
@@ -318,7 +319,8 @@ function buildProjections(tracks, inventory, budget) {
     },
     ranking,
     leastAggressivePassingTargetKbps: ranking[0]?.targetKbps ?? null,
-    ownerListeningComparisonRequired: true,
+    ownerListeningComparisonRequired: false,
+    recommendedAdditionalCompressionTargetKbps: null,
   };
 }
 
@@ -343,6 +345,12 @@ function buildReport() {
       remainingHeadroomBytes: budget.totalRuntimeBytes - inventory.actualTotalBytes,
       capTotalBytes: inventory.capTotalBytes,
       automatedReleaseResult: releaseResult,
+    },
+    currentRuntimeBudgetInterpretation: {
+      requiredRemainingHeadroomBytes: 2000000,
+      currentRemainingHeadroomBytes: budget.totalRuntimeBytes - inventory.actualTotalBytes,
+      currentHeadroomMeetsGoal: budget.totalRuntimeBytes - inventory.actualTotalBytes >= 2000000,
+      conclusion: "Current runtime headroom exceeds the declared threshold; no additional music compression is required for the current runtime-budget goal.",
     },
     inventory: {
       convention: "text files normalize CRLF to LF before byte counting; binary assets use raw file bytes",

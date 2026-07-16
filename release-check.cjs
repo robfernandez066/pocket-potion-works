@@ -37,6 +37,11 @@ const imageAssets = [
   "assets/images/potions/wayfinder-cordial.png"
 ];
 const streamedAssets = ["assets/audio/music1.mp3", "assets/audio/music2.mp3", "assets/audio/music3.mp3"];
+const approvedMusic = [
+  { file: "assets/audio/music1.mp3", bytes: 6031777, sha256: "3BDB1FEE54E177AF9C10EE1C837B16940F95FCD2DFD119B238F9E19C6266BFFC", cap: 6100000 },
+  { file: "assets/audio/music2.mp3", bytes: 5547780, sha256: "6138EF693EA321E35B1747A1B7F1EB41A590E7F2EE33598E1FDFEB0B92A449A6", cap: 5600000 },
+  { file: "assets/audio/music3.mp3", bytes: 5311424, sha256: "7E30FEE8E17B3F8F746AB521E88F7AF88D1D60D4D842EA72EC1A3BDB50274B36", cap: 5400000 },
+];
 assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release asset inventory must match exactly");
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
 const pagesArtifactStep = pagesWorkflow.match(/- name: Prepare playable artifact only([\s\S]*?)(?=\n      - name:|$)/)?.[1];
@@ -141,7 +146,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v65`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v66`/);
 assert.match(text["ui-render.js"], /globalThis\.PPWUI = Object\.freeze\(/, "UI module must expose its frozen browser API");
 assert.doesNotMatch(text["ui-render.js"], /\b(?:document|window|require|module|setTimeout|setInterval|Date|Math\.random|localStorage|addEventListener|querySelector)\b/, "UI module must remain dependency-free presentation code");
 assert.match(text["app.js"], /const UI = window\.PPWUI;/, "browser adapter must require the UI presentation module");
@@ -177,6 +182,29 @@ assert.deepEqual(parseByteRange("bytes=-100", 1000), { start: 900, end: 999 });
 assert.equal(parseByteRange("bytes=1000-", 1000), null);
 
 const budgets = JSON.parse(fs.readFileSync("release-budgets.json", "utf8"));
+assert.equal(budgets.totalRuntimeBytes, 24000000, "Task 43 must keep the fixed total runtime budget");
+for (const music of approvedMusic) {
+  const audio = fs.readFileSync(music.file);
+  const bytes = audio.length;
+  const sha256 = require("node:crypto").createHash("sha256").update(audio).digest("hex").toUpperCase();
+  assert.equal(bytes, music.bytes, `${music.file} must retain its approved Task 42 byte size`);
+  assert.equal(sha256, music.sha256, `${music.file} must retain its approved Task 42 hash`);
+  let cursor = 0;
+  let frameCount = 0;
+  while (cursor + 4 <= audio.length) {
+    assert.equal(audio[cursor], 0xff, `${music.file} frame ${frameCount} must retain the MPEG sync word`);
+    assert.equal(audio[cursor + 1] & 0xfe, 0xfa, `${music.file} must be MPEG-1 Layer III`);
+    assert.equal(audio[cursor + 2] >> 4, 11, `${music.file} must be constant 192 kbps`);
+    assert.equal((audio[cursor + 2] >> 2) & 3, 0, `${music.file} must use 44.1 kHz`);
+    assert.equal(audio[cursor + 3] >> 6, 1, `${music.file} must use joint stereo`);
+    const frameBytes = Math.floor(144 * 192000 / 44100) + ((audio[cursor + 2] >> 1) & 1);
+    assert.ok(cursor + frameBytes <= audio.length, `${music.file} must not contain a truncated MPEG frame`);
+    cursor += frameBytes;
+    frameCount += 1;
+  }
+  assert.ok(frameCount > 0 && cursor === audio.length, `${music.file} must contain only complete constant-192 kbps MPEG frames`);
+  assert.equal(budgets.files[music.file], music.cap, `${music.file} must retain its lowered Task 43 cap`);
+}
 assert.equal(budgets.files[miraRuntime], 24000, "Mira runtime portrait must keep its fixed 24 KB cap");
 assert.equal(budgets.files[fernRuntime], 8000, "Fern runtime portrait must keep its fixed 8 KB cap");
 assert.ok(!Object.hasOwn(budgets.files, miraSource), "Mira source artwork must not count toward runtime budgets");
@@ -193,6 +221,11 @@ for (const [file, ceiling] of Object.entries(budgets.files)) {
   assert.ok(bytes <= ceiling, `${file} is ${bytes} bytes, above its ${ceiling}-byte release budget`);
 }
 assert.ok(total <= budgets.totalRuntimeBytes, `runtime shell is ${total} bytes, above its ${budgets.totalRuntimeBytes}-byte budget`);
+assert.equal(total, 18370083, "Task 43 runtime inventory must match the approved exact total");
+assert.equal(budgets.totalRuntimeBytes - total, 5629917, "Task 43 runtime inventory must retain the approved headroom");
+assert.ok(budgets.totalRuntimeBytes - total >= 2000000, "current runtime headroom must already satisfy the no-further-compression threshold");
+assert.ok(!swShell.some(file => streamedAssets.includes(file.slice(2))), "background music must remain streamed instead of entering the offline shell");
+assert.doesNotMatch(text["service-worker.js"], /v65/, "Task 43 must rotate the cache identity exactly once");
 const task38RuntimeBytes = 23993911;
 assert.ok(normalizedReleaseBytes("app.js") <= 72000, "app.js must retain Task 39 implementation headroom");
 assert.ok(normalizedReleaseBytes("ui-render.js") <= 16000, "ui-render.js must remain within its fixed presentation cap");
