@@ -7,7 +7,7 @@ const { resolveRequestPath, securityHeaders, mime, parseByteRange } = require(".
 const { MUSIC_TRACKS } = require("./audio-feedback.js");
 const automatedOnly = process.argv.includes("--automated-only");
 
-const runtimeFiles = ["index.html", "style.css", "content-data.js", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
+const runtimeFiles = ["index.html", "style.css", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
 const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
 const imageAssets = [
   "assets/images/ingredients/dewleaf.png",
@@ -141,7 +141,10 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v64`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v65`/);
+assert.match(text["ui-render.js"], /globalThis\.PPWUI = Object\.freeze\(/, "UI module must expose its frozen browser API");
+assert.doesNotMatch(text["ui-render.js"], /\b(?:document|window|require|module|setTimeout|setInterval|Date|Math\.random|localStorage|addEventListener|querySelector)\b/, "UI module must remain dependency-free presentation code");
+assert.match(text["app.js"], /const UI = window\.PPWUI;/, "browser adapter must require the UI presentation module");
 assert.match(text["audio-feedback.js"], /function effectsOutputGain\(volume\)/);
 assert.match(text["audio-feedback.js"], /const SYNTH_OUTPUT_BOOST = 8/);
 assert.match(text["style.css"], /workshop-scene:not\(\.is-idle\) \.bubble \{ display: block !important; animation: none !important; opacity: \.82; \}/);
@@ -190,6 +193,10 @@ for (const [file, ceiling] of Object.entries(budgets.files)) {
   assert.ok(bytes <= ceiling, `${file} is ${bytes} bytes, above its ${ceiling}-byte release budget`);
 }
 assert.ok(total <= budgets.totalRuntimeBytes, `runtime shell is ${total} bytes, above its ${budgets.totalRuntimeBytes}-byte budget`);
+const task38RuntimeBytes = 23993911;
+assert.ok(normalizedReleaseBytes("app.js") <= 72000, "app.js must retain Task 39 implementation headroom");
+assert.ok(normalizedReleaseBytes("ui-render.js") <= 16000, "ui-render.js must remain within its fixed presentation cap");
+assert.ok(total - task38RuntimeBytes <= 1500, `Task 39 runtime overhead is ${total - task38RuntimeBytes} bytes, above the 1500-byte limit`);
 
 const evidence = JSON.parse(fs.readFileSync("release-browser-evidence.json", "utf8"));
 assert.equal(evidence.schemaVersion, 1);

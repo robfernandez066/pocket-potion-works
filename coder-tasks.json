@@ -487,7 +487,7 @@
   },
   {
     "id": 39,
-    "status": "next",
+    "status": "complete",
     "title": "Browser presentation boundary",
     "model": "5.6 Terra with High effort",
     "freshChat": true,
@@ -502,6 +502,21 @@
       "Cache advances exactly once to v65 and Task 36 Pages coverage plus Task 38 portrait separation remain intact",
       "npm.cmd run check, git diff --check, both mobile core loops, portrait/emoji/modal/tutorial checks, and offline reload pass without overflow or console issues",
       "The coder reports exactly one PASS, FAIL, or BLOCKED status with boundary inventory, parity, validation, sizes, cache, assumptions, and deferred evidence"
+    ]
+  },
+  {
+    "id": 40,
+    "status": "owner-review",
+    "title": "Mira and Fern presentation owner acceptance",
+    "model": "Owner test; no coder model",
+    "freshChat": false,
+    "prompt": "Task #40\n\nUse the updated public or installed-phone build for a short owner acceptance pass. Do not reset the owner's save and do not force a rare trust-heart state.\n\nOpen Workshop, Orders, Upgrades, and Journal. Confirm Mira and Fern's portraits look consistent with the game and that another villager still uses an emoji avatar. If a Villager Special Request invitation is already available, open its chooser and confirm Fern remains clear without crowding the choices. Perform a few normal actions and note whether the character portraits and authored delivery moments feel welcome and noticeable rather than repetitive or visually crowded.\n\nReport PASS with any brief preference notes, or report the exact screen and issue if something feels wrong. No coder task begins until this owner checkpoint is accepted.",
+    "acceptance": [
+      "The installed update opens and Workshop, Orders, Upgrades, and Journal remain usable",
+      "Mira and Fern portraits look consistent with the game while another villager retains an emoji avatar",
+      "The Special Request chooser remains readable if naturally available",
+      "A short normal session finds no distracting repetition or visual crowding from the character presentation",
+      "The owner either accepts the presentation or reports one concrete screen and issue"
     ]
   }
 ]

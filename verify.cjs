@@ -1,7 +1,7 @@
 const fs = require("fs");
 const vm = require("vm");
 
-const files = ["index.html", "style.css", "content-data.js", "game-logic.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
+const files = ["index.html", "style.css", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
 const missing = files.filter(file => !fs.existsSync(file));
 if (missing.length) throw new Error(`Missing files: ${missing.join(", ")}`);
 
@@ -13,6 +13,7 @@ if (!combined.includes("Pocket Potion Works") || !combined.includes("pocket-poti
 const html = fs.readFileSync("index.html", "utf8");
 const normalizedHtml = html.replace(/\r\n/g, "\n");
 const content = fs.readFileSync("content-data.js", "utf8");
+const uiSource = fs.readFileSync("ui-render.js", "utf8");
 const app = fs.readFileSync("app.js", "utf8");
 const style = fs.readFileSync("style.css", "utf8");
 if (!app.includes("already been added to the Pantry")) throw new Error("Welcome Back must state that offline ingredients were already added to the Pantry.");
@@ -20,9 +21,21 @@ if (!app.includes('label: "Back to workshop", primary: true')) throw new Error("
 if (app.includes('label: "Collect ingredients"')) throw new Error("Welcome Back must not offer a second ingredient collection step.");
 if (!html.includes('<script src="content-data.js"></script>')) throw new Error("Content data must load before pure game logic.");
 if (!html.includes('<script src="game-logic.js"></script>')) throw new Error("Pure game logic must load before the browser adapter.");
+if (!html.includes('<script src="ui-render.js"></script>')) throw new Error("UI helpers must load before the browser adapter.");
 if (!html.includes('<script src="platform-adapters.js"></script>')) throw new Error("Platform adapters must load before the browser adapter.");
 if (!html.includes('<script src="audio-feedback.js"></script>')) throw new Error("Audio helpers must load before the browser adapter.");
-if (!normalizedHtml.includes('content-data.js"></script>\n    <script src="game-logic.js"></script>\n    <script src="platform-adapters.js"></script>\n    <script src="audio-feedback.js"></script>\n    <script src="app.js')) throw new Error("Browser scripts must load in dependency order.");
+if (!normalizedHtml.includes('content-data.js"></script>\n    <script src="game-logic.js"></script>\n    <script src="ui-render.js"></script>\n    <script src="platform-adapters.js"></script>\n    <script src="audio-feedback.js"></script>\n    <script src="app.js')) throw new Error("Browser scripts must load in dependency order.");
+const uiSandbox = {};
+vm.runInNewContext(uiSource, uiSandbox, { filename: "ui-render.js" });
+const ui = uiSandbox.PPWUI;
+if (!ui || !Object.isFrozen(ui) || Object.keys(uiSandbox).filter(key => key.startsWith("PPW")).join(",") !== "PPWUI") throw new Error("UI helpers must expose exactly one frozen browser global.");
+if (/\b(?:document|window|require|module|setTimeout|setInterval|Date|Math\.random|localStorage|addEventListener|querySelector)\b/.test(uiSource)) throw new Error("UI helpers must remain dependency-free pure presentation code.");
+if (!app.includes('const UI = window.PPWUI;') || !app.includes('PPWUI missing; load ui-render.js.')) throw new Error("The browser adapter must fail clearly when UI helpers are unavailable.");
+if (/const (?:INGREDIENT_SPRITES|POTION_SPRITES|PORTRAITS)\b|function (?:ingredientCostText|portraitMarkup|potionSpriteMarkup)\b/.test(app)) throw new Error("Moved UI helper definitions must not be duplicated in app.js.");
+if (!ui.activeBrewMarkup({ id: "tonic", icon: "⚗", color: "#123", name: "Meadow Tonic" }).includes('data-sprite="tonic"')) throw new Error("Potion sprite presentation output changed.");
+if (!ui.ingredientCards({ herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 } }, 1, null, { herb: 7 }).includes('data-ingredient-sprite="herb"') || !ui.ingredientCards({ herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 } }, 1, null, { herb: 7 }).includes("<strong>7</strong>")) throw new Error("Ingredient-card presentation output changed.");
+if (ui.portraitMarkup("customer-0") !== '<span class="villager-portrait mira-portrait" aria-hidden="true"></span>' || ui.portraitMarkup("customer-6") !== '<span class="villager-portrait fern-portrait" aria-hidden="true"></span>' || !ui.customerAvatarMarkup("customer-1", "🧙", "#123").includes(">🧙</span>")) throw new Error("Portrait and emoji fallback presentation changed.");
+if (!ui.narrativeDeliveryMarkup({ customerId: "customer-6", kicker: "FERN", title: "A patient little leaf", body: "Body", footer: "Footer" }).includes("fern-portrait")) throw new Error("Narrative-card portrait selection changed.");
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 const queriedIds = [...app.matchAll(/querySelector\(["'`]#([A-Za-z0-9_-]+)["'`]\)/g)].map(match => match[1]);
 const dynamicIds = new Set(["collectBrewButton"]);
@@ -31,7 +44,7 @@ if (absentIds.length) throw new Error(`JavaScript references absent HTML IDs: ${
 if (!html.includes('id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"')) throw new Error("Brew transitions require one stable atomic live status node.");
 for (const id of ["workshopNarrativeDelivery", "ordersNarrativeDelivery"]) if (!html.includes(`id="${id}" role="status" aria-live="polite" aria-atomic="true"`)) throw new Error("Narrative delivery surfaces require stable atomic live status nodes.");
 if (!html.includes('id="reservedStoryKicker"') || !app.includes("Logic.reservedStoryTracker(state)")) throw new Error("The reserved-story tracker must support After the Stars and The Village Loaf through one surface.");
-if (!app.includes("Village Chapter") || !fs.readFileSync("style.css", "utf8").includes('data-cosmetic="firstlight"')) throw new Error("The Village Loaf ribbon and Firstlight Bakery look must remain wired.");
+if (!uiSource.includes("Village Chapter") || !fs.readFileSync("style.css", "utf8").includes('data-cosmetic="firstlight"')) throw new Error("The Village Loaf ribbon and Firstlight Bakery look must remain wired.");
 if (!app.includes('fulfillOrder(Number(button.dataset.quickDeliver), "workshop")') || !app.includes('fulfillOrder(Number(button.dataset.order), "orders")')) throw new Error("Narrative delivery must retain its originating surface.");
 if (!app.includes('Logic.orderAction(state, order)') || !app.includes('data-next') || !app.includes('function routeOrderAction(orderId)')) throw new Error("Ordinary not-ready orders must use the state-aware navigation route.");
 if (!app.includes('function focusTarget(target)') || !app.includes('setDisclosure("recipes", true)')) throw new Error("Ordinary order guidance must retain Workshop target focus.");
@@ -39,16 +52,13 @@ const miraRuntime = "assets/images/villagers/mira-head.png";
 const miraSource = "assets/source/villagers/mira_head-256.png";
 const fernRuntime = "assets/images/villagers/fern-head.webp";
 const fernSource = "assets/source/villagers/fern_head-256.png";
-const avatarHelperStart = app.indexOf("const PORTRAITS");
-const avatarHelperEnd = app.indexOf("const $ =", avatarHelperStart);
-const avatarHelper = app.slice(avatarHelperStart, avatarHelperEnd);
-if (avatarHelperStart < 0 || !avatarHelper.includes('Object.freeze({ "customer-0": "mira", "customer-6": "fern" })') || (style.match(new RegExp(miraRuntime, "g")) || []).length !== 1 || (style.match(new RegExp(fernRuntime.replace(".", "\\."), "g")) || []).length !== 1 || !avatarHelper.includes("portraitMarkup(id) || avatar")) throw new Error("Exactly Mira and Fern must use the shared portrait seam while other villagers keep emoji fallback avatars.");
+if (!uiSource.includes('{ "customer-0": "mira", "customer-6": "fern" }') || (style.match(new RegExp(miraRuntime, "g")) || []).length !== 1 || (style.match(new RegExp(fernRuntime.replace(".", "\\."), "g")) || []).length !== 1 || !uiSource.includes("portraitMarkup(id) || avatar")) throw new Error("Exactly Mira and Fern must use the shared portrait seam while other villagers keep emoji fallback avatars.");
 const ordersPath = app.slice(app.indexOf("function renderOrders()"), app.indexOf("function focusTarget"));
 const requestsPath = app.slice(app.indexOf("function showSpecialRequestChooser"), app.indexOf("function renderWeekly"));
 const journalPath = app.slice(app.indexOf("function renderJournal()"), app.indexOf("function claimJournalEntry"));
-if (!ordersPath.includes("customerAvatarMarkup(order.customerId, order.avatar, order.avatarColor)") || !requestsPath.includes("customerAvatarMarkup(commission.customerId, customer[1], customer[3])") || !journalPath.includes("customerAvatarMarkup(customerId, customer[1], customer[3])")) throw new Error("Illustrated villagers must use the shared avatar seam on order, request, and Journal surfaces.");
+if (!ordersPath.includes("UI.orderListMarkup") || !requestsPath.includes("UI.commissionChoicesMarkup") || !journalPath.includes("UI.customerAvatarMarkup(customerId, customer[1], customer[3])")) throw new Error("Illustrated villagers must use the shared avatar seam on order, request, and Journal surfaces.");
 const narrativePath = app.slice(app.indexOf("function renderNarrativeDelivery()"), app.indexOf("function chooseCommission"));
-if (!narrativePath.includes("portraitMarkup(detail.customerId)") || !style.includes(".narrative-delivery-card:has(> .villager-portrait)")) throw new Error("Mira and Fern first-heart cards must use the generic mapped narrative portrait treatment.");
+if (!narrativePath.includes("UI.narrativeDeliveryMarkup(detail)") || !style.includes(".narrative-delivery-card:has(> .villager-portrait)")) throw new Error("Mira and Fern first-heart cards must use the generic mapped narrative portrait treatment.");
 const chapterPayoffStart = app.indexOf("function showChapterPayoff(result, surface)");
 const chapterPayoffEnd = app.indexOf("function openModal(", chapterPayoffStart);
 const chapterPayoffPath = app.slice(chapterPayoffStart, chapterPayoffEnd);
@@ -62,7 +72,7 @@ const chapterTarget = chapterPayoffPath.indexOf(".order-card.is-chapter");
 if (!app.includes('if (result.chapter) showChapterPayoff(result, surface);\n  else if (restoreReservedFocus)') || !chapterPayoffPath.includes('"Continue the chapter"') || !(chapterClose < chapterOrdersView && chapterOrdersView < chapterTarget)) throw new Error("Continue must close the modal, open Orders, then focus the next chapter target.");
 if (!chapterPayoffPath.includes("lastFocus = $(surface === \"orders\" ? \"#ordersView h1\" : '[data-nav=\"workshop\"]');") || !chapterPayoffPath.includes('if (surface === "orders") lastFocus.tabIndex = -1;')) throw new Error("Chapter dismissal must return to the Orders heading or a visible Workshop control.");
 if (!chapterPayoffPath.includes('"View Workshop Looks"') || !chapterPayoffPath.includes('switchView("journal")') || !chapterPayoffPath.includes('button[data-cosmetic="firstlight"]') || !app.includes('focusTarget($(`button[data-cosmetic="${cosmeticId}"]`));')) throw new Error("The final chapter action and Workshop Look selections must retain focus on Firstlight Bakery.");
-if (!chapterPayoffPath.includes('icon: portraitMarkup("customer-0")')) throw new Error("Every Village Chapter payoff must use the shared Mira portrait.");
+if (!chapterPayoffPath.includes('icon: UI.portraitMarkup("customer-0")')) throw new Error("Every Village Chapter payoff must use the shared Mira portrait.");
 const modalPath = app.slice(app.indexOf("function openModal({"), app.indexOf("function closeModal()"));
 if (!modalPath.includes("modalIcon.innerHTML = icon;") || !modalPath.includes('modalIcon.classList.toggle("is-villager-portrait", icon.includes("mira-portrait"));') || modalPath.includes("fern")) throw new Error("Only Mira's acknowledgement-controlled chapter modal may use a portrait.");
 const worker = fs.readFileSync("service-worker.js", "utf8");
@@ -73,5 +83,6 @@ if (app.includes('class="active-brew" aria-live=')) throw new Error("The per-sec
 
 JSON.parse(fs.readFileSync("manifest.webmanifest", "utf8"));
 new vm.Script(content, { filename: "content-data.js" });
+new vm.Script(uiSource, { filename: "ui-render.js" });
 new vm.Script(app, { filename: "app.js" });
 console.log(`Verification passed: ${files.length} required files, ${ids.size} UI IDs, product identity and syntax checks passed.`);

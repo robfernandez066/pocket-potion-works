@@ -5,15 +5,9 @@ const UI_PREFS_KEY = "pocket-potion-works-ui-v1";
 const Logic = window.PPWLogic;
 const Platform = window.PPWPlatform;
 const AudioFeedback = window.PPWAudio;
+const UI = window.PPWUI;
+if (!UI) throw Error("PPWUI missing; load ui-render.js.");
 const { SAVE_VERSION, PRESTIGE_CONFIG, CUSTOMER_CONFIG, MASTERY_CONFIG, COSMETICS, COLLECTION_GOALS, INGREDIENTS, RECIPES, UPGRADES, CUSTOMERS, SIGNATURE_COMMISSIONS, ACHIEVEMENTS, clamp, todayKey, defaultState, recipeById, upgradeById } = Logic;
-const INGREDIENT_SPRITES = new Set(["herb", "mushroom", "crystal", "mist", "ember", "mint", "lavender"]);
-const POTION_SPRITES = new Set(RECIPES.map(recipe => recipe.id));
-const ingredientSpriteAttr = id => INGREDIENT_SPRITES.has(id) ? ` data-ingredient-sprite="${id}"` : "";
-const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
-const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionSpriteAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
-const PORTRAITS = Object.freeze({ "customer-0": "mira", "customer-6": "fern" });
-const portraitMarkup = id => PORTRAITS[id] ? `<span class="villager-portrait ${PORTRAITS[id]}-portrait" aria-hidden="true"></span>` : "";
-const customerAvatarMarkup = (id, avatar, color) => `<span class="customer-avatar" style="--avatar:${color}">${portraitMarkup(id) || avatar}</span>`;
 const $ = document.querySelector.bind(document);
 function browserStorage() {
   try { return window.localStorage; }
@@ -34,7 +28,7 @@ const lifecycleAdapter = new Platform.FakeLifecycleAdapter();
 const audioPreferenceStore = new AudioFeedback.AudioPreferenceStore(storage);
 const sound = new AudioFeedback.SoundEngine(audioPreferenceStore);
 const music = new AudioFeedback.MusicEngine(audioPreferenceStore);
-function formatNumber(value) { return Math.floor(value).toLocaleString("en-US"); }
+const formatNumber = UI.formatNumber;
 function xpNeeded(level = state.level) { return Logic.xpNeeded(level); }
 function storageCap() { return Logic.storageCap(state); }
 function gatherRate() { return Logic.gatherRate(state); }
@@ -226,10 +220,6 @@ function generateOrder() {
   return window.PPWLogic.generateOrder(state);
 }
 
-function ingredientCostText(recipe) {
-  return Object.entries(recipe.ingredients).map(([id, count]) => `<span class="ingredient-cost-item"><span class="ingredient-cost-icon"${ingredientSpriteAttr(id)} aria-hidden="true">${INGREDIENTS[id].icon}</span>${count}</span>`).join("");
-}
-
 function canAffordRecipe(recipe) {
   return window.PPWLogic.canAffordRecipe(state, recipe);
 }
@@ -353,15 +343,7 @@ function showTutorialTransition(before, viewBeforeAction) {
 }
 
 function renderIngredients() {
-  document.querySelector("#ingredientGrid").innerHTML = Object.entries(INGREDIENTS).map(([id, item]) => {
-    const locked = item.unlock > state.level;
-    const selected = state.gather.targetId === id;
-    return `<button class="ingredient-card ${selected ? "is-selected" : ""}" type="button" style="--ingredient-bg:${item.color}" ${locked ? "disabled" : `data-gather-target="${id}" aria-pressed="${selected}"`}>
-      <span class="ingredient-icon"${locked ? "" : ingredientSpriteAttr(id)}>${locked ? "?" : item.icon}</span>
-      <strong>${locked ? `Level ${item.unlock}` : formatNumber(state.ingredients[id])}</strong>
-      <small>${locked ? "Locked" : item.name}</small>
-    </button>`;
-  }).join("");
+  document.querySelector("#ingredientGrid").innerHTML = UI.ingredientCards(INGREDIENTS, state.level, state.gather.targetId, state.ingredients);
   document.querySelectorAll("[data-gather-target]").forEach(button => button.addEventListener("click", () => selectGatherTarget(button.dataset.gatherTarget)));
   document.querySelector("#requestGatherTarget").setAttribute("aria-pressed", String(state.gather.targetId === null));
 }
@@ -377,7 +359,7 @@ function showPantryCleanup() {
   const choices = Object.entries(INGREDIENTS).filter(([id, item]) => item.unlock <= state.level && state.ingredients[id] > 0);
   openModal({
     icon: "⌄", kicker: "PANTRY", title: "Clear some space",
-    body: choices.length ? `<p>Choose an ingredient to discard. Discarded ingredients earn no coins.</p><div class="discard-grid">${choices.map(([id, item]) => `<button data-discard-choice="${id}"><span class="ingredient-discard-icon"${ingredientSpriteAttr(id)}>${item.icon}</span><strong>${item.name}</strong><small>${state.ingredients[id]} stored</small></button>`).join("")}</div>` : "<p>Your Pantry has nothing available to discard.</p>",
+    body: choices.length ? `<p>Choose an ingredient to discard. Discarded ingredients earn no coins.</p><div class="discard-grid">${choices.map(([id, item]) => `<button data-discard-choice="${id}"><span class="ingredient-discard-icon" data-ingredient-sprite="${id}">${item.icon}</span><strong>${item.name}</strong><small>${state.ingredients[id]} stored</small></button>`).join("")}</div>` : "<p>Your Pantry has nothing available to discard.</p>",
     actions: [{ label: "Back", primary: true }],
   });
   document.querySelectorAll("[data-discard-choice]").forEach(button => button.addEventListener("click", () => showDiscardIngredient(button.dataset.discardChoice)));
@@ -413,10 +395,7 @@ function renderReadyDeliverStrip() {
   }
   const strip = $("#readyDeliverStrip");
   strip.hidden = ready.length === 0;
-  strip.innerHTML = ready.length ? `<div><span class="eyebrow">READY TO DELIVER</span><strong>${ready.length} order${ready.length === 1 ? "" : "s"} waiting</strong></div><div class="ready-deliver-actions">${ready.slice(0, 2).map(order => {
-    const recipe = recipeById(order.recipeId);
-    return `<button data-quick-deliver="${order.id}">${potionSpriteMarkup(recipe)}<span>Deliver ${recipe.name} · +${orderReward(order)}</span></button>`;
-  }).join("")}</div>` : "";
+  strip.innerHTML = UI.readyDeliverStrip(ready, recipeById, orderReward);
   strip.querySelectorAll("[data-quick-deliver]").forEach(button => button.addEventListener("click", () => fulfillOrder(Number(button.dataset.quickDeliver), "workshop")));
 }
 
@@ -446,7 +425,7 @@ function renderBrew() {
     scene.classList.add("is-idle");
     scene.style.removeProperty("--brew-color");
     slot.classList.remove("is-ready");
-    if (renderedBrewKey !== "idle") slot.innerHTML = `<div class="brew-empty"><span>♨</span><div><strong>Your cauldron is ready</strong><small>Choose a recipe below to start brewing.</small></div></div>`;
+    if (renderedBrewKey !== "idle") slot.innerHTML = UI.idleBrewMarkup();
     renderedBrewKey = "idle";
     document.querySelector("#brewQueueLabel").textContent = "Ready";
     return;
@@ -471,11 +450,7 @@ function renderBrew() {
   document.querySelector("#brewQueueLabel").textContent = ready ? "Complete!" : `${Math.ceil(remaining / 1000)}s left`;
   const brewKey = `${state.brew.recipeId}:${state.brew.startedAt}`;
   if (renderedBrewKey !== brewKey) {
-    slot.innerHTML = `<div class="active-brew">
-      <span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span>
-      <div><strong>${recipe.name}</strong><small data-brew-remaining></small><div class="brew-progress" role="progressbar" aria-label="${recipe.name} brewing progress" aria-valuemin="0" aria-valuemax="100"><span></span></div></div>
-      <button class="collect-button" id="collectBrewButton" disabled>Brewing</button>
-    </div>`;
+    slot.innerHTML = UI.activeBrewMarkup(recipe);
     document.querySelector("#collectBrewButton").addEventListener("click", collectBrew);
     renderedBrewKey = brewKey;
   }
@@ -493,30 +468,14 @@ function renderPotionShelf() {
   const visible = RECIPES.filter(recipe => recipe.unlock <= state.level && (state.potions[recipe.id] > 0 || state.orders.some(order => order.recipeId === recipe.id)));
   document.querySelector("#potionShelf").innerHTML = visible.map(recipe => {
     const requested = state.orders.some(order => order.recipeId === recipe.id);
-    return `<span class="potion-chip ${requested ? "is-requested" : ""}"><span class="potion-chip-art"${potionSpriteAttr(recipe)}>${recipe.icon}</span><strong>${state.potions[recipe.id]}</strong> ${recipe.name}${requested ? " · requested" : ""}</span>`;
+    return `<span class="potion-chip ${requested ? "is-requested" : ""}"><span class="potion-chip-art" data-sprite="${recipe.id}">${recipe.icon}</span><strong>${state.potions[recipe.id]}</strong> ${recipe.name}${requested ? " · requested" : ""}</span>`;
   }).join("");
 }
 
 function renderRecipes() {
   const visibleRecipes = RECIPES.filter(recipe => recipe.unlock <= state.level + 2).sort((a, b) => a.unlock - b.unlock);
   const hiddenCount = RECIPES.length - visibleRecipes.length;
-  document.querySelector("#recipeList").innerHTML = visibleRecipes.map(recipe => {
-    const locked = recipe.unlock > state.level;
-    const disabled = locked || Boolean(state.brew) || !canAffordRecipe(recipe);
-    let buttonLabel = "Brew";
-    if (locked) buttonLabel = `Lv. ${recipe.unlock}`;
-    else if (state.brew) buttonLabel = "Busy";
-    else if (!canAffordRecipe(recipe)) buttonLabel = "Need items";
-    const requested = state.orders.some(order => order.recipeId === recipe.id);
-    const mastery = Logic.recipeMasteryProgress(state, recipe.id);
-    const masteryBonus = mastery.rank * MASTERY_CONFIG.coinBonusPerRank * 100;
-    const masteryText = mastery.next ? `Mastery ${mastery.rank} · ${mastery.count}/${mastery.next} brews · +${masteryBonus}% order coins` : `Mastery ${mastery.rank} · complete · +${masteryBonus}% order coins`;
-    return `<article class="recipe-card ${locked ? "is-locked" : ""} ${requested ? "is-requested" : ""}">
-      <span class="potion-bottle"${locked ? "" : potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${locked ? "?" : recipe.icon}</span>
-      <div class="recipe-info"><strong>${locked ? "Mysterious recipe" : recipe.name}</strong><small>${locked ? `Discover at level ${recipe.unlock}` : `${Math.ceil(recipe.seconds / brewSpeedMultiplier())} sec · order value ~${recipe.sell} coins`}</small>${!locked && recipe.description ? `<small class="recipe-description">${recipe.description}</small>` : ""}<div class="recipe-cost">${locked ? "Keep helping villagers to level up" : `${ingredientCostText(recipe)} · Owned ${state.potions[recipe.id]}${requested ? " · Requested" : ""}`}</div>${locked ? "" : `<small class="mastery-progress">${masteryText}</small>`}</div>
-      <button class="brew-button" data-brew="${recipe.id}" aria-label="${buttonLabel} ${locked ? "locked recipe" : recipe.name}" ${disabled ? "disabled" : ""}>${buttonLabel}</button>
-    </article>`;
-  }).join("") + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
+  document.querySelector("#recipeList").innerHTML = UI.recipeListMarkup(visibleRecipes, state, canAffordRecipe, recipeId => Logic.recipeMasteryProgress(state, recipeId), MASTERY_CONFIG.coinBonusPerRank, brewSpeedMultiplier, INGREDIENTS) + (hiddenCount ? `<p class="distant-recipes">${hiddenCount} distant recipe${hiddenCount === 1 ? "" : "s"} will appear as your alchemy grows.</p>` : "");
   document.querySelectorAll("[data-brew]").forEach(button => button.addEventListener("click", () => startBrew(button.dataset.brew)));
   const requested = RECIPES.filter(recipe => state.orders.some(order => order.recipeId === recipe.id)).length;
   document.querySelector("#recipeSummary").textContent = `${RECIPES.filter(recipe => recipe.unlock <= state.level).length} known · ${requested} requested`;
@@ -557,27 +516,12 @@ function renderOrders() {
   const specialCompletion = $("#specialRequestComplete");
   specialCompletion.hidden = !transientCompletions.special;
   specialCompletion.innerHTML = transientCompletions.special ? `<p class="eyebrow">VILLAGER SPECIAL REQUEST COMPLETE</p><h2>${transientCompletions.special.title}</h2><p>${transientCompletions.special.customer} gave you the <strong>${transientCompletions.special.keepsake}</strong>.</p>` : "";
-  $("#orderList").innerHTML = state.orders.map(order => {
-    const recipe = recipeById(order.recipeId);
-    const owned = state.potions[recipe.id];
-    const action = Logic.orderAction(state, order);
-    const label = { gather: "Gather", brew: "Brew", "view-brew": "View brew", "collect-brew": "Collect brew" }[action];
-    const html = action === "deliver" ? `<button class="fulfill-button" data-order="${order.id}">Deliver</button>` : label ? `<button class="fulfill-button" data-next="${order.id}">${label}</button>` : `<button class="fulfill-button" data-order="${order.id}" disabled>Not ready</button>`;
-    const customer = state.customers[order.customerId] || { deliveries: 0, hearts: 0 };
-    const towardHeart = customer.deliveries % CUSTOMER_CONFIG.deliveriesPerHeart;
-    const reward = orderReward(order);
-    const trust = customer.hearts >= CUSTOMER_CONFIG.maxHearts ? `${"♥".repeat(customer.hearts)} trusted friend` : `${"♥".repeat(customer.hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - customer.hearts)} · ${towardHeart}/${CUSTOMER_CONFIG.deliveriesPerHeart} toward next favor`;
-    const commission = Logic.commissionById(order.commissionId);
-    const questStep = Logic.isAfterStarsOrder(order) ? Logic.AFTER_STARS_STEPS[order.afterStarsStep] : null;
-    const chapterStep = Logic.isChapterOrder(order);
-    const questRibbon = questStep ? `<div class="commission-ribbon">After the Stars · ${questStep.title}</div>` : "";
-    return `<article class="order-card ${commission ? "is-commission" : questStep ? "is-after-stars" : chapterStep ? "is-chapter" : ""}">${questRibbon}
-      ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
-      ${chapterStep ? `<div class="commission-ribbon">Village Chapter</div>` : ""}
-      <div class="order-top">${customerAvatarMarkup(order.customerId, order.avatar, order.avatarColor)}<div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
-      <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div>${html}</div>
-    </article>`;
-  }).join("");
+  const cards = state.orders.map(order => Object.freeze({
+    order, recipe: recipeById(order.recipeId), owned: state.potions[order.recipeId], action: Logic.orderAction(state, order), reward: orderReward(order),
+    customer: state.customers[order.customerId] || { deliveries: 0, hearts: 0 }, commission: Logic.commissionById(order.commissionId),
+    questStep: Logic.isAfterStarsOrder(order) ? Logic.AFTER_STARS_STEPS[order.afterStarsStep] : null, chapterStep: Logic.isChapterOrder(order),
+  }));
+  $("#orderList").innerHTML = UI.orderListMarkup(cards, CUSTOMER_CONFIG);
   document.querySelectorAll("[data-order]").forEach(button => button.addEventListener("click", ()=>fulfillOrder(Number(button.dataset.order), "orders")));
   document.querySelectorAll("[data-next]").forEach(button => button.addEventListener("click", ()=>routeOrderAction(Number(button.dataset.next))));
 }
@@ -608,7 +552,7 @@ function renderNarrativeDelivery() {
     const detail = transientCompletions[`narrative${surface}`];
     const card = document.getElementById(`${surface.toLowerCase()}NarrativeDelivery`);
     card.hidden = !detail;
-    card.innerHTML = detail ? `${portraitMarkup(detail.customerId)}<div class="narrative-copy"><p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small></div>` : "";
+    card.innerHTML = UI.narrativeDeliveryMarkup(detail);
   }
 }
 
@@ -632,12 +576,7 @@ function showSpecialRequestChooser({ automatic = false } = {}) {
     return;
   }
   const choices = Logic.refreshCommissionChoices(state);
-  const body = choices.length ? `<p>Choose exactly who you want to help. Their request uses one noticeboard slot, builds their trust, and awards the keepsake shown.</p><div class="commission-choice-list">${choices.map(commission => {
-    const customer = CUSTOMERS[Number(commission.customerId.slice(9))];
-    const recipe = recipeById(commission.recipeId);
-    const trust = state.customers[commission.customerId]?.hearts || 0;
-    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}">${customerAvatarMarkup(commission.customerId, customer[1], customer[3])}<span><strong>${customer[0]} · ${commission.title}</strong><small class="commission-potion-line">${potionSpriteMarkup(recipe)} Potion: ${recipe.name}</small><small>Trust: ${trust}/${CUSTOMER_CONFIG.maxHearts} hearts</small><small>Keepsake: ${commission.keepsake.name}</small></span><b>Choose request</b></button>`;
-  }).join("")}</div>` : `<p>No unfinished request matches a potion you know yet. Your invitation is saved until you unlock another potion.</p>`;
+  const body = UI.commissionChoicesMarkup(choices, CUSTOMERS, recipeById, state, CUSTOMER_CONFIG);
   openModal({ icon: "✦", kicker: "VILLAGER SPECIAL REQUEST", title: "Choose who to help", body, actions: [{ label: "Choose later", primary: true }] });
   document.querySelectorAll("[data-commission-choice]").forEach(button => button.addEventListener("click", () => chooseCommission(button.dataset.commissionChoice)));
 }
@@ -673,13 +612,7 @@ function upgradeCost(upgrade) {
 }
 
 function renderUpgrades() {
-  document.querySelector("#upgradeList").innerHTML = UPGRADES.map(upgrade => {
-    const level = state.upgrades[upgrade.id];
-    const maxed = level >= upgrade.max;
-    const cost = upgradeCost(upgrade);
-    const preview = Logic.upgradePreview(state, upgrade);
-    return `<article class="upgrade-card"><span class="upgrade-icon">${upgrade.icon}</span><div class="upgrade-copy"><strong>${upgrade.name}</strong><small>${preview.path} path · ${upgrade.description}</small><small class="upgrade-preview">${preview.maxed ? `Current: ${preview.current}` : `${preview.current} → ${preview.next}`}</small><small class="upgrade-level">Level ${level} / ${upgrade.max}</small></div><button class="upgrade-button" data-upgrade="${upgrade.id}" ${maxed || state.coins < cost ? "disabled" : ""}>${maxed ? "MAX" : `${cost} ●`}</button></article>`;
-  }).join("");
+  document.querySelector("#upgradeList").innerHTML = UI.upgradeListMarkup(UPGRADES, state, upgradeCost, upgrade => Logic.upgradePreview(state, upgrade));
   document.querySelectorAll("[data-upgrade]").forEach(button => button.addEventListener("click", () => buyUpgrade(button.dataset.upgrade)));
   const canPrestige = state.level >= PRESTIGE_CONFIG.unlockLevel;
   const prestigeButton = document.querySelector("#prestigeButton");
@@ -712,13 +645,13 @@ function renderJournal() {
       return `<div class="journal-entry is-read" data-journal-story-read="${status.id}" tabindex="-1"><div><strong>Story ${storyIndex + 1}</strong><small>${status.text}</small></div><span>Read</span></div>`;
     }).join("");
     const progress = `${unlockedCount}/${CUSTOMER_CONFIG.maxHearts} stories${newCount ? ` · ${newCount} new` : ""}`;
-    return `<details class="villager-journal-card ${newCount ? "has-claim" : ""}" data-journal-customer="${customerId}" ${openCustomers.has(customerId) ? "open" : ""}><summary>${customerAvatarMarkup(customerId, customer[1], customer[3])}<div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
+    return `<details class="villager-journal-card ${newCount ? "has-claim" : ""}" data-journal-customer="${customerId}" ${openCustomers.has(customerId) ? "open" : ""}><summary>${UI.customerAvatarMarkup(customerId, customer[1], customer[3])}<div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
   }).join("");
   $("#recipeLoreList").innerHTML = [...RECIPES].sort((a, b) => a.unlock - b.unlock).map(recipe => {
     const status = Logic.recipeLoreStatus(state, recipe.id);
     if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
-    if (!status.read) return `<button type="button" class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>Read this bottle note and claim ${Logic.JOURNAL_REWARDS.recipe} coins</small></div><b>Read & claim</b></button>`;
-    return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
+    if (!status.read) return `<button type="button" class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle" data-sprite="${recipe.id}" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>Read this bottle note and claim ${Logic.JOURNAL_REWARDS.recipe} coins</small></div><b>Read & claim</b></button>`;
+    return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle" data-sprite="${recipe.id}" style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
   }).join("");
   const completedKeepsakes = new Set(state.commissions.completedIds);
   $("#keepsakeProgress").textContent = `${completedKeepsakes.size} / ${SIGNATURE_COMMISSIONS.length} collected · all twelve unlock the Heirloom Garland look.`;
@@ -950,7 +883,7 @@ function goToBrewSlot() {
 function showChapterPayoff(result, surface) {
   const final = result.chapter.complete;
   openModal({ kicker: result.narrative.kicker, title: result.narrative.title,
-    icon: portraitMarkup("customer-0"), body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
+    icon: UI.portraitMarkup("customer-0"), body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
     actions: [{ label: final ? "View Workshop Looks" : "Continue the chapter", primary: true, onClick: () => {
       closeModal();
       if (final) switchView("journal"); else switchView("orders");
