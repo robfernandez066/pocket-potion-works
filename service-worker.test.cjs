@@ -57,7 +57,7 @@ function fetchEvent(url, mode = "same-origin") {
   listeners.install(install);
   await install.done();
   const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v60");
-  assert.equal(activeCache, "ppw-shell-v62", "install must rotate to the Mira-portrait shell cache");
+  assert.equal(activeCache, "ppw-shell-v63", "install must rotate to the Fern-narrative shell cache");
   const shell = stores.get(activeCache);
   assert.ok(shell.has(cacheKey("./assets/images/villagers/mira-head.png")), "offline shell is missing Mira's runtime portrait");
   assert.ok(!shell.has(cacheKey("./assets/source/villagers/mira_head-256.png")), "source artwork must stay outside the offline shell");
