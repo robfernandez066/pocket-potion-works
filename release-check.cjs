@@ -20,6 +20,7 @@ const imageAssets = [
   "assets/images/misc/gather-satchel.png",
   "assets/images/misc/workshop-cat.png",
   "assets/images/misc/workshop-cauldron.png",
+  "assets/images/villagers/mira-head.png",
   "assets/images/potions/aurora-nectar.png",
   "assets/images/potions/aurora-nectar-animated-12f.png",
   "assets/images/potions/bottled-sunrise.png",
@@ -39,10 +40,19 @@ assert.deepEqual([...MUSIC_TRACKS], streamedAssets, "music playlist and release 
 const pagesWorkflow = fs.readFileSync(".github/workflows/pages.yml", "utf8");
 for (const file of streamedAssets) assert.ok(pagesWorkflow.includes(file), `GitHub Pages artifact is missing streamed music: ${file}`);
 assert.ok(pagesWorkflow.includes("cp -r assets/images _site/assets/"), "GitHub Pages must copy the complete local image library");
+const miraSource = "assets/source/villagers/mira_head-256.png";
+const miraRuntime = "assets/images/villagers/mira-head.png";
+assert.ok(fs.existsSync(miraSource), "Mira source artwork must be preserved outside deployed images");
+assert.ok(!fs.existsSync("assets/images/villagers/mira_head.png"), "Mira source artwork must not remain in deployed images");
+assert.ok(!pagesWorkflow.includes("assets/source"), "GitHub Pages artifact must not copy source artwork");
 const releaseDocs = ["RELEASE_READINESS.md", "PRIVACY_DISCLOSURE_DRAFT.md", "DEVICE_TEST_MATRIX.md", "ROLLBACK_PLAN.md", "ASSET_PROVENANCE.md", "PLATFORM_ADAPTERS.md", "GAMEPLAY_ROADMAP.md"];
 for (const file of [...runtimeFiles, ...runtimeAssets, ...streamedAssets, ...imageAssets, ...releaseDocs, "release-budgets.json", "release-browser-evidence.json", "fixtures/saves/legacy-pre-release-v1.json", "fixtures/saves/future-version-v9.json", "fixtures/saves/future-version-v10.json", "fixtures/rollback/game-save-reader-v1.cjs", "fixtures/rollback/game-save-reader-v2.cjs", "fixtures/rollback/game-save-reader-v3.cjs", "fixtures/rollback/game-save-reader-v4.cjs", "fixtures/rollback/game-save-reader-v5.cjs", "fixtures/rollback/game-save-reader-v6.cjs", "fixtures/rollback/game-save-reader-v7.cjs", "fixtures/rollback/game-save-reader-v8.cjs"]) assert.ok(fs.existsSync(file), `required release file missing: ${file}`);
 
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const miraSourcePng = fs.readFileSync(miraSource);
+assert.ok(miraSourcePng.subarray(0, 8).equals(pngSignature), "Mira source artwork must remain a PNG");
+assert.deepEqual([miraSourcePng.readUInt32BE(16), miraSourcePng.readUInt32BE(20)], [256, 256], "Mira source artwork must remain 256x256");
+assert.equal(miraSourcePng[25], 6, "Mira source artwork must retain transparency");
 for (const file of imageAssets) {
   const png = fs.readFileSync(file);
   assert.ok(png.subarray(0, 8).equals(pngSignature), `${file} is not a valid PNG file`);
@@ -54,6 +64,7 @@ for (const file of imageAssets) {
     assert.equal(width, height, `${file} must be square`);
     assert.ok([128, 256].includes(width), `${file} must be 128x128 or 256x256`);
   }
+  if (file === miraRuntime) assert.equal(png[25], 6, "Mira runtime portrait must retain transparency");
 }
 
 const text = Object.fromEntries(runtimeFiles.map(file => [file, fs.readFileSync(file, "utf8")]));
@@ -73,6 +84,7 @@ const swShell = JSON.parse(swShellMatch[1]);
 for (const file of runtimeFiles.filter(file => file !== "service-worker.js")) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
 for (const file of runtimeAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing ${file}`);
 for (const file of imageAssets) assert.ok(swShell.includes(`./${file}`), `service worker cache is missing approved sprite ${file}`);
+assert.ok(!swShell.includes(`./${miraSource}`), "service worker must not cache Mira source artwork");
 assert.ok(swShell.includes("./"), "service worker cache is missing the start URL");
 
 for (const [file, source] of Object.entries(text)) {
@@ -106,7 +118,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v61`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v62`/);
 assert.match(text["audio-feedback.js"], /function effectsOutputGain\(volume\)/);
 assert.match(text["audio-feedback.js"], /const SYNTH_OUTPUT_BOOST = 8/);
 assert.match(text["style.css"], /workshop-scene:not\(\.is-idle\) \.bubble \{ display: block !important; animation: none !important; opacity: \.82; \}/);
@@ -139,6 +151,8 @@ assert.deepEqual(parseByteRange("bytes=-100", 1000), { start: 900, end: 999 });
 assert.equal(parseByteRange("bytes=1000-", 1000), null);
 
 const budgets = JSON.parse(fs.readFileSync("release-budgets.json", "utf8"));
+assert.equal(budgets.files[miraRuntime], 24000, "Mira runtime portrait must keep its fixed 24 KB cap");
+assert.ok(!Object.hasOwn(budgets.files, miraSource), "Mira source artwork must not count toward runtime budgets");
 const normalizedReleaseBytes = file => {
   const extension = path.extname(file).toLowerCase();
   if (![".html", ".css", ".js", ".json", ".webmanifest", ".svg"].includes(extension)) return fs.statSync(file).size;

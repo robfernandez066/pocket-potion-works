@@ -31,16 +31,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Stardust now preserves its original 10% order-coin gain through five, then follows the owner-approved diminishing formula `1.5 + (stardust - 5) / (stardust + 15)`, remaining below a 2.5x Stardust multiplier without changing earned counts or sources.
 - The five immutable narrative catalogs now live in the dependency-free `content-data.js` offline module. Browser and CommonJS consumers still receive the same recursively frozen objects through `PPWLogic`, and gameplay behavior is unchanged.
 - Mira's permanent three-delivery chapter, **The Village Loaf**, unlocks after level 4, Mira's third heart, and her Flour-Sun Pin Special Request. Each chapter delivery presents an acknowledgement-controlled story scene; completion unlocks the reversible, economy-neutral **Firstlight Bakery** Workshop Look. The chapter shares the existing reserved slot without displacing its two ordinary orders and persists through Starry Rebirth.
+- Mira's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and Village Chapter payoff scenes. The original 256x256 source is retained outside deployment; one optimized transparent runtime copy is cached for offline play without changing other villagers' avatars.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 34 Mira portrait integration
+## Now - Task 35 Request Mix usefulness evidence
 
-Tasks 15 through 33 are complete and owner-accepted.
+Tasks 15 through 34 are complete and owner-accepted.
 
-Integrate the owner-approved Mira headshot into the existing Mira surfaces: order cards, Villager Special Request choice, Mira's Journal relationship card, and The Village Loaf payoff modal. Preserve every other villager's current avatar and all gameplay behavior.
+Measure the shipped Request Mix against the shipped uniform random ingredient path across representative active-order deficits. The evidence must quantify the chance that one charged harvest supplies at least one currently missing ingredient, average deficit reduction, and cases where weighting correctly disappears because bottled potions or Pantry stock already cover the request.
 
-The supplied 256x256 transparent PNG is a source asset, not a runtime-size decision. Preserve that original outside the deployed image library and derive one crisp transparent runtime portrait sized for its actual 44-72px mobile presentation. Add the runtime asset to the offline shell and release inventory without raising the 24,000,000-byte total budget. Keep the portrait decorative where Mira's name is already present, retain accessible names and focus behavior, and avoid a general avatar framework or broader art pass.
+This is a development-only evidence task. It must not change gathering, copy, weights, recipes, orders, saves, runtime assets, or player behavior. Use the result to decide whether the current “stays random and favors active-request deficits” explanation is both truthful and useful before authorizing any player-facing adjustment.
 
 ## Near-term existing-loop and playtest candidates
 

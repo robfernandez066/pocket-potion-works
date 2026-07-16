@@ -11,6 +11,8 @@ const POTION_SPRITES = new Set(RECIPES.map(recipe => recipe.id));
 const ingredientSpriteAttr = id => INGREDIENT_SPRITES.has(id) ? ` data-ingredient-sprite="${id}"` : "";
 const potionSpriteAttr = recipe => POTION_SPRITES.has(recipe.id) ? ` data-sprite="${recipe.id}"` : "";
 const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionSpriteAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
+const MIRA_PORTRAIT_MARKUP = '<span class="mira-portrait" aria-hidden="true"></span>';
+const customerAvatarMarkup = (customerId, avatar, color) => `<span class="customer-avatar" style="--avatar:${color}">${customerId === "customer-0" ? MIRA_PORTRAIT_MARKUP : avatar}</span>`;
 const $ = document.querySelector.bind(document);
 function browserStorage() {
   try { return window.localStorage; }
@@ -522,39 +524,39 @@ function renderRecipes() {
 function renderOrders() {
   const dailyComplete = state.daily.orders >= 5;
   const invitationAvailable = state.commissions.invitations < Logic.unfinishedCommissionCount(state);
-  const dailyCard = document.querySelector("#dailyCard");
+  const dailyCard = $("#dailyCard");
   dailyCard.hidden = state.daily.claimed && !transientCompletions.daily;
-  document.querySelector("#dailyProgress").textContent = state.daily.claimed && transientCompletions.daily ? "Daily reward claimed!" : `${Math.min(state.daily.orders, 5)} / 5 orders`;
-  document.querySelector("#dailyRewardLabel").textContent = state.daily.claimed && transientCompletions.daily ? "Collected" : "Reward";
-  document.querySelector("#dailyRewardCopy").textContent = state.daily.claimed && transientCompletions.daily
+  $("#dailyProgress").textContent = state.daily.claimed && transientCompletions.daily ? "Daily reward claimed!" : `${Math.min(state.daily.orders, 5)} / 5 orders`;
+  $("#dailyRewardLabel").textContent = state.daily.claimed && transientCompletions.daily ? "Collected" : "Reward";
+  $("#dailyRewardCopy").textContent = state.daily.claimed && transientCompletions.daily
     ? `50 coins + 1 stardust${transientCompletions.daily.invitationGranted ? transientCompletions.daily.savedForLater ? " + Villager Special Request invitation saved for later" : " + Villager Special Request" : ""}`
     : invitationAvailable
       ? state.commissions.selectedId ? "50 coins + 1 stardust + Villager Special Request invitation saved for later" : "50 coins + 1 stardust + Villager Special Request"
       : `50 coins + 1 stardust${Logic.unfinishedCommissionCount(state) ? " · request invitation already saved" : " · keepsakes complete"}`;
-  document.querySelector("#dailyBar").style.width = `${Math.min(100, state.daily.orders / 5 * 100)}%`;
-  const dailyClaimButton = document.querySelector("#claimDailyButton");
+  $("#dailyBar").style.width = `${Math.min(100, state.daily.orders / 5 * 100)}%`;
+  const dailyClaimButton = $("#claimDailyButton");
   dailyClaimButton.hidden = !dailyComplete || state.daily.claimed;
   const commissionChoices = Logic.refreshCommissionChoices(state);
   const invitations = state.commissions.invitations;
-  const choiceCard = document.querySelector("#commissionChoices");
+  const choiceCard = $("#commissionChoices");
   choiceCard.hidden = invitations < 1;
-  const choiceButton = document.querySelector("#openCommissionChoicesButton");
+  const choiceButton = $("#openCommissionChoicesButton");
   const activeRequest = Boolean(state.commissions.selectedId);
   const afterStars = Logic.afterStarsStatus(state);
   const questOrderActive = state.orders.some(Logic.isAfterStarsOrder);
   choiceButton.disabled = activeRequest || questOrderActive || commissionChoices.length === 0;
   choiceButton.textContent = questOrderActive ? "Finish the starborn errand first" : activeRequest ? "Finish your active request first" : commissionChoices.length ? "Choose a request" : "Unlock more potions to choose";
-  document.querySelector("#commissionChoiceSummary").textContent = `${invitations} invitation${invitations === 1 ? "" : "s"} saved. ${questOrderActive ? "Complete the After the Stars errand first; your invitation stays saved." : activeRequest ? "Finish the request on the board, then choose another." : "Choose a villager, build trust, and earn their named keepsake."}`;
-  const afterStarsCard = document.querySelector("#afterStarsCard");
+  $("#commissionChoiceSummary").textContent = `${invitations} invitation${invitations === 1 ? "" : "s"} saved. ${questOrderActive ? "Complete the After the Stars errand first; your invitation stays saved." : activeRequest ? "Finish the request on the board, then choose another." : "Choose a villager, build trust, and earn their named keepsake."}`;
+  const afterStarsCard = $("#afterStarsCard");
   const finalQuestState = transientCompletions.afterStars;
   const reservedStory = finalQuestState ? ["AFTER THE STARS", "Dawnthread Workshop unlocked", "4 / 4", "The four errands are complete. You can use the new Workshop Look from the Journal."]
     : Logic.reservedStoryTracker(state);
   afterStarsCard.hidden = !reservedStory;
   if (reservedStory) ["reservedStoryKicker", "afterStarsTitle", "afterStarsProgress", "afterStarsDetail"].forEach((id, index) => { document.getElementById(id).textContent = reservedStory[index]; });
-  const specialCompletion = document.querySelector("#specialRequestComplete");
+  const specialCompletion = $("#specialRequestComplete");
   specialCompletion.hidden = !transientCompletions.special;
   specialCompletion.innerHTML = transientCompletions.special ? `<p class="eyebrow">VILLAGER SPECIAL REQUEST COMPLETE</p><h2>${transientCompletions.special.title}</h2><p>${transientCompletions.special.customer} gave you the <strong>${transientCompletions.special.keepsake}</strong>.</p>` : "";
-  document.querySelector("#orderList").innerHTML = state.orders.map(order => {
+  $("#orderList").innerHTML = state.orders.map(order => {
     const recipe = recipeById(order.recipeId);
     const owned = state.potions[recipe.id];
     const action = Logic.orderAction(state, order);
@@ -571,7 +573,7 @@ function renderOrders() {
     return `<article class="order-card ${commission ? "is-commission" : questStep ? "is-after-stars" : chapterStep ? "is-chapter" : ""}">${questRibbon}
       ${commission ? `<div class="commission-ribbon">Villager Special Request · ${commission.title}</div>` : ""}
       ${chapterStep ? `<div class="commission-ribbon">Village Chapter</div>` : ""}
-      <div class="order-top"><span class="customer-avatar" style="--avatar:${order.avatarColor}">${order.avatar}</span><div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
+      <div class="order-top">${customerAvatarMarkup(order.customerId, order.avatar, order.avatarColor)}<div class="order-copy"><strong>${order.customer}</strong><small>${order.note}</small><small class="customer-trust">${trust}</small></div><div class="order-reward">+${reward} ●<br><small>+${order.xp} XP</small></div></div>
       <div class="order-bottom"><div class="order-request"><span>${potionSpriteMarkup(recipe)} ${order.quantity}×</span> ${recipe.name}<br><small>You have ${owned}</small></div>${html}</div>
     </article>`;
   }).join("");
@@ -633,7 +635,7 @@ function showSpecialRequestChooser({ automatic = false } = {}) {
     const customer = CUSTOMERS[Number(commission.customerId.slice(9))];
     const recipe = recipeById(commission.recipeId);
     const trust = state.customers[commission.customerId]?.hearts || 0;
-    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}"><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><span><strong>${customer[0]} · ${commission.title}</strong><small class="commission-potion-line">${potionSpriteMarkup(recipe)} Potion: ${recipe.name}</small><small>Trust: ${trust}/${CUSTOMER_CONFIG.maxHearts} hearts</small><small>Keepsake: ${commission.keepsake.name}</small></span><b>Choose request</b></button>`;
+    return `<button type="button" class="commission-choice" data-commission-choice="${commission.id}">${customerAvatarMarkup(commission.customerId, customer[1], customer[3])}<span><strong>${customer[0]} · ${commission.title}</strong><small class="commission-potion-line">${potionSpriteMarkup(recipe)} Potion: ${recipe.name}</small><small>Trust: ${trust}/${CUSTOMER_CONFIG.maxHearts} hearts</small><small>Keepsake: ${commission.keepsake.name}</small></span><b>Choose request</b></button>`;
   }).join("")}</div>` : `<p>No unfinished request matches a potion you know yet. Your invitation is saved until you unlock another potion.</p>`;
   openModal({ icon: "✦", kicker: "VILLAGER SPECIAL REQUEST", title: "Choose who to help", body, actions: [{ label: "Choose later", primary: true }] });
   document.querySelectorAll("[data-commission-choice]").forEach(button => button.addEventListener("click", () => chooseCommission(button.dataset.commissionChoice)));
@@ -687,17 +689,17 @@ function renderUpgrades() {
 function renderJournal() {
   const openCustomers = new Set([...document.querySelectorAll("[data-journal-customer][open]")].map(node => node.dataset.journalCustomer));
   const claims = Logic.journalClaimableCounts(state);
-  document.querySelector("#journalDot").hidden = claims.total === 0;
-  document.querySelector('[data-nav="journal"]').setAttribute("aria-label", claims.total ? `Journal, ${claims.total} reward${claims.total === 1 ? "" : "s"} ready` : "Journal");
-  document.querySelector("#friendsJournalDot").hidden = claims.story === 0;
-  document.querySelector("#recipeJournalDot").hidden = claims.recipe === 0;
-  document.querySelector("#achievementJournalDot").hidden = claims.achievement === 0;
+  $("#journalDot").hidden = claims.total === 0;
+  $('[data-nav="journal"]').setAttribute("aria-label", claims.total ? `Journal, ${claims.total} reward${claims.total === 1 ? "" : "s"} ready` : "Journal");
+  $("#friendsJournalDot").hidden = claims.story === 0;
+  $("#recipeJournalDot").hidden = claims.recipe === 0;
+  $("#achievementJournalDot").hidden = claims.achievement === 0;
   const stats = [
     ["Potions brewed", state.stats.brewed], ["Orders delivered", state.stats.orders],
     ["Lifetime coins", state.stats.coinsEarned], ["Harvest taps", state.stats.taps],
   ];
-  document.querySelector("#statsGrid").innerHTML = stats.map(([label, value]) => `<div class="stat-card"><span>${label}</span><strong>${formatNumber(value)}</strong></div>`).join("");
-  document.querySelector("#villageStoryList").innerHTML = CUSTOMERS.map((customer, customerIndex) => {
+  $("#statsGrid").innerHTML = stats.map(([label, value]) => `<div class="stat-card"><span>${label}</span><strong>${formatNumber(value)}</strong></div>`).join("");
+  $("#villageStoryList").innerHTML = CUSTOMERS.map((customer, customerIndex) => {
     const customerId = `customer-${customerIndex}`;
     const hearts = state.customers[customerId]?.hearts || 0;
     const statuses = [0, 1, 2].map(storyIndex => Logic.customerStoryStatus(state, customerId, storyIndex));
@@ -709,21 +711,21 @@ function renderJournal() {
       return `<div class="journal-entry is-read" data-journal-story-read="${status.id}" tabindex="-1"><div><strong>Story ${storyIndex + 1}</strong><small>${status.text}</small></div><span>Read</span></div>`;
     }).join("");
     const progress = `${unlockedCount}/${CUSTOMER_CONFIG.maxHearts} stories${newCount ? ` · ${newCount} new` : ""}`;
-    return `<details class="villager-journal-card ${newCount ? "has-claim" : ""}" data-journal-customer="${customerId}" ${openCustomers.has(customerId) ? "open" : ""}><summary><span class="customer-avatar" style="--avatar:${customer[3]}">${customer[1]}</span><div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
+    return `<details class="villager-journal-card ${newCount ? "has-claim" : ""}" data-journal-customer="${customerId}" ${openCustomers.has(customerId) ? "open" : ""}><summary>${customerAvatarMarkup(customerId, customer[1], customer[3])}<div><strong>${customer[0]}</strong><small>${"♥".repeat(hearts)}${"♡".repeat(CUSTOMER_CONFIG.maxHearts - hearts)} trust · ${progress}</small></div><span class="journal-expand" aria-hidden="true">⌄</span></summary><div class="journal-entry-stack">${beats}</div></details>`;
   }).join("");
-  document.querySelector("#recipeLoreList").innerHTML = [...RECIPES].sort((a, b) => a.unlock - b.unlock).map(recipe => {
+  $("#recipeLoreList").innerHTML = [...RECIPES].sort((a, b) => a.unlock - b.unlock).map(recipe => {
     const status = Logic.recipeLoreStatus(state, recipe.id);
     if (!status.unlocked) return `<div class="journal-entry recipe-lore is-locked"><span class="potion-bottle" style="--potion-color:${recipe.color}">?</span><div><strong>Undiscovered potion</strong><small>Brew or deliver ${recipe.unlock <= state.level ? "this recipe" : `the level ${recipe.unlock} recipe`} to reveal its lore.</small></div><b>Locked</b></div>`;
     if (!status.read) return `<button type="button" class="journal-entry recipe-lore is-new" data-journal-recipe="${recipe.id}"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>Read this bottle note and claim ${Logic.JOURNAL_REWARDS.recipe} coins</small></div><b>Read & claim</b></button>`;
     return `<div class="journal-entry recipe-lore is-read"><span class="potion-bottle"${potionSpriteAttr(recipe)} style="--potion-color:${recipe.color}">${recipe.icon}</span><div><strong>${recipe.name}</strong><small>${status.text}</small></div><b>Read</b></div>`;
   }).join("");
   const completedKeepsakes = new Set(state.commissions.completedIds);
-  document.querySelector("#keepsakeProgress").textContent = `${completedKeepsakes.size} / ${SIGNATURE_COMMISSIONS.length} collected · all twelve unlock the Heirloom Garland look.`;
-  document.querySelector("#keepsakeList").innerHTML = SIGNATURE_COMMISSIONS.map(commission => {
+  $("#keepsakeProgress").textContent = `${completedKeepsakes.size} / ${SIGNATURE_COMMISSIONS.length} collected · all twelve unlock the Heirloom Garland look.`;
+  $("#keepsakeList").innerHTML = SIGNATURE_COMMISSIONS.map(commission => {
     const collected = completedKeepsakes.has(commission.id);
     return `<article class="keepsake-card ${collected ? "is-collected" : "is-locked"}"><span aria-hidden="true">${collected ? commission.keepsake.mark : "?"}</span><div><strong>${collected ? commission.keepsake.name : "Uncollected keepsake"}</strong><small>${collected ? commission.keepsake.description : `Help ${CUSTOMERS[Number(commission.customerId.slice(9))][0]} with a Villager Special Request.`}</small></div></article>`;
   }).join("");
-  document.querySelector("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
+  $("#achievementList").innerHTML = ACHIEVEMENTS.map(achievement => {
     const earned = Number.isFinite(state.achievements[achievement.id]) && state.achievements[achievement.id] > 0;
     const claimed = state.journal.claimedAchievements.includes(achievement.id);
     if (earned && !claimed) return `<button type="button" class="achievement-card is-claimable" data-journal-achievement="${achievement.id}"><span class="achievement-icon">${achievement.icon}</span><div><strong>${achievement.name}</strong><small>${achievement.description}</small></div><span class="achievement-status">+${Logic.JOURNAL_REWARDS.achievement} · Claim</span></button>`;
@@ -947,7 +949,7 @@ function goToBrewSlot() {
 function showChapterPayoff(result, surface) {
   const final = result.chapter.complete;
   openModal({ kicker: result.narrative.kicker, title: result.narrative.title,
-    icon: "✦", body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
+    icon: MIRA_PORTRAIT_MARKUP, body: `<p>${result.narrative.body}</p><p><strong>${result.narrative.footer}</strong></p>`,
     actions: [{ label: final ? "View Workshop Looks" : "Continue the chapter", primary: true, onClick: () => {
       closeModal();
       if (final) switchView("journal"); else switchView("orders");
@@ -962,7 +964,9 @@ function showChapterPayoff(result, surface) {
 function openModal({ icon, kicker, title, body, actions }) {
   const backdrop = $("#modalBackdrop");
   if (backdrop.hidden) lastFocus = document.activeElement;
-  $("#modalIcon").textContent = icon;
+  const modalIcon = $("#modalIcon");
+  modalIcon.innerHTML = icon;
+  modalIcon.classList.toggle("is-mira-portrait", icon === MIRA_PORTRAIT_MARKUP);
   $("#modalKicker").textContent = kicker;
   $("#modalTitle").textContent = title;
   $("#modalBody").innerHTML = body;
