@@ -40,13 +40,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 42 192 kbps music listening candidates
+## Now - Task 43 ship the owner-approved 192 kbps music
 
-Tasks 15 through 41 are complete. The deterministic runtime audit confirms that the three shipped music tracks are 256 kbps CBR and occupy 22,516,295 bytes, or 93.84% of the deployed runtime. The current build has only 4,603 bytes of headroom.
+Tasks 15 through 42 are complete. The owner accepted the 192 kbps A/B candidate for all three background-music tracks. The temporary candidates are exact validated CBR exports with unchanged musical content and a combined size of 16,890,981 bytes.
 
-The least-aggressive modeled option that clears the declared headroom threshold is 192 kbps. Its mathematical projection recovers 5,629,073 bytes and leaves 5,633,676 bytes of runtime headroom, while 160 and 128 kbps would compress more aggressively than the current evidence requires.
+Replace only the three shipped 256 kbps runtime copies with the exact owner-approved candidate hashes. This should recover 5,625,314 deployed bytes, reduce the runtime to 18,370,083 bytes, and leave 5,629,917 bytes of headroom without removing a track or changing playback behavior.
 
-Create temporary 192 kbps CBR listening candidates outside the repository using the existing local Audacity installation. Preserve all three originals and every live runtime, cache, budget, credit, and playback behavior. Provide a short same-position A/B comparison for owner listening; only an explicit owner acceptance may authorize replacing the shipped files in a later task.
+Keep the 24,000,000-byte total budget fixed, lower the three individual music caps to protect the recovered space, preserve credits and licenses, rotate the offline cache once, and make the active runtime audit state clearly that no further compression is required by the declared headroom threshold. Do not re-encode the approved candidates or extend this task into new music, mix, UI, gameplay, or content work.
 
 ## Near-term existing-loop and playtest candidates
 
