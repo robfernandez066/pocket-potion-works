@@ -146,7 +146,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v66`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v67`/);
 assert.match(text["ui-render.js"], /globalThis\.PPWUI = Object\.freeze\(/, "UI module must expose its frozen browser API");
 assert.doesNotMatch(text["ui-render.js"], /\b(?:document|window|require|module|setTimeout|setInterval|Date|Math\.random|localStorage|addEventListener|querySelector)\b/, "UI module must remain dependency-free presentation code");
 assert.match(text["app.js"], /const UI = window\.PPWUI;/, "browser adapter must require the UI presentation module");
@@ -221,8 +221,8 @@ for (const [file, ceiling] of Object.entries(budgets.files)) {
   assert.ok(bytes <= ceiling, `${file} is ${bytes} bytes, above its ${ceiling}-byte release budget`);
 }
 assert.ok(total <= budgets.totalRuntimeBytes, `runtime shell is ${total} bytes, above its ${budgets.totalRuntimeBytes}-byte budget`);
-assert.equal(total, 18370083, "Task 43 runtime inventory must match the approved exact total");
-assert.equal(budgets.totalRuntimeBytes - total, 5629917, "Task 43 runtime inventory must retain the approved headroom");
+assert.equal(total, 18370432, "Task 44 runtime inventory must match the approved exact total");
+assert.equal(budgets.totalRuntimeBytes - total, 5629568, "Task 44 runtime inventory must retain the approved headroom");
 assert.ok(budgets.totalRuntimeBytes - total >= 2000000, "current runtime headroom must already satisfy the no-further-compression threshold");
 assert.ok(!swShell.some(file => streamedAssets.includes(file.slice(2))), "background music must remain streamed instead of entering the offline shell");
 assert.doesNotMatch(text["service-worker.js"], /v65/, "Task 43 must rotate the cache identity exactly once");
