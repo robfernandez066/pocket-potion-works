@@ -1,7 +1,7 @@
 const fs = require("fs");
 const vm = require("vm");
 
-const files = ["index.html", "style.css", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
+const files = ["index.html", "style.css", "relationship-content.js", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
 const missing = files.filter(file => !fs.existsSync(file));
 if (missing.length) throw new Error(`Missing files: ${missing.join(", ")}`);
 
@@ -12,6 +12,7 @@ if (!combined.includes("Pocket Potion Works") || !combined.includes("pocket-poti
 
 const html = fs.readFileSync("index.html", "utf8");
 const normalizedHtml = html.replace(/\r\n/g, "\n");
+const relationshipSource = fs.readFileSync("relationship-content.js", "utf8");
 const content = fs.readFileSync("content-data.js", "utf8");
 const uiSource = fs.readFileSync("ui-render.js", "utf8");
 const app = fs.readFileSync("app.js", "utf8");
@@ -19,12 +20,21 @@ const style = fs.readFileSync("style.css", "utf8");
 if (!app.includes("already been added to the Pantry")) throw new Error("Welcome Back must state that offline ingredients were already added to the Pantry.");
 if (!app.includes('label: "Back to workshop", primary: true')) throw new Error("Welcome Back must use a non-claiming return action.");
 if (app.includes('label: "Collect ingredients"')) throw new Error("Welcome Back must not offer a second ingredient collection step.");
+if (!html.includes('<script src="relationship-content.js"></script>')) throw new Error("Relationship content must load before the primary content catalog.");
 if (!html.includes('<script src="content-data.js"></script>')) throw new Error("Content data must load before pure game logic.");
 if (!html.includes('<script src="game-logic.js"></script>')) throw new Error("Pure game logic must load before the browser adapter.");
 if (!html.includes('<script src="ui-render.js"></script>')) throw new Error("UI helpers must load before the browser adapter.");
 if (!html.includes('<script src="platform-adapters.js"></script>')) throw new Error("Platform adapters must load before the browser adapter.");
 if (!html.includes('<script src="audio-feedback.js"></script>')) throw new Error("Audio helpers must load before the browser adapter.");
-if (!normalizedHtml.includes('content-data.js"></script>\n    <script src="game-logic.js"></script>\n    <script src="ui-render.js"></script>\n    <script src="platform-adapters.js"></script>\n    <script src="audio-feedback.js"></script>\n    <script src="app.js')) throw new Error("Browser scripts must load in dependency order.");
+if (!normalizedHtml.includes('relationship-content.js"></script>\n    <script src="content-data.js"></script>\n    <script src="game-logic.js"></script>\n    <script src="ui-render.js"></script>\n    <script src="platform-adapters.js"></script>\n    <script src="audio-feedback.js"></script>\n    <script src="app.js')) throw new Error("Browser scripts must load in dependency order.");
+const relationshipSandbox = {};
+vm.runInNewContext(relationshipSource, relationshipSandbox, { filename: "relationship-content.js" });
+const relationship = relationshipSandbox.PPWRelationshipContent;
+if (!relationship || !Object.isFrozen(relationship) || !Object.isFrozen(relationship.DELIVERY_NARRATIVE_PILOTS) || relationship.DELIVERY_NARRATIVE_PILOTS.some(entry => !Object.isFrozen(entry)) || Object.keys(relationshipSandbox).filter(key => key.startsWith("PPW")).join(",") !== "PPWRelationshipContent") throw new Error("Relationship content must expose exactly one deeply frozen browser global.");
+const relationshipImplementation = relationshipSource.slice(0, relationshipSource.indexOf("const DELIVERY_NARRATIVE_PILOTS"));
+if (/\brequire\s*\(|\bdocument\s*(?:\.|\[)|\bwindow\s*(?:\.|\[)|\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|localStorage)\s*\(/.test(relationshipImplementation)) throw new Error("Relationship content must remain dependency-free offline data.");
+if (!content.includes('require("./relationship-content.js")') || content.includes("The early list")) throw new Error("The primary content catalog must consume the extracted relationship module without a fallback copy.");
+try { vm.runInNewContext(content, {}, { filename: "content-data.js" }); throw new Error("Content data unexpectedly loaded without relationship content."); } catch (error) { if (!/relationship content is unavailable/.test(error.message)) throw error; }
 const uiSandbox = {};
 vm.runInNewContext(uiSource, uiSandbox, { filename: "ui-render.js" });
 const ui = uiSandbox.PPWUI;
@@ -35,7 +45,7 @@ if (/const (?:INGREDIENT_SPRITES|POTION_SPRITES|PORTRAITS)\b|function (?:ingredi
 if (!ui.activeBrewMarkup({ id: "tonic", icon: "⚗", color: "#123", name: "Meadow Tonic" }).includes('data-sprite="tonic"')) throw new Error("Potion sprite presentation output changed.");
 if (!ui.ingredientCards({ herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 } }, 1, null, { herb: 7 }).includes('data-ingredient-sprite="herb"') || !ui.ingredientCards({ herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 } }, 1, null, { herb: 7 }).includes("<strong>7</strong>")) throw new Error("Ingredient-card presentation output changed.");
 if (ui.portraitMarkup("customer-0") !== '<span class="villager-portrait mira-portrait" aria-hidden="true"></span>' || ui.portraitMarkup("customer-6") !== '<span class="villager-portrait fern-portrait" aria-hidden="true"></span>' || !ui.customerAvatarMarkup("customer-1", "🧙", "#123").includes(">🧙</span>")) throw new Error("Portrait and emoji fallback presentation changed.");
-if (!ui.narrativeDeliveryMarkup({ customerId: "customer-6", kicker: "FERN", title: "The seed that would not wake", body: "Body", footer: "Footer" }).includes("fern-portrait")) throw new Error("Narrative-card portrait selection changed.");
+if (!ui.narrativeDeliveryMarkup({ customerId: "customer-6", kicker: "FERN", title: "The seed that would not wake", body: "Body", footer: "Footer" }, [["", ""], ["Old Moss", "ðŸ§™", "", "#123"], [], [], [], [], ["Fern", "â€", "", "#456"]]).includes("fern-portrait") || !ui.narrativeDeliveryMarkup({ customerId: "customer-1", kicker: "MOSS", title: "Title", body: "Body", footer: "Footer" }, [["", ""], ["Old Moss", "ðŸ§™", "", "#123"]]).includes("ðŸ§™")) throw new Error("Narrative-card portrait and emoji fallback selection changed.");
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 const queriedIds = [...app.matchAll(/querySelector\(["'`]#([A-Za-z0-9_-]+)["'`]\)/g)].map(match => match[1]);
 const dynamicIds = new Set(["collectBrewButton"]);
@@ -58,7 +68,7 @@ const requestsPath = app.slice(app.indexOf("function showSpecialRequestChooser")
 const journalPath = app.slice(app.indexOf("function renderJournal()"), app.indexOf("function claimJournalEntry"));
 if (!ordersPath.includes("UI.orderListMarkup") || !requestsPath.includes("UI.commissionChoicesMarkup") || !journalPath.includes("UI.customerAvatarMarkup(customerId, customer[1], customer[3])")) throw new Error("Illustrated villagers must use the shared avatar seam on order, request, and Journal surfaces.");
 const narrativePath = app.slice(app.indexOf("function renderNarrativeDelivery()"), app.indexOf("function chooseCommission"));
-if (!narrativePath.includes("UI.narrativeDeliveryMarkup(detail)") || !style.includes(".narrative-delivery-card:has(> .villager-portrait)")) throw new Error("Mira and Fern first-heart cards must use the generic mapped narrative portrait treatment.");
+if (!narrativePath.includes("UI.narrativeDeliveryMarkup(detail, CUSTOMERS)") || !style.includes(".narrative-delivery-card:has(> :is(.villager-portrait,.customer-avatar))")) throw new Error("Narrative cards must use the generic mapped portrait and emoji fallback treatment.");
 const chapterPayoffStart = app.indexOf("function showChapterPayoff(result, surface)");
 const chapterPayoffEnd = app.indexOf("function openModal(", chapterPayoffStart);
 const chapterPayoffPath = app.slice(chapterPayoffStart, chapterPayoffEnd);
@@ -82,6 +92,7 @@ if (!fs.existsSync(miraSource) || !fs.existsSync(fernSource) || fs.existsSync("a
 if (app.includes('class="active-brew" aria-live=')) throw new Error("The per-second brew countdown must remain outside live regions.");
 
 JSON.parse(fs.readFileSync("manifest.webmanifest", "utf8"));
+new vm.Script(relationshipSource, { filename: "relationship-content.js" });
 new vm.Script(content, { filename: "content-data.js" });
 new vm.Script(uiSource, { filename: "ui-render.js" });
 new vm.Script(app, { filename: "app.js" });

@@ -1,16 +1,13 @@
 "use strict";
 
 (function exposePocketPotionContent(root, factory) {
-  const api = factory();
+  const relationshipContent = typeof module === "object" && module.exports ? require("./relationship-content.js") : root && root.PPWRelationshipContent;
+  const api = factory(relationshipContent);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.PPWContent = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionContent() {
-  const DELIVERY_NARRATIVE_PILOTS = Object.freeze([
-    Object.freeze({ customerId: "customer-0", fromHearts: 0, toHearts: 1, kicker: "MIRA · FIRST TRUST HEART", title: "A warmer morning", body: "Mira leaves a warm bun beside your coins. \"Mornings are kinder with a friend.\"", footer: "1 of 3 trust hearts · New story ready in Journal" }),
-    Object.freeze({ customerId: "customer-6", fromHearts: 0, toHearts: 1, kicker: "FERN · FIRST TRUST HEART", title: "The seed that would not wake", body: "Fern sets a blue clay pot on the counter. Its soil is dark and carefully tended, but bare. \"I've tried sun, shade, songs, and apologizing to it,\" she says. \"I keep telling everyone it just needs more time, but I'm starting to think I'm wrong.\" She asks if she can leave the pot beside your warm cauldron for a few days, and you clear it a place.", footer: "1 of 3 trust hearts · The blue pot stays in your workshop" }),
-    Object.freeze({ customerId: "customer-6", fromHearts: 1, toHearts: 2, kicker: "FERN · SECOND TRUST HEART", title: "What help looks like", body: "A few days later, Fern returns to check the blue pot and finds a tiny green shoot breaking through the soil. It has grown toward the cauldron and is beginning to lean. Fern reaches to move it closer to the warmth, but you point to the morning light at the nearby window. Together you move the pot where it can have both, then brace the stem with a folded order slip. \"I thought being patient meant leaving it alone,\" Fern says. \"But sometimes patience means watching closely and helping at the right time.\"", footer: "2 of 3 trust hearts · The seedling moves to the workshop window" }),
-    Object.freeze({ customerId: "customer-6", fromHearts: 2, toHearts: 3, kicker: "FERN · THIRD TRUST HEART", title: "A place by the window", body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.", footer: "3 of 3 trust hearts · Patience stays by the workshop window" }),
-  ]);
+})(typeof globalThis !== "undefined" ? globalThis : this, function createPocketPotionContent(relationshipContent) {
+  if (!relationshipContent?.DELIVERY_NARRATIVE_PILOTS) throw new Error("Pocket Potion Works relationship content is unavailable. Load relationship-content.js before content-data.js.");
+  const { DELIVERY_NARRATIVE_PILOTS } = relationshipContent;
 
   const CUSTOMER_CONTENT = Object.freeze([
     Object.freeze({ orderLines: Object.freeze(["The ovens wake before I do.", "A warm loaf deserves a steady baker.", "Could you bottle a calmer morning?"]), stories: Object.freeze(["Mira leaves the first bun of every batch on the village well for whoever starts work earliest.", "She learned to bake from a flour-smudged notebook whose final page is still blank.", "Mira decides the blank page should hold a recipe the whole village helps invent."]) }),

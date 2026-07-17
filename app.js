@@ -551,8 +551,8 @@ function renderNarrativeDelivery() {
   for (const surface of ["Workshop", "Orders"]) {
     const detail = transientCompletions[`narrative${surface}`];
     const card = document.getElementById(`${surface.toLowerCase()}NarrativeDelivery`);
-    card.hidden = !detail;
-    card.innerHTML = UI.narrativeDeliveryMarkup(detail);
+    card.hidden=!detail;
+    card.innerHTML = UI.narrativeDeliveryMarkup(detail, CUSTOMERS);
   }
 }
 

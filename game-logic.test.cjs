@@ -3,11 +3,26 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
+const relationship = require("./relationship-content.js");
 const content = require("./content-data.js");
 const game = require("./game-logic.js");
 
 const NOW = Date.UTC(2026, 6, 12, 12);
 const CONTENT_KEYS = ["DELIVERY_NARRATIVE_PILOTS", "CUSTOMER_CONTENT", "SIGNATURE_COMMISSIONS", "AFTER_STARS_STEPS", "VILLAGE_CHAPTER", "RECIPE_LORE"];
+const EXPECTED_DELIVERY_NARRATIVES = [
+  { customerId: "customer-0", fromHearts: 0, toHearts: 1, kicker: "MIRA · FIRST TRUST HEART", title: "The early list", body: "Before sunrise, Mira is checking the small slate where she records which opening trays sell first and which need another try. A flour tin is holding down one corner because the bakery door keeps letting in a sharp draft. You slide a folded cloth beneath the slate so it stays level, then hold the door while she writes down the two trays already cooling. \"There,\" she says. \"Now I can tell what actually worked.\" When the first loaves come out even, Mira laughs with relief and leaves one blank line for the next tray worth testing.", footer: "1 of 3 trust hearts · Mira keeps her opening-tray slate by the oven, with one blank test line." },
+  { customerId: "customer-0", fromHearts: 1, toHearts: 2, kicker: "MIRA · SECOND TRUST HEART", title: "A taste before opening", body: "Four market mornings later, Mira brings a covered basket to the workshop before the shutters lift. Inside are three little oat loaves, each wrapped in parchment and tied with a different-colored string. You cut them into equal pieces with the butter knife she packed, then point to the apple loaf after its warm scent fills the doorway. Mira tastes it, looks at the empty crumbs on that plate, and writes RED STRING on her slate before circling those words. \"That one is plainly the favorite,\" she says. \"Thank you for helping me choose.\" She leaves the basket at your counter for the morning customers.", footer: "2 of 3 trust hearts · Mira records the red-string apple loaf as her next opening batch." },
+  { customerId: "customer-0", fromHearts: 2, toHearts: 3, kicker: "MIRA · THIRD TRUST HEART", title: "The last warm slice", body: "A week later, Mira arrives at dusk with the same slate tucked under her arm. The red-string apple loaf sold out before noon, and she has brought one last warm slice for you to taste. You tap the cinnamon jar beside the cauldron. Mira opens it and smells the cinnamon, then writes \"one pinch cinnamon\" beside the RED STRING note on her slate. She takes the note back to the bakery and tests the change in the next opening batch. The following morning, she returns with an empty basket and a pleased nod. She adds one clear line to the slate: \"one workshop slice with every opening batch.\"", footer: "3 of 3 trust hearts · Mira now adds a workshop slice to every opening batch." },
+  { customerId: "customer-1", fromHearts: 0, toHearts: 1, kicker: "OLD MOSS · FIRST TRUST HEART", title: "The little chime", body: "After a hard shower, Old Moss stops outside the workshop with a damp coat, a tin cup, and two little acorn chimes threaded on waxed string. He says the lane by the hedges is \"thinking about becoming a pond.\" He has already walked the raised route behind the elm and knows it is clear. You hold the shop lantern while he ties one chime at the elm turn. \"It will help people find this turn when rain hides the path,\" he explains. Before leaving, he hangs the other, the spare, by the workshop door so anyone caught in bad weather knows where to meet.", footer: "1 of 3 trust hearts · The route chime marks the elm turn; the spare marks the workshop meeting door." },
+  { customerId: "customer-1", fromHearts: 1, toHearts: 2, kicker: "OLD MOSS · SECOND TRUST HEART", title: "A fidgety branch", body: "Two rainy days later, the spare chime knocks gently against the workshop door. Old Moss is already outside, looking pleased and mildly offended. The elm's low branch has rubbed the route chime against a knot, leaving its string frayed. You bring fresh waxed string and hold the lantern while he moves the chime one hand higher on the branch. \"Branches are fidgety neighbors,\" he explains. Then you stand together at the workshop door and listen through the rain. From there, you can hear the route chime, while the spare still marks the place where walkers should gather first.", footer: "2 of 3 trust hearts · The repaired route chime can be heard from the workshop meeting door." },
+  { customerId: "customer-1", fromHearts: 2, toHearts: 3, kicker: "OLD MOSS · THIRD TRUST HEART", title: "The dry way home", body: "The following week, rain catches the evening market just as the bakers begin packing up. Neighbors spot the spare acorn chime at the workshop door and gather beneath its awning while Old Moss brings an armful of umbrellas for everyone. You help keep the group together as he leads everyone to the elm. The repaired route chime rattles at the turn, so no one misses the raised path behind it. The neighbors follow with their shoes mostly clean. At the far gate, Moss says, \"Reliable enough for company.\" When the rain eases, the spare chime is still hanging by the workshop door.", footer: "3 of 3 trust hearts · The workshop meeting chime and elm route marker guide neighbors to the raised path." },
+  { customerId: "customer-2", fromHearts: 0, toHearts: 1, kicker: "JUNIPER · FIRST TRUST HEART", title: "The missing page", body: "Behind the mill, Juniper's music pages keep lifting from their stand whenever the wheel catches a breeze. One sheet skids across the grass, and you catch it before it reaches the water. Juniper groans, then laughs. \"A dramatic exit for a very shy note.\" You fasten the pages with the plain brass clip from a supply box, and she tries the troublesome passage again. This time she makes it to the end without chasing paper. She writes a small dot beside the bar where she usually stops and folds the clipped pages carefully into her case.", footer: "1 of 3 trust hearts · A brass clip holds Juniper's pages, and one difficult bar is marked." },
+  { customerId: "customer-2", fromHearts: 1, toHearts: 2, kicker: "JUNIPER · SECOND TRUST HEART", title: "One more run-through", body: "The next Friday, Juniper has set two stools behind the mill: one for her case and one facing the water. She says the marked bar still feels like a loose floorboard. You take the spare stool and turn pages when she nods. The first attempt wobbles, so she stops, makes a face, and starts again before you can politely look away. On the second pass, the brass clip flashes in the sun and she clears the bar cleanly. Juniper adds a penciled pause before it. \"That is where I remember to breathe,\" she says.", footer: "2 of 3 trust hearts · The marked bar gains a breathing pause, and the second stool stays by the mill." },
+  { customerId: "customer-2", fromHearts: 2, toHearts: 3, kicker: "JUNIPER · THIRD TRUST HEART", title: "The open rehearsal", body: "Several weeks later, a delivery cart breaks a wheel in the market square, and people gather under the awning. Juniper carries her case from the mill and sets it on its usual stool. You sit on the second stool beside a dry fruit crate, the only dry surface available for her score. Juniper sets the score on the crate; you fasten it with the brass clip and turn its pages while she plays. When a few neighbors turn to listen, Juniper pauses, then says she will finish this one. She clears the marked passage, takes the penciled breathing pause, and plays on. Afterward, both stools return to the mill.", footer: "3 of 3 trust hearts · Juniper returns both stools to the mill and keeps the listener's stool ready." },
+  { customerId: "customer-6", fromHearts: 0, toHearts: 1, kicker: "FERN · FIRST TRUST HEART", title: "The seed that would not wake", body: "Fern sets a blue clay pot on the counter. Its soil is dark and carefully tended, but bare. \"I've tried sun, shade, songs, and apologizing to it,\" she says. \"I keep telling everyone it just needs more time, but I'm starting to think I'm wrong.\" She asks if she can leave the pot beside your warm cauldron for a few days, and you clear it a place.", footer: "1 of 3 trust hearts · The blue pot stays in your workshop" },
+  { customerId: "customer-6", fromHearts: 1, toHearts: 2, kicker: "FERN · SECOND TRUST HEART", title: "What help looks like", body: "A few days later, Fern returns to check the blue pot and finds a tiny green shoot breaking through the soil. It has grown toward the cauldron and is beginning to lean. Fern reaches to move it closer to the warmth, but you point to the morning light at the nearby window. Together you move the pot where it can have both, then brace the stem with a folded order slip. \"I thought being patient meant leaving it alone,\" Fern says. \"But sometimes patience means watching closely and helping at the right time.\"", footer: "2 of 3 trust hearts · The seedling moves to the workshop window" },
+  { customerId: "customer-6", fromHearts: 2, toHearts: 3, kicker: "FERN · THIRD TRUST HEART", title: "A place by the window", body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.", footer: "3 of 3 trust hearts · Patience stays by the workshop window" },
+];
 let passed = 0;
 function test(name, fn) {
   fn(); passed += 1; console.log(`ok ${passed} - ${name}`);
@@ -21,9 +36,15 @@ function assertDeepFrozen(value, seen = new Set()) {
 }
 
 test("content catalog exposes the same deeply frozen objects through CommonJS and PPWLogic", () => {
+  assert.deepEqual(Object.keys(relationship), ["DELIVERY_NARRATIVE_PILOTS"]);
+  assert.equal(Object.isFrozen(relationship), true);
   assert.equal(Object.isFrozen(content), true);
   assert.equal(Object.isFrozen(game), true);
   assert.deepEqual(Object.keys(content), CONTENT_KEYS);
+  assert.strictEqual(content.DELIVERY_NARRATIVE_PILOTS, relationship.DELIVERY_NARRATIVE_PILOTS);
+  assert.strictEqual(game.DELIVERY_NARRATIVE_PILOTS, relationship.DELIVERY_NARRATIVE_PILOTS);
+  assert.deepEqual(relationship.DELIVERY_NARRATIVE_PILOTS, EXPECTED_DELIVERY_NARRATIVES);
+  assertDeepFrozen(relationship);
   for (const key of CONTENT_KEYS) {
     assert.strictEqual(game[key], content[key]);
     assertDeepFrozen(content[key]);
@@ -31,13 +52,19 @@ test("content catalog exposes the same deeply frozen objects through CommonJS an
 });
 
 test("content catalog exposes one browser global and game logic requires it", () => {
+  const relationshipSource = fs.readFileSync("relationship-content.js", "utf8");
   const contentSource = fs.readFileSync("content-data.js", "utf8");
   const logicSource = fs.readFileSync("game-logic.js", "utf8");
   const browser = vm.createContext({});
+  vm.runInContext(relationshipSource, browser, { filename: "relationship-content.js" });
+  assert.ok(browser.PPWRelationshipContent);
   vm.runInContext(contentSource, browser, { filename: "content-data.js" });
   assert.ok(browser.PPWContent);
   vm.runInContext(logicSource, browser, { filename: "game-logic.js" });
+  assert.strictEqual(browser.PPWContent.DELIVERY_NARRATIVE_PILOTS, browser.PPWRelationshipContent.DELIVERY_NARRATIVE_PILOTS);
+  assert.strictEqual(browser.PPWLogic.DELIVERY_NARRATIVE_PILOTS, browser.PPWRelationshipContent.DELIVERY_NARRATIVE_PILOTS);
   for (const key of CONTENT_KEYS) assert.strictEqual(browser.PPWLogic[key], browser.PPWContent[key]);
+  assert.throws(() => vm.runInNewContext(contentSource, {}, { filename: "content-data.js" }), /relationship content is unavailable/);
   assert.throws(() => vm.runInNewContext(logicSource, {}, { filename: "game-logic.js" }), /content catalog is unavailable/);
 });
 
@@ -537,52 +564,105 @@ test("recurring customers gain trust and grant a deterministic non-blocking favo
   assert.equal(result.customerBonus, game.CUSTOMER_CONFIG.heartBonusCoins);
   assert.equal(result.reward, 20 + game.CUSTOMER_CONFIG.heartBonusCoins);
   assert.deepEqual(state.customers["customer-0"], { deliveries: 3, hearts: 1 });
-  assert.deepEqual(result.narrative, { customerId: "customer-0", fromHearts: 0, toHearts: 1, kicker: "MIRA · FIRST TRUST HEART", title: "A warmer morning", body: "Mira leaves a warm bun beside your coins. \"Mornings are kinder with a friend.\"", footer: "1 of 3 trust hearts · New story ready in Journal" });
+  assert.deepEqual(result.narrative, EXPECTED_DELIVERY_NARRATIVES[0]);
   assert.equal(game.journalClaimableCounts(state).story, 1);
   assert.equal(game.customerStoryStatus(state, "customer-0", 0).read, false);
 });
 
-test("Mira's narrative pilot is transition-only and preserves shared fulfillment results", () => {
-  const deliver = (customerId, deliveries, hearts, extra = {}) => {
+test("Mira, Old Moss, and Juniper arcs trigger exactly once across every supported fulfillment path", () => {
+  const newPilots = EXPECTED_DELIVERY_NARRATIVES.slice(0, 9);
+  const deliver = (pilot, deliveries = pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1, hearts = pilot.fromHearts, extra = {}) => {
     const state = game.defaultState(NOW);
-    state.customers[customerId] = { deliveries, hearts };
-    state.orders = [{ id: 1, customerId, customer: game.CUSTOMERS[Number(customerId.slice(9))][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+    state.customers[pilot.customerId] = { deliveries, hearts };
+    state.orders = [{ id: 1, customerId: pilot.customerId, customer: game.CUSTOMERS[Number(pilot.customerId.slice(9))][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
     state.nextOrderId = 2;
     state.potions.tonic = extra.ready === false ? 0 : 1;
     return { state, result: game.fulfillOrder(state, 1, NOW, () => 0) };
   };
-  assert.equal(deliver("customer-0", 1, 0).result.narrative, null, "Mira needs the third delivery");
-  assert.equal(deliver("customer-0", 3, 1).result.narrative, null, "later hearts cannot replay the pilot");
-  assert.equal(deliver("customer-1", 2, 0).result.narrative, null, "other villagers are ineligible");
-  assert.equal(deliver("customer-0", 2, 0, { ready: false }).result, null, "failed deliveries have no payload");
-  const replay = deliver("customer-0", 2, 0);
-  assert.equal(game.fulfillOrder(replay.state, 1, NOW, () => 0), null, "a repeated order ID cannot replay the pilot");
 
-  const commissionState = game.defaultState(NOW);
-  commissionState.commissions.invitations = 1;
-  const commissionOrder = game.selectSignatureCommission(commissionState, "mira-dawn");
-  commissionState.customers["customer-0"] = { deliveries: 2, hearts: 0 };
-  commissionState.potions.tonic = 1;
-  const commissionResult = game.fulfillOrder(commissionState, commissionOrder.id, NOW, () => 0);
-  assert.equal(commissionResult.commission.id, "mira-dawn");
-  assert.ok(commissionResult.narrative, "a special request retains its completion result and adds the pilot");
+  for (const pilot of newPilots) {
+    const boundaryDeliveries = pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1;
+    assert.equal(deliver(pilot, boundaryDeliveries - 1, pilot.fromHearts).result.narrative, null, `${pilot.kicker} must not trigger before its boundary`);
+    const ordinary = deliver(pilot);
+    assert.deepEqual(ordinary.result.narrative, pilot, `${pilot.kicker} must use its exact ordinary-order payload`);
+    assert.equal(ordinary.result.customerBonus, game.CUSTOMER_CONFIG.heartBonusCoins);
+    assert.equal(ordinary.result.reward, 20 + game.CUSTOMER_CONFIG.heartBonusCoins);
+    assert.equal(ordinary.state.coins, game.defaultState(NOW).coins + ordinary.result.reward, "the narrative adds no extra coins");
+    assert.deepEqual(ordinary.state.customers[pilot.customerId], { deliveries: boundaryDeliveries + 1, hearts: pilot.toHearts });
+    assert.equal(Object.hasOwn(ordinary.state, "narrative"), false, "the narrative is not saved state");
+    assert.deepEqual(Object.keys(ordinary.state).sort(), Object.keys(game.defaultState(NOW)).sort(), "the narrative adds no saved field");
+    assert.equal(game.customerStoryStatus(ordinary.state, pilot.customerId, pilot.toHearts - 1).read, false, "the matching Journal summary remains unread");
+    assert.equal(game.journalClaimableCounts(ordinary.state).story, pilot.toHearts, "existing Journal summaries remain claimable by heart count");
+    const coinsBeforeClaim = ordinary.state.coins;
+    assert.deepEqual(game.claimJournalReward(ordinary.state, "story", `${pilot.customerId}:${pilot.toHearts}`, NOW), { kind: "story", id: `${pilot.customerId}:${pilot.toHearts}`, reward: game.JOURNAL_REWARDS.story });
+    assert.equal(ordinary.state.coins, coinsBeforeClaim + game.JOURNAL_REWARDS.story, "the existing Journal reward stays exact");
 
-  const afterStarsState = game.defaultState(NOW);
-  afterStarsState.stats.prestiges = 1;
-  game.ensureOrders(afterStarsState, () => 0);
-  const afterStarsOrder = afterStarsState.orders.find(game.isAfterStarsOrder);
-  afterStarsState.customers["customer-0"] = { deliveries: 2, hearts: 0 };
-  afterStarsState.potions.tonic = 1;
-  const afterStarsResult = game.fulfillOrder(afterStarsState, afterStarsOrder.id, NOW, () => 0);
-  assert.deepEqual(afterStarsResult.afterStars, { step: 0, title: "The Oven Remembers", complete: false });
-  assert.ok(afterStarsResult.narrative, "a post-rebirth After the Stars delivery remains eligible");
+    const repeatedSnapshot = JSON.stringify(ordinary.state);
+    assert.equal(game.fulfillOrder(ordinary.state, 1, NOW, () => 0), null, `${pilot.kicker} cannot repeat from its consumed order`);
+    assert.equal(JSON.stringify(ordinary.state), repeatedSnapshot, "a repeated delivery cannot mutate state");
+    assert.equal(deliver(pilot, boundaryDeliveries, pilot.toHearts).result.narrative, null, `${pilot.kicker} cannot replay after the heart is earned`);
+    assert.equal(deliver(pilot, boundaryDeliveries, pilot.fromHearts, { ready: false }).result, null, `${pilot.kicker} cannot trigger on a failed delivery`);
 
-  const rebirthState = game.defaultState(NOW);
-  rebirthState.level = game.PRESTIGE_CONFIG.unlockLevel;
-  rebirthState.customers["customer-0"] = { deliveries: 3, hearts: 1 };
-  const reborn = game.performPrestige(rebirthState, 3, NOW);
-  assert.deepEqual(reborn.customers["customer-0"], { deliveries: 3, hearts: 1 }, "rebirth preserves the already-earned first heart instead of replaying a delivery result");
-  assert.equal(Object.hasOwn(reborn, "narrative"), false, "rebirth alone cannot produce a fulfillment payload");
+    const offBoard = game.defaultState(NOW);
+    offBoard.customers[pilot.customerId] = { deliveries: boundaryDeliveries, hearts: pilot.fromHearts };
+    offBoard.potions.tonic = 1;
+    assert.equal(game.fulfillOrder(offBoard, 999, NOW, () => 0), null, `${pilot.kicker} cannot trigger from an off-board order`);
+
+    const reloaded = game.parseSave(JSON.stringify(ordinary.state), NOW + 1).state;
+    assert.equal(Object.hasOwn(reloaded, "narrative"), false, "reload and startup reconciliation cannot restore a transient narrative");
+    reloaded.orders = [{ id: 999, customerId: pilot.customerId, customer: game.CUSTOMERS[Number(pilot.customerId.slice(9))][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+    reloaded.potions.tonic = 1;
+    assert.equal(game.fulfillOrder(reloaded, 999, NOW + 1, () => 0).narrative, null, `${pilot.kicker} cannot replay after reload`);
+
+    const rebirthState = game.defaultState(NOW);
+    rebirthState.level = game.PRESTIGE_CONFIG.unlockLevel;
+    rebirthState.customers[pilot.customerId] = { deliveries: boundaryDeliveries, hearts: pilot.fromHearts };
+    const reborn = game.performPrestige(rebirthState, 3, NOW);
+    assert.deepEqual(reborn.customers[pilot.customerId], { deliveries: boundaryDeliveries, hearts: pilot.fromHearts });
+    assert.equal(Object.hasOwn(reborn, "narrative"), false, "rebirth alone cannot produce a fulfillment payload");
+    reborn.orders = [{ id: 1, customerId: pilot.customerId, customer: game.CUSTOMERS[Number(pilot.customerId.slice(9))][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+    reborn.nextOrderId = 2;
+    reborn.potions.tonic = 1;
+    assert.deepEqual(game.fulfillOrder(reborn, 1, NOW, () => 0).narrative, pilot, `${pilot.kicker} remains eligible on a genuine post-rebirth boundary`);
+  }
+
+  for (const pilot of newPilots) {
+    const commission = game.SIGNATURE_COMMISSIONS.find(entry => entry.customerId === pilot.customerId);
+    const commissionState = game.defaultState(NOW);
+    commissionState.level = game.recipeById(commission.recipeId).unlock;
+    commissionState.commissions.invitations = 1;
+    const commissionOrder = game.selectSignatureCommission(commissionState, commission.id);
+    commissionState.customers[pilot.customerId] = { deliveries: pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1, hearts: pilot.fromHearts };
+    commissionState.potions[commission.recipeId] = 1;
+    const commissionResult = game.fulfillOrder(commissionState, commissionOrder.id, NOW, () => 0);
+    assert.equal(commissionResult.commission.id, commission.id, "Special Request completion must coexist with the narrative");
+    assert.deepEqual(commissionResult.narrative, pilot, `${pilot.kicker} must work through its canonical Special Request`);
+  }
+
+  for (const pilot of newPilots.filter(entry => entry.customerId === "customer-0")) {
+    const afterStarsState = game.defaultState(NOW);
+    afterStarsState.stats.prestiges = 1;
+    game.ensureOrders(afterStarsState, () => 0);
+    const afterStarsOrder = afterStarsState.orders.find(game.isAfterStarsOrder);
+    afterStarsState.customers[pilot.customerId] = { deliveries: pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1, hearts: pilot.fromHearts };
+    afterStarsState.potions.tonic = 1;
+    const afterStarsResult = game.fulfillOrder(afterStarsState, afterStarsOrder.id, NOW, () => 0);
+    assert.deepEqual(afterStarsResult.afterStars, { step: 0, title: "The Oven Remembers", complete: false });
+    assert.deepEqual(afterStarsResult.narrative, pilot, `${pilot.kicker} must work through the eligible canonical After the Stars order`);
+  }
+
+  const wrongVillager = game.defaultState(NOW);
+  wrongVillager.customers["customer-3"] = { deliveries: 2, hearts: 0 };
+  wrongVillager.orders = [{ id: 1, customerId: "customer-3", customer: game.CUSTOMERS[3][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+  wrongVillager.potions.tonic = 1;
+  assert.equal(game.fulfillOrder(wrongVillager, 1, NOW, () => 0).narrative, null, "an unapproved villager cannot receive another villager's narrative");
+
+  const forged = game.defaultState(NOW);
+  forged.customers["customer-0"] = { deliveries: 2, hearts: 0 };
+  forged.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 999, xp: 1, afterStarsStep: 0 }];
+  forged.potions.tonic = 1;
+  const forgedReload = game.parseSave(JSON.stringify(forged), NOW).state;
+  assert.equal(forgedReload.orders.length, 0, "a forged reserved order is discarded before it can trigger Mira's narrative");
 });
 
 test("Fern's narrative pilot is exact, transition-only, and keeps every delivery path intact", () => {
@@ -604,14 +684,14 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
     body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.",
     footer: "3 of 3 trust hearts · Patience stays by the workshop window",
   };
-  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 4);
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3]]);
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[1], fernPilot, "Fern's first-heart entry remains byte-for-byte in catalog order");
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[2], fernSecondPilot, "Fern's second-heart entry is exact and follows the first-heart entry");
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[3], fernThirdPilot, "Fern's third-heart entry is exact and follows the second-heart entry");
-  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[1]), true);
-  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[2]), true);
-  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[3]), true);
+  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 12);
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-0", 1, 2], ["customer-0", 2, 3], ["customer-1", 0, 1], ["customer-1", 1, 2], ["customer-1", 2, 3], ["customer-2", 0, 1], ["customer-2", 1, 2], ["customer-2", 2, 3], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3]]);
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[9], fernPilot, "Fern's first-heart entry remains byte-for-byte in catalog order");
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[10], fernSecondPilot, "Fern's second-heart entry is exact and follows the first-heart entry");
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[11], fernThirdPilot, "Fern's third-heart entry is exact and follows the second-heart entry");
+  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[9]), true);
+  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[10]), true);
+  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[11]), true);
 
   const deliver = (customerId, deliveries, hearts, { recipeId = "bloom", ready = true } = {}) => {
     const state = game.defaultState(NOW);
@@ -664,7 +744,7 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
   assert.equal(Object.hasOwn(thirdHeart.state, "narrative"), false, "the third-heart payoff is not saved state");
   assert.deepEqual(Object.keys(thirdHeart.state).sort(), Object.keys(game.defaultState(NOW)).sort(), "the third-heart payoff adds no saved field");
   assert.equal(deliver("customer-6", 9, 3).result.narrative, null, "a maximum-heart delivery cannot replay the payoff");
-  assert.equal(deliver("customer-1", 8, 2).result.narrative, null, "another villager is ineligible at the boundary");
+  assert.equal(deliver("customer-3", 8, 2).result.narrative, null, "another villager is ineligible at the boundary");
   const failed = deliver("customer-6", 8, 2, { ready: false });
   assert.equal(failed.result, null, "failed delivery has no payload");
   assert.deepEqual(failed.state.customers["customer-6"], { deliveries: 8, hearts: 2 });

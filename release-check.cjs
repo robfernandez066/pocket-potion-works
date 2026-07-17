@@ -7,7 +7,7 @@ const { resolveRequestPath, securityHeaders, mime, parseByteRange } = require(".
 const { MUSIC_TRACKS } = require("./audio-feedback.js");
 const automatedOnly = process.argv.includes("--automated-only");
 
-const runtimeFiles = ["index.html", "style.css", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
+const runtimeFiles = ["index.html", "style.css", "relationship-content.js", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "manifest.webmanifest", "icon.svg", "service-worker.js"];
 const runtimeAssets = ["assets/audio/bagpop.mp3", "assets/audio/brew-ready.mp3", "assets/audio/brew-start.mp3", "assets/audio/coin.mp3", "assets/audio/confirm.mp3", "assets/audio/gather.mp3", "assets/audio/levelup.ogg", "assets/audio/tap.ogg"];
 const imageAssets = [
   "assets/images/ingredients/dewleaf.png",
@@ -146,7 +146,10 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v69`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v70`/);
+assert.match(text["relationship-content.js"], /root\.PPWRelationshipContent = api/, "relationship module must expose its browser global");
+assert.doesNotMatch(text["relationship-content.js"], /\brequire\s*\(/, "relationship module must remain dependency-free");
+assert.match(text["content-data.js"], /require\("\.\/relationship-content\.js"\)/, "content catalog must consume the extracted relationship module");
 assert.match(text["ui-render.js"], /globalThis\.PPWUI = Object\.freeze\(/, "UI module must expose its frozen browser API");
 assert.doesNotMatch(text["ui-render.js"], /\b(?:document|window|require|module|setTimeout|setInterval|Date|Math\.random|localStorage|addEventListener|querySelector)\b/, "UI module must remain dependency-free presentation code");
 assert.match(text["app.js"], /const UI = window\.PPWUI;/, "browser adapter must require the UI presentation module");
@@ -221,11 +224,11 @@ for (const [file, ceiling] of Object.entries(budgets.files)) {
   assert.ok(bytes <= ceiling, `${file} is ${bytes} bytes, above its ${ceiling}-byte release budget`);
 }
 assert.ok(total <= budgets.totalRuntimeBytes, `runtime shell is ${total} bytes, above its ${budgets.totalRuntimeBytes}-byte budget`);
-assert.equal(total, 18371871, "Task 47 runtime inventory must match the approved exact total");
-assert.equal(budgets.totalRuntimeBytes - total, 5628129, "Task 47 runtime inventory must retain the approved headroom");
+assert.equal(total, 18380186, "Task 49 runtime inventory must match the approved exact total");
+assert.equal(budgets.totalRuntimeBytes - total, 5619814, "Task 49 runtime inventory must retain the approved headroom");
 assert.ok(budgets.totalRuntimeBytes - total >= 2000000, "current runtime headroom must already satisfy the no-further-compression threshold");
 assert.ok(!swShell.some(file => streamedAssets.includes(file.slice(2))), "background music must remain streamed instead of entering the offline shell");
-assert.doesNotMatch(text["service-worker.js"], /v65/, "Task 43 must rotate the cache identity exactly once");
+assert.doesNotMatch(text["service-worker.js"], /v69/, "Task 49 must rotate the cache identity exactly once");
 const task38RuntimeBytes = 23993911;
 assert.ok(normalizedReleaseBytes("app.js") <= 72000, "app.js must retain Task 39 implementation headroom");
 assert.ok(normalizedReleaseBytes("ui-render.js") <= 16000, "ui-render.js must remain within its fixed presentation cap");

@@ -52,19 +52,20 @@ function fetchEvent(url, mode = "same-origin") {
 }
 
 (async () => {
-  stores.set("ppw-shell-v60", new Map());
+  stores.set("ppw-shell-v69", new Map());
   const install = lifecycleEvent();
   listeners.install(install);
   await install.done();
-  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v60");
-  assert.equal(activeCache, "ppw-shell-v69", "install must rotate to the Fern narrative shell cache");
+  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v69");
+  assert.equal(activeCache, "ppw-shell-v70", "install must rotate to the extracted relationship-content shell cache");
   const shell = stores.get(activeCache);
+  assert.ok(shell.has(cacheKey("./relationship-content.js")), "offline shell is missing the relationship content module");
   assert.ok(shell.has(cacheKey("./ui-render.js")), "offline shell is missing the presentation module");
   assert.ok(shell.has(cacheKey("./assets/images/villagers/mira-head.png")), "offline shell is missing Mira's runtime portrait");
   assert.ok(shell.has(cacheKey("./assets/images/villagers/fern-head.webp")), "offline shell is missing Fern's runtime portrait");
   assert.ok(!shell.has(cacheKey("./assets/source/villagers/mira_head-256.png")), "source artwork must stay outside the offline shell");
   assert.ok(!shell.has(cacheKey("./assets/source/villagers/fern_head-256.png")), "Fern source artwork must stay outside the offline shell");
-  for (const file of ["./", "./index.html", "./style.css", "./content-data.js", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg", "./assets/images/ingredients/dewleaf.png", "./assets/images/ingredients/dream-lavender.png", "./assets/images/ingredients/frostmint.png", "./assets/images/ingredients/mist-pearl.png", "./assets/images/ingredients/mooshroom.png", "./assets/images/ingredients/starshard.png", "./assets/images/ingredients/sun-ember.png", "./assets/images/misc/gather-satchel.png", "./assets/images/misc/workshop-cat.png", "./assets/images/misc/workshop-cauldron.png", "./assets/images/potions/aurora-nectar.png", "./assets/images/potions/aurora-nectar-animated-12f.png", "./assets/images/potions/bottled-sunrise.png", "./assets/images/potions/clarity-elixir.png", "./assets/images/potions/cloudbloom-tea.png", "./assets/images/potions/dreamers-draught.png", "./assets/images/potions/kindheart-cordial.png", "./assets/images/potions/lantern-sip.png", "./assets/images/potions/meadow-tonic.png", "./assets/images/potions/moonmilk.png", "./assets/images/potions/quietbell-tea.png", "./assets/images/potions/starlight-philter.png", "./assets/images/potions/wayfinder-cordial.png"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
+  for (const file of ["./", "./index.html", "./style.css", "./relationship-content.js", "./content-data.js", "./game-logic.js", "./platform-adapters.js", "./audio-feedback.js", "./app.js", "./manifest.webmanifest", "./icon.svg", "./assets/audio/bagpop.mp3", "./assets/audio/brew-ready.mp3", "./assets/audio/brew-start.mp3", "./assets/audio/coin.mp3", "./assets/audio/confirm.mp3", "./assets/audio/gather.mp3", "./assets/audio/levelup.ogg", "./assets/audio/tap.ogg", "./assets/images/ingredients/dewleaf.png", "./assets/images/ingredients/dream-lavender.png", "./assets/images/ingredients/frostmint.png", "./assets/images/ingredients/mist-pearl.png", "./assets/images/ingredients/mooshroom.png", "./assets/images/ingredients/starshard.png", "./assets/images/ingredients/sun-ember.png", "./assets/images/misc/gather-satchel.png", "./assets/images/misc/workshop-cat.png", "./assets/images/misc/workshop-cauldron.png", "./assets/images/potions/aurora-nectar.png", "./assets/images/potions/aurora-nectar-animated-12f.png", "./assets/images/potions/bottled-sunrise.png", "./assets/images/potions/clarity-elixir.png", "./assets/images/potions/cloudbloom-tea.png", "./assets/images/potions/dreamers-draught.png", "./assets/images/potions/kindheart-cordial.png", "./assets/images/potions/lantern-sip.png", "./assets/images/potions/meadow-tonic.png", "./assets/images/potions/moonmilk.png", "./assets/images/potions/quietbell-tea.png", "./assets/images/potions/starlight-philter.png", "./assets/images/potions/wayfinder-cordial.png"]) assert.ok(shell.has(cacheKey(file)), `offline shell is missing ${file}`);
 
   const activate = lifecycleEvent();
   listeners.activate(activate);
