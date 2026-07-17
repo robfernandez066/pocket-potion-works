@@ -34,6 +34,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Mira's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and Village Chapter payoff scenes. The original 256x256 source is retained outside deployment; one optimized transparent runtime copy is cached for offline play without changing other villagers' avatars.
 - Fern's first trust heart now produces one exact data-driven inline payoff at the Workshop or Orders surface that earned it. It adds no reward or saved state, preserves the unread Journal claim, and retains all Mira narrative and chapter behavior.
 - Fern's second trust heart now continues the blue-pot story with one exact originating-surface delivery payoff. It reuses the same generic portrait/card lifecycle, adds no reward or saved state, and leaves Fern's second Journal story unread and claimable.
+- Fern's third trust heart now resolves the blue-pot story with one exact delivery payoff, completing her three-heart inline arc without adding a reward, saved field, or new presentation system. Her third Journal story remains a separate unread claim under the existing rules.
 - Fern's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and first-heart inline payoff through the same illustrated-villager seam as Mira. The original 256x256 source is retained outside deployment; one 96x96 transparent WebP is cached for offline play while the other ten villagers retain their emoji avatars.
 - Pure browser presentation helpers now live in the dependency-free `ui-render.js` offline module. `app.js` retains state, DOM, event, focus, storage, audio, save, and gameplay ownership while returning below its fixed per-file cap without changing rendered behavior.
 - Owner mobile acceptance passed for the Mira/Fern presentation batch: the installed update, primary views, portraits beside emoji villagers, and normal interactions remained clear without distracting repetition or crowding.
@@ -42,13 +43,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 45 complete Fern's three-heart delivery arc
+## Now - Task 46 Fern arc owner acceptance
 
-Tasks 15 through 44 are complete. Fern's first two trust hearts now produce exact one-time delivery moments through the same small data-driven seam. Complete that existing arc with one third-heart payoff before starting another villager or larger chapter.
+Tasks 15 through 45 are complete. Fern now has three exact one-time delivery moments that follow the blue pot from encouragement, through new growth, to the flower named Patience. Before extending this treatment to another villager, the owner should review the complete arc as one meaningful content batch.
 
-When a genuine successful Fern delivery moves her from two trust hearts to three, show one exact inline authored payoff that resolves the blue-pot story and leaves Fern's existing third Journal story unread and claimable. Reuse the originating Workshop/Orders card, Fern portrait, timing, focus, and fulfillment behavior without adding a reward, saved field, cosmetic, modal, or new content framework.
+Use a short temporary local preview of the same portrait/card treatment rather than forcing nine Fern deliveries or altering the owner's save. Review all three moments in order and decide whether the arc feels coherent, cozy, noticeable, and brief enough for routine delivery play.
 
-Keep both earlier Fern moments, every Mira moment and Village Chapter, Special Requests, After the Stars, rebirth, trust rewards, and economy values unchanged. This completes only Fern's three-heart delivery arc; it does not authorize another Village Chapter or expand the same treatment to the remaining villagers.
+This checkpoint changes no gameplay or files. Acceptance authorizes PM planning for the next bounded content pilot; a concrete copy, pacing, portrait, or repetition concern returns only the affected Fern moment for correction.
 
 ## Near-term existing-loop and playtest candidates
 

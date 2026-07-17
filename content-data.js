@@ -9,6 +9,7 @@
     Object.freeze({ customerId: "customer-0", fromHearts: 0, toHearts: 1, kicker: "MIRA · FIRST TRUST HEART", title: "A warmer morning", body: "Mira leaves a warm bun beside your coins. \"Mornings are kinder with a friend.\"", footer: "1 of 3 trust hearts · New story ready in Journal" }),
     Object.freeze({ customerId: "customer-6", fromHearts: 0, toHearts: 1, kicker: "FERN · FIRST TRUST HEART", title: "A patient little leaf", body: "Fern sets a blue pot beside your coins. \"Some things grow faster when someone is cheering with you.\"", footer: "1 of 3 trust hearts · New story ready in Journal" }),
     Object.freeze({ customerId: "customer-6", fromHearts: 1, toHearts: 2, kicker: "FERN · SECOND TRUST HEART", title: "Still growing", body: "Fern turns the blue pot toward you. A new green curl has pushed through the soil. \"It hasn't bloomed yet. But it decided to keep trying.\"", footer: "2 of 3 trust hearts · New story ready in Journal" }),
+    Object.freeze({ customerId: "customer-6", fromHearts: 2, toHearts: 3, kicker: "FERN · THIRD TRUST HEART", title: "Patience, in bloom", body: "Fern arrives with the blue pot held carefully in both hands. A tiny flower has opened above the soil. \"You were right to keep cheering. I named it Patience.\"", footer: "3 of 3 trust hearts · New story ready in Journal" }),
   ]);
 
   const CUSTOMER_CONTENT = Object.freeze([

@@ -593,7 +593,7 @@
   },
   {
     "id": 45,
-    "status": "next",
+    "status": "complete",
     "title": "Complete Fern three-heart delivery arc",
     "model": "5.6 Luna with High effort",
     "freshChat": true,
@@ -607,6 +607,21 @@
       "Save schema v9, economics, trust rules, content caps, fixed runtime budget, and approved music evidence remain unchanged",
       "All deterministic locks and required 390x844 and 360x740 browser checks pass with no overflow or console issues",
       "The coder reports exactly one PASS, FAIL, or BLOCKED status with trigger, reward/save/Journal, browser, size, cache, assumption, and deferred evidence"
+    ]
+  },
+  {
+    "id": 46,
+    "status": "owner-review",
+    "title": "Fern three-heart arc owner acceptance",
+    "model": "Owner test; no coder model",
+    "freshChat": false,
+    "prompt": "Task #46\n\nUse the temporary local Fern arc preview supplied by the PM. Do not reset or alter the owner's game save.\n\nReview Fern's three delivery moments in order with their shipped portrait/card treatment. The review should take about two minutes. Decide whether the blue-pot story progresses clearly from encouragement, to new growth, to the flower named Patience; whether each card is brief and readable; and whether three one-time moments across Fern's three trust hearts feel welcome rather than repetitive.\n\nReport PASS with any brief preference note, or identify the exact moment and concrete copy, pacing, portrait, or repetition issue. No new villager arc or larger chapter begins until this owner checkpoint is accepted.",
+    "acceptance": [
+      "All three Fern moments are reviewed in their shipped order and generic portrait/card treatment",
+      "The blue-pot story reads as one coherent progression from encouragement to growth to Patience blooming",
+      "Each moment is brief, readable, and noticeable without feeling repetitive for one-time trust milestones",
+      "The owner either accepts the arc or reports one exact moment and concrete concern",
+      "No save reset, rare-state grinding, repository change, or coder task is required for the review"
     ]
   }
 ]

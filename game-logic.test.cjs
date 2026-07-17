@@ -598,12 +598,20 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
     body: "Fern turns the blue pot toward you. A new green curl has pushed through the soil. \"It hasn't bloomed yet. But it decided to keep trying.\"",
     footer: "2 of 3 trust hearts · New story ready in Journal",
   };
-  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 3);
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-6", 0, 1], ["customer-6", 1, 2]]);
+  const fernThirdPilot = {
+    customerId: "customer-6", fromHearts: 2, toHearts: 3,
+    kicker: "FERN · THIRD TRUST HEART", title: "Patience, in bloom",
+    body: "Fern arrives with the blue pot held carefully in both hands. A tiny flower has opened above the soil. \"You were right to keep cheering. I named it Patience.\"",
+    footer: "3 of 3 trust hearts · New story ready in Journal",
+  };
+  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 4);
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3]]);
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[1], fernPilot, "Fern's first-heart entry remains byte-for-byte in catalog order");
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[2], fernSecondPilot, "Fern's second-heart entry is exact and follows the first-heart entry");
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[3], fernThirdPilot, "Fern's third-heart entry is exact and follows the second-heart entry");
   assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[1]), true);
   assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[2]), true);
+  assert.equal(Object.isFrozen(game.DELIVERY_NARRATIVE_PILOTS[3]), true);
 
   const deliver = (customerId, deliveries, hearts, { recipeId = "bloom", ready = true } = {}) => {
     const state = game.defaultState(NOW);
@@ -642,44 +650,68 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
   assert.equal(game.customerStoryStatus(secondHeart.state, "customer-6", 1).read, false, "the second Journal story remains unread");
   assert.deepEqual(game.claimJournalReward(secondHeart.state, "story", "customer-6:2", NOW), { kind: "story", id: "customer-6:2", reward: game.JOURNAL_REWARDS.story });
   assert.equal(game.customerStoryStatus(secondHeart.state, "customer-6", 1).read, true);
-  assert.equal(deliver("customer-6", 8, 2).result.narrative, null, "third-heart delivery cannot replay the second-heart payoff");
-  assert.equal(deliver("customer-1", 2, 0).result.narrative, null, "another villager is ineligible");
-  const failed = deliver("customer-6", 2, 0, { ready: false });
+  assert.equal(deliver("customer-6", 7, 2).result.narrative, null, "a before-boundary delivery is later");
+  const thirdHeart = deliver("customer-6", 8, 2);
+  assert.deepEqual(thirdHeart.result.narrative, fernThirdPilot, "the exact Fern payload appears only at two-to-three");
+  assert.equal(thirdHeart.result.customerBonus, game.CUSTOMER_CONFIG.heartBonusCoins);
+  assert.equal(thirdHeart.result.reward, 20 + game.CUSTOMER_CONFIG.heartBonusCoins);
+  assert.deepEqual(thirdHeart.state.customers["customer-6"], { deliveries: 9, hearts: 3 });
+  assert.equal(thirdHeart.state.coins, game.defaultState(NOW).coins + thirdHeart.result.reward, "the third-heart inline payoff adds no extra reward");
+  assert.equal(game.journalClaimableCounts(thirdHeart.state).story, 3, "the third Journal story is unlocked and claimable");
+  assert.equal(game.customerStoryStatus(thirdHeart.state, "customer-6", 2).read, false, "the third Journal story remains unread");
+  assert.deepEqual(game.claimJournalReward(thirdHeart.state, "story", "customer-6:3", NOW), { kind: "story", id: "customer-6:3", reward: game.JOURNAL_REWARDS.story });
+  assert.equal(game.customerStoryStatus(thirdHeart.state, "customer-6", 2).read, true);
+  assert.equal(Object.hasOwn(thirdHeart.state, "narrative"), false, "the third-heart payoff is not saved state");
+  assert.deepEqual(Object.keys(thirdHeart.state).sort(), Object.keys(game.defaultState(NOW)).sort(), "the third-heart payoff adds no saved field");
+  assert.equal(deliver("customer-6", 9, 3).result.narrative, null, "a maximum-heart delivery cannot replay the payoff");
+  assert.equal(deliver("customer-1", 8, 2).result.narrative, null, "another villager is ineligible at the boundary");
+  const failed = deliver("customer-6", 8, 2, { ready: false });
   assert.equal(failed.result, null, "failed delivery has no payload");
-  assert.deepEqual(failed.state.customers["customer-6"], { deliveries: 2, hearts: 0 });
+  assert.deepEqual(failed.state.customers["customer-6"], { deliveries: 8, hearts: 2 });
   const duplicate = deliver("customer-6", 2, 0);
   const afterFirst = JSON.stringify(duplicate.state);
   assert.equal(game.fulfillOrder(duplicate.state, 1, NOW, () => 0), null, "duplicate delivery cannot replay the pilot");
   assert.deepEqual(duplicate.result.narrative, fernPilot, "the first delivery produced the one pilot payload");
   assert.equal(JSON.stringify(duplicate.state), afterFirst, "a duplicate delivery does not change state");
 
+  const thirdDuplicate = deliver("customer-6", 8, 2);
+  const afterThird = JSON.stringify(thirdDuplicate.state);
+  assert.deepEqual(thirdDuplicate.result.narrative, fernThirdPilot, "the boundary delivery produced the third-heart payload");
+  assert.equal(game.fulfillOrder(thirdDuplicate.state, 1, NOW, () => 0), null, "a repeated boundary delivery cannot replay the pilot");
+  assert.equal(JSON.stringify(thirdDuplicate.state), afterThird, "a repeated boundary delivery does not change state");
+
   const reloaded = game.parseSave(JSON.stringify(ordinary.state), NOW + 1).state;
   reloaded.orders = [{ id: 1, customerId: "customer-6", customer: game.CUSTOMERS[6][0], recipeId: "bloom", quantity: 1, reward: 20, xp: 1 }];
   reloaded.potions.bloom = 1;
   assert.equal(game.fulfillOrder(reloaded, 1, NOW + 1, () => 0).narrative, null, "reload cannot replay the pilot");
 
+  const thirdReloaded = game.parseSave(JSON.stringify(thirdHeart.state), NOW + 1).state;
+  thirdReloaded.orders = [{ id: 1, customerId: "customer-6", customer: game.CUSTOMERS[6][0], recipeId: "bloom", quantity: 1, reward: 20, xp: 1 }];
+  thirdReloaded.potions.bloom = 1;
+  assert.equal(game.fulfillOrder(thirdReloaded, 1, NOW + 1, () => 0).narrative, null, "reload cannot replay the third-heart payoff");
+
   const stale = game.defaultState(NOW);
-  stale.customers["customer-6"] = { deliveries: 5, hearts: 1 };
+  stale.customers["customer-6"] = { deliveries: 8, hearts: 2 };
   stale.potions.bloom = 1;
   assert.equal(game.fulfillOrder(stale, 999, NOW, () => 0), null, "an off-board order cannot trigger the payoff");
-  assert.deepEqual(stale.customers["customer-6"], { deliveries: 5, hearts: 1 });
+  assert.deepEqual(stale.customers["customer-6"], { deliveries: 8, hearts: 2 });
 
   const forged = game.defaultState(NOW);
-  forged.customers["customer-6"] = { deliveries: 5, hearts: 1 };
+  forged.customers["customer-6"] = { deliveries: 8, hearts: 2 };
   forged.orders = [{ id: 1, customerId: "customer-6", customer: game.CUSTOMERS[6][0], recipeId: "bloom", quantity: 1, reward: 999, xp: 1, afterStarsStep: 0 }];
   forged.potions.bloom = 1;
   const forgedReload = game.parseSave(JSON.stringify(forged), NOW).state;
   assert.equal(forgedReload.orders.length, 0, "a forged reserved order is discarded before fulfillment");
-  assert.deepEqual(forgedReload.customers["customer-6"], { deliveries: 5, hearts: 1 });
+  assert.deepEqual(forgedReload.customers["customer-6"], { deliveries: 8, hearts: 2 });
 
   const commissionState = game.defaultState(NOW);
   commissionState.level = game.recipeById("bloom").unlock;
   commissionState.commissions.invitations = 1;
   const commissionOrder = game.selectSignatureCommission(commissionState, "fern-patience");
-  commissionState.customers["customer-6"] = { deliveries: 5, hearts: 1 };
+  commissionState.customers["customer-6"] = { deliveries: 8, hearts: 2 };
   commissionState.potions.bloom = 1;
   const commissionResult = game.fulfillOrder(commissionState, commissionOrder.id, NOW, () => 0);
-  assert.deepEqual(commissionResult.narrative, fernSecondPilot);
+  assert.deepEqual(commissionResult.narrative, fernThirdPilot);
   assert.equal(commissionResult.commission.id, "fern-patience", "Special Request completion remains present");
 
   const afterStarsState = game.defaultState(NOW);
@@ -688,25 +720,25 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
   afterStarsState.afterStars.step = 2;
   game.ensureOrders(afterStarsState, () => 0);
   const afterStarsOrder = afterStarsState.orders.find(game.isAfterStarsOrder);
-  afterStarsState.customers["customer-6"] = { deliveries: 5, hearts: 1 };
+  afterStarsState.customers["customer-6"] = { deliveries: 8, hearts: 2 };
   afterStarsState.potions.bloom = 1;
   const afterStarsResult = game.fulfillOrder(afterStarsState, afterStarsOrder.id, NOW, () => 0);
-  assert.deepEqual(afterStarsResult.narrative, fernSecondPilot);
+  assert.deepEqual(afterStarsResult.narrative, fernThirdPilot);
   assert.deepEqual(afterStarsResult.afterStars, { step: 2, title: "Roots After Starlight", complete: false }, "After the Stars completion remains present");
 
   const rebirthState = game.defaultState(NOW);
   rebirthState.level = game.PRESTIGE_CONFIG.unlockLevel;
-  rebirthState.customers["customer-6"] = { deliveries: 3, hearts: 1 };
+  rebirthState.customers["customer-6"] = { deliveries: 8, hearts: 2 };
   const reborn = game.performPrestige(rebirthState, 3, NOW);
-  assert.deepEqual(reborn.customers["customer-6"], { deliveries: 3, hearts: 1 });
+  assert.deepEqual(reborn.customers["customer-6"], { deliveries: 8, hearts: 2 });
   assert.equal(Object.hasOwn(reborn, "narrative"), false, "rebirth cannot produce a fulfillment payload");
 
-  reborn.customers["customer-6"] = { deliveries: 5, hearts: 1 };
+  reborn.customers["customer-6"] = { deliveries: 8, hearts: 2 };
   reborn.orders = [{ id: 1, customerId: "customer-6", customer: game.CUSTOMERS[6][0], recipeId: "bloom", quantity: 1, reward: 20, xp: 1 }];
   reborn.nextOrderId = 2;
   reborn.potions.bloom = 1;
   const postRebirthResult = game.fulfillOrder(reborn, 1, NOW, () => 0);
-  assert.deepEqual(postRebirthResult.narrative, fernSecondPilot, "a genuine post-rebirth one-to-two boundary remains eligible");
+  assert.deepEqual(postRebirthResult.narrative, fernThirdPilot, "a genuine post-rebirth two-to-three boundary remains eligible");
 });
 
 test("all villagers have three distinct trust stories and deterministic request variety", () => {

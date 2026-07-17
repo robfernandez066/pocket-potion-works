@@ -57,7 +57,7 @@ function fetchEvent(url, mode = "same-origin") {
   listeners.install(install);
   await install.done();
   const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v60");
-  assert.equal(activeCache, "ppw-shell-v67", "install must rotate to the Fern narrative shell cache");
+  assert.equal(activeCache, "ppw-shell-v68", "install must rotate to the Fern narrative shell cache");
   const shell = stores.get(activeCache);
   assert.ok(shell.has(cacheKey("./ui-render.js")), "offline shell is missing the presentation module");
   assert.ok(shell.has(cacheKey("./assets/images/villagers/mira-head.png")), "offline shell is missing Mira's runtime portrait");
