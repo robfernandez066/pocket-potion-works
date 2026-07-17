@@ -41,13 +41,13 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 48 draft Mira, Old Moss, and Juniper relationship arcs
+## Now - Task 49 implement Mira, Old Moss, and Juniper relationship arcs
 
 Task 47 is complete. The exact owner-approved Fern rewrite fits the existing content cap, advances the offline cache to `ppw-shell-v69`, preserves all trigger, reward, save, Journal, portrait, and gameplay behavior, and passes the full automated suite. The owner preview of the exact copy plus the already-proven generic card lifecycle is accepted as sufficient rare-state presentation evidence; no additional hidden-state Fern replay is required.
 
-Task 48 is an evidence-only content draft and owner preview for Mira, Old Moss, and Juniper. Write three connected trust-heart scenes for each villager using Fern's approved standard: clear language, a slightly charming feel-good tone, continuity across scenes, distinct character voice, implicit closeness with the alchemist through actions and natural back-and-forth, and a concrete change by the end. Mira's arc must complement rather than repeat or contradict The Village Loaf chapter and Flour-Sun Pin Special Request. Old Moss and Juniper must build from their active catalog facts without merely expanding those one-sentence summaries.
+Task 48 is owner-accepted. Its exact nine-scene Mira, Old Moss, and Juniper copy passed the evidence-only mobile preview at 390x844 and 360x740, including the final object, location, timing, and cause-and-effect continuity review. The accepted copy is locked in the Task 49 execution prompt and must not be rewritten during implementation.
 
-Create only a temporary local preview using the current generic card treatment. Do not change runtime content, gameplay, saves, rewards, cache, budgets, or repository files. Owner approval is required before any of the nine scenes can be implemented.
+Task 49 implements those nine scenes through the existing heart-boundary fulfillment seam. Because `content-data.js` has only limited file-cap headroom, the task may first extract the existing delivery-narrative catalog into one small offline, dependency-free content module while preserving the public `PPWContent` API, deep-freeze/reference behavior, browser/CommonJS parity, load order, Pages artifact, and service-worker shell. This is a capacity refactor for accepted content, not a new dialogue system. Keep gameplay, heart thresholds, rewards, Journal summaries and claims, saves, fulfillment economics, portraits, focus/timing behavior, and all Fern content unchanged.
 
 ## Next - continue remaining relationship arcs in reviewed batches
 
