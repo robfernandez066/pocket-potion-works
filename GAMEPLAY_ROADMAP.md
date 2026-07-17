@@ -43,13 +43,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 46 Fern arc owner acceptance
+## Now - Task 47 implement the owner-approved Fern rewrite
 
-Tasks 15 through 45 are complete. Fern now has three exact one-time delivery moments that follow the blue pot from encouragement, through new growth, to the flower named Patience. Before extending this treatment to another villager, the owner should review the complete arc as one meaningful content batch.
+Task 46 owner acceptance passed after a continuity review. Fern's approved three-scene arc keeps the blue pot in the workshop throughout: she leaves the dormant seed beside the cauldron, returns to move and brace the new shoot by the window with the alchemist, then later discovers the flower and accepts the alchemist's quiet invitation to leave it there. The writing standard is clear, slightly charming, and feel-good without becoming preachy, overly profound, or self-consciously poetic. Fern and the alchemist grow closer implicitly through shared actions and natural back-and-forth.
 
-Use a short temporary local preview of the same portrait/card treatment rather than forcing nine Fern deliveries or altering the owner's save. Review all three moments in order and decide whether the arc feels coherent, cozy, noticeable, and brief enough for routine delivery play.
+Task 47 should replace only Fern's three shipped inline delivery scenes with the exact owner-approved copy through the existing data-driven relationship seam. Preserve all triggers, rewards, Journal claim behavior, portraits, saves, gameplay, and presentation behavior. Do not begin another villager or build a dialogue system inside the implementation task.
 
-This checkpoint changes no gameplay or files. Acceptance authorizes PM planning for the next bounded content pilot; a concrete copy, pacing, portrait, or repetition concern returns only the affected Fern moment for correction.
+## Next - revise all remaining relationship arcs in owner-reviewed batches
+
+The owner authorized the same substantive treatment for the other eleven villagers. Treat each villager as one connected three-heart arc rather than three one-sentence facts. Preview and approve two or three villagers at a time before implementation, beginning with Mira, Old Moss, and Juniper; later batches should cover Pip, Lady Bramble, Tink, Captain Wren, Nell, Rowan, Sol, and Bea. Each arc needs continuity, distinct character voice, implicit relationship growth with the alchemist, meaningful back-and-forth where it fits, and a concrete change across its three scenes. Do not mass-generate or implement all 33 scenes without staged owner review.
 
 ## Near-term existing-loop and playtest candidates
 
