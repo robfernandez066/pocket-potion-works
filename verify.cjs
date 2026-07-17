@@ -35,7 +35,7 @@ if (/const (?:INGREDIENT_SPRITES|POTION_SPRITES|PORTRAITS)\b|function (?:ingredi
 if (!ui.activeBrewMarkup({ id: "tonic", icon: "⚗", color: "#123", name: "Meadow Tonic" }).includes('data-sprite="tonic"')) throw new Error("Potion sprite presentation output changed.");
 if (!ui.ingredientCards({ herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 } }, 1, null, { herb: 7 }).includes('data-ingredient-sprite="herb"') || !ui.ingredientCards({ herb: { name: "Dewleaf", icon: "☘", color: "#dcebd8", unlock: 1 } }, 1, null, { herb: 7 }).includes("<strong>7</strong>")) throw new Error("Ingredient-card presentation output changed.");
 if (ui.portraitMarkup("customer-0") !== '<span class="villager-portrait mira-portrait" aria-hidden="true"></span>' || ui.portraitMarkup("customer-6") !== '<span class="villager-portrait fern-portrait" aria-hidden="true"></span>' || !ui.customerAvatarMarkup("customer-1", "🧙", "#123").includes(">🧙</span>")) throw new Error("Portrait and emoji fallback presentation changed.");
-if (!ui.narrativeDeliveryMarkup({ customerId: "customer-6", kicker: "FERN", title: "A patient little leaf", body: "Body", footer: "Footer" }).includes("fern-portrait")) throw new Error("Narrative-card portrait selection changed.");
+if (!ui.narrativeDeliveryMarkup({ customerId: "customer-6", kicker: "FERN", title: "The seed that would not wake", body: "Body", footer: "Footer" }).includes("fern-portrait")) throw new Error("Narrative-card portrait selection changed.");
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 const queriedIds = [...app.matchAll(/querySelector\(["'`]#([A-Za-z0-9_-]+)["'`]\)/g)].map(match => match[1]);
 const dynamicIds = new Set(["collectBrewButton"]);

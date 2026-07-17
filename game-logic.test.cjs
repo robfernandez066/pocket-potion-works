@@ -588,21 +588,21 @@ test("Mira's narrative pilot is transition-only and preserves shared fulfillment
 test("Fern's narrative pilot is exact, transition-only, and keeps every delivery path intact", () => {
   const fernPilot = {
     customerId: "customer-6", fromHearts: 0, toHearts: 1,
-    kicker: "FERN · FIRST TRUST HEART", title: "A patient little leaf",
-    body: "Fern sets a blue pot beside your coins. \"Some things grow faster when someone is cheering with you.\"",
-    footer: "1 of 3 trust hearts · New story ready in Journal",
+    kicker: "FERN · FIRST TRUST HEART", title: "The seed that would not wake",
+    body: "Fern sets a blue clay pot on the counter. Its soil is dark and carefully tended, but bare. \"I've tried sun, shade, songs, and apologizing to it,\" she says. \"I keep telling everyone it just needs more time, but I'm starting to think I'm wrong.\" She asks if she can leave the pot beside your warm cauldron for a few days, and you clear it a place.",
+    footer: "1 of 3 trust hearts · The blue pot stays in your workshop",
   };
   const fernSecondPilot = {
     customerId: "customer-6", fromHearts: 1, toHearts: 2,
-    kicker: "FERN · SECOND TRUST HEART", title: "Still growing",
-    body: "Fern turns the blue pot toward you. A new green curl has pushed through the soil. \"It hasn't bloomed yet. But it decided to keep trying.\"",
-    footer: "2 of 3 trust hearts · New story ready in Journal",
+    kicker: "FERN · SECOND TRUST HEART", title: "What help looks like",
+    body: "A few days later, Fern returns to check the blue pot and finds a tiny green shoot breaking through the soil. It has grown toward the cauldron and is beginning to lean. Fern reaches to move it closer to the warmth, but you point to the morning light at the nearby window. Together you move the pot where it can have both, then brace the stem with a folded order slip. \"I thought being patient meant leaving it alone,\" Fern says. \"But sometimes patience means watching closely and helping at the right time.\"",
+    footer: "2 of 3 trust hearts · The seedling moves to the workshop window",
   };
   const fernThirdPilot = {
     customerId: "customer-6", fromHearts: 2, toHearts: 3,
-    kicker: "FERN · THIRD TRUST HEART", title: "Patience, in bloom",
-    body: "Fern arrives with the blue pot held carefully in both hands. A tiny flower has opened above the soil. \"You were right to keep cheering. I named it Patience.\"",
-    footer: "3 of 3 trust hearts · New story ready in Journal",
+    kicker: "FERN · THIRD TRUST HEART", title: "A place by the window",
+    body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.",
+    footer: "3 of 3 trust hearts · Patience stays by the workshop window",
   };
   assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 4);
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3]]);
