@@ -41,15 +41,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 50 draft Pip, Lady Bramble, and Tink relationship arcs
+## Now - Task 51 implement Pip, Lady Bramble, and Tink relationship arcs
 
-Task 49 is complete. The exact owner-approved Mira, Old Moss, and Juniper arcs now ship through the existing heart-boundary fulfillment seam. One dependency-free `relationship-content.js` owns the exact twelve-entry catalog and preserves strict frozen reference identity through `PPWContent` and `PPWLogic`. The nine new scenes, Fern's three unchanged scenes, Journal claims, rewards, saves, economics, Pages artifact, installed offline shell, cache `ppw-shell-v70`, both mobile loops, and all deterministic locks passed PM review.
+Task 50 is complete. The owner approved the exact nine-scene Pip, Lady Bramble, and Tink draft after PM review of its writing continuity, corrected copy, focus behavior, mobile readability, touch targets, overflow, console state, and repository protection. The evidence-only preview changed no repository or runtime file.
 
-Task 50 is an evidence-only writing and preview task for Postmaster Pip, Lady Bramble, and Tink the Smith. Author exactly three connected trust-heart scenes per villager using the approved clear, charming, concrete-event standard; audit object, location, timing, and cause-and-effect continuity; and present all nine scenes for owner review at 390x844 and 360x740. Do not implement the draft or change repository/runtime files before owner approval.
+Task 51 implements only that approved nine-scene batch through the existing dependency-free relationship catalog and genuine heart-boundary fulfillment seam. Preserve all current Journal summaries, rewards, saves, economics, generic originating-surface presentation, prior twelve scenes, and gameplay behavior. Update only the deterministic, release-budget, cache, deployment, and browser evidence directly required by the larger catalog.
 
 ## Next - continue remaining relationship arcs in reviewed batches
 
-After the owner approves Task 50's exact copy, implement only the Pip, Lady Bramble, and Tink batch in a fresh bounded task. Then repeat the evidence-only review and implementation sequence for Captain Wren, Nell, and Rowan, followed by Sol and Bea. Do not mass-generate or implement all remaining scenes without staged owner review.
+After Task 51 passes PM review and publication, draft Captain Wren, Nell, and Rowan in a fresh evidence-only owner-review task. Implement that batch only after owner approval, then repeat the sequence for Sol and Bea. Do not mass-generate or implement all remaining scenes without staged owner review.
 
 ## Near-term existing-loop and playtest candidates
 
