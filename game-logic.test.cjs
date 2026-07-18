@@ -22,6 +22,15 @@ const EXPECTED_DELIVERY_NARRATIVES = [
   { customerId: "customer-6", fromHearts: 0, toHearts: 1, kicker: "FERN · FIRST TRUST HEART", title: "The seed that would not wake", body: "Fern sets a blue clay pot on the counter. Its soil is dark and carefully tended, but bare. \"I've tried sun, shade, songs, and apologizing to it,\" she says. \"I keep telling everyone it just needs more time, but I'm starting to think I'm wrong.\" She asks if she can leave the pot beside your warm cauldron for a few days, and you clear it a place.", footer: "1 of 3 trust hearts · The blue pot stays in your workshop" },
   { customerId: "customer-6", fromHearts: 1, toHearts: 2, kicker: "FERN · SECOND TRUST HEART", title: "What help looks like", body: "A few days later, Fern returns to check the blue pot and finds a tiny green shoot breaking through the soil. It has grown toward the cauldron and is beginning to lean. Fern reaches to move it closer to the warmth, but you point to the morning light at the nearby window. Together you move the pot where it can have both, then brace the stem with a folded order slip. \"I thought being patient meant leaving it alone,\" Fern says. \"But sometimes patience means watching closely and helping at the right time.\"", footer: "2 of 3 trust hearts · The seedling moves to the workshop window" },
   { customerId: "customer-6", fromHearts: 2, toHearts: 3, kicker: "FERN · THIRD TRUST HEART", title: "A place by the window", body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.", footer: "3 of 3 trust hearts · Patience stays by the workshop window" },
+  { customerId: "customer-3", fromHearts: 0, toHearts: 1, kicker: "POSTMASTER PIP · FIRST TRUST HEART", title: "The ribbon at the gate", body: "On a breezy afternoon, Pip skids into the workshop with a small bundle of blank address cards and a blue ribbon caught around his satchel strap. A garden gate on his route has been swinging open, he explains, and every gust sends the cards fluttering into the path. You hold the gate steady while he threads the ribbon through its loose latch, then use the empty cards to test the wind. They stay put. Pip checks the ribbon twice, grins, and tucks the cards back into his satchel. \"A route with fewer flying papers is a very fast route,\" he says.", footer: "1 of 3 trust hearts · The blue ribbon now keeps the garden gate latched and Pip's address cards from blowing into the path." },
+  { customerId: "customer-3", fromHearts: 1, toHearts: 2, kicker: "POSTMASTER PIP · SECOND TRUST HEART", title: "The damp corner", body: "Three rainy mornings later, Pip finds you beneath the same garden gate with the blue ribbon still holding firm. One address card has a damp corner from a puddle near the hedge. You spread it on the workshop counter and press it flat under a clean jar while Pip sketches the gate and puddle in the margin of a fresh card. Together you carry a flat stepping stone from the garden border to the wet spot. Pip hops across it, then crosses again at his usual hurry. \"Officially a better crossing,\" he declares, and adds a tiny stone symbol to his route note.", footer: "2 of 3 trust hearts · A stepping stone protects the gate crossing; Pip's route note now marks it." },
+  { customerId: "customer-3", fromHearts: 2, toHearts: 3, kicker: "POSTMASTER PIP · THIRD TRUST HEART", title: "The dry delivery", body: "The next week brings a proper downpour just as Pip reaches the workshop with a sealed letter for the gardener beyond the hedge. He pauses at the blue-ribbon gate, spots the stepping stone, and hands you the satchel while he closes his umbrella. You cross first, keeping the letter high and dry; Pip follows, laughing when the stone saves his polished shoes from the puddle. At the far gate, he takes back the satchel and delivers the letter without a wrinkled corner. On his return, Pip adds one neat note beside the stone symbol: \"trusted in rain.\"", footer: "3 of 3 trust hearts · Pip keeps the blue-ribbon gate and marked stepping stone on his rainy-day route." },
+  { customerId: "customer-4", fromHearts: 0, toHearts: 1, kicker: "LADY BRAMBLE · FIRST TRUST HEART", title: "The small brass key", body: "Lady Bramble arrives with a tiny brass key tied to a green thread and asks you to look at its stubborn little bow. It belongs to a wooden seed chest in her back hall, she says, and the thread keeps catching whenever she opens it. You set the key on a cloth, smooth the knot, and loop the thread through a buttonhole-sized ring from a spare tag. Bramble tries the chest key again, then gives the ring an approving tap. \"Orderly, but not so orderly that it stops being charming,\" she says. She leaves the key on the workshop shelf until morning so the new loop can settle.", footer: "1 of 3 trust hearts · The brass key has a loose green-thread loop and waits on the workshop shelf overnight." },
+  { customerId: "customer-4", fromHearts: 1, toHearts: 2, kicker: "LADY BRAMBLE · SECOND TRUST HEART", title: "The labeled drawers", body: "The following day, Lady Bramble returns for the key carrying three seed packets with their names rubbed away. You fetch the seed chest from her back hall and spread the packets beside it on the workshop table. She remembers one packet smelled peppery and another made a very poor hiding place for a snail. You sort the remaining clues into little paper sleeves; she writes simple labels in her tidy hand. The brass key opens the chest without catching, and Bramble slips the sleeves into its top drawer. \"You have made my disorder quite presentable,\" she says.", footer: "2 of 3 trust hearts · The seed chest now holds three labeled sleeves, opened by the green-looped brass key." },
+  { customerId: "customer-4", fromHearts: 2, toHearts: 3, kicker: "LADY BRAMBLE · THIRD TRUST HEART", title: "The right drawer", body: "A few days later, Bramble finds a fourth unmarked packet on her doorstep after a night of strong wind. She brings it straight to the workshop instead of guessing. You compare its leaf shape to the sketches on the three paper sleeves, and she notices it matches the peppery packet's curled edge. Together you label it before it can disappear into a drawer. Back at the seed chest, the green-looped key turns easily and Bramble files the new sleeve beside its match. She pauses before closing the lid. \"Next time, we begin with the drawer,\" she says, pleased.", footer: "3 of 3 trust hearts · Lady Bramble uses the labeled seed chest as a shared starting place for new garden mysteries." },
+  { customerId: "customer-5", fromHearts: 0, toHearts: 1, kicker: "TINK THE SMITH · FIRST TRUST HEART", title: "The rolling washer", body: "Tink spots a small iron washer rolling under your worktable and drops to one knee before it can vanish behind the flour tins. He says it slipped from a hand-cranked label press he is making for workshop jars. You slide a shallow tray under the table while he nudges the washer into it with a spoon. At the forge, he fits it back onto the press and turns the handle. The label comes out crooked but readable: MINT, almost. Tink squints, then lets you add a pencil arrow showing which way the washer should face next time.", footer: "1 of 3 trust hearts · The washer sits correctly in Tink's label press, with a pencil arrow for its proper direction." },
+  { customerId: "customer-5", fromHearts: 1, toHearts: 2, kicker: "TINK THE SMITH · SECOND TRUST HEART", title: "A steadier turn", body: "Two market days later, Tink brings the label press to the workshop with the washer still in place but the pencil arrow smudged from use. You hold the press steady while he turns its handle slowly, and the first label reads MINT without leaning. The second jams halfway through. Instead of yanking it free, Tink sets the press on the tray you used under the table and you both lift the paper back in one piece. He redraws the arrow on a small metal tab and ties the tab to the handle with twine. \"That should survive my enthusiasm,\" he says.", footer: "2 of 3 trust hearts · A metal direction tab now hangs from the press handle; the tray catches any jammed labels." },
+  { customerId: "customer-5", fromHearts: 2, toHearts: 3, kicker: "TINK THE SMITH · THIRD TRUST HEART", title: "Labels before lunch", body: "The next Saturday, jars have gathered on your counter before the morning rush. Tink sets his press beside the shallow tray, checks the metal tab, and hands you the blank labels one at a time. You line up each jar while he gives the handle its steady turn. When one label starts to crease, you catch it in the tray and Tink resets the paper without fuss. Soon every jar has a straight name, including the smallest amber bottle. Tink reads that last label aloud, nods solemnly, and leaves the press by your counter for the afternoon.", footer: "3 of 3 trust hearts · Tink's label press, direction tab, and shallow tray make a reliable workshop counter routine." },
 ];
 let passed = 0;
 function test(name, fn) {
@@ -569,8 +578,8 @@ test("recurring customers gain trust and grant a deterministic non-blocking favo
   assert.equal(game.customerStoryStatus(state, "customer-0", 0).read, false);
 });
 
-test("Mira, Old Moss, and Juniper arcs trigger exactly once across every supported fulfillment path", () => {
-  const newPilots = EXPECTED_DELIVERY_NARRATIVES.slice(0, 9);
+test("all relationship arcs trigger exactly once across every supported fulfillment path", () => {
+  const newPilots = EXPECTED_DELIVERY_NARRATIVES;
   const deliver = (pilot, deliveries = pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1, hearts = pilot.fromHearts, extra = {}) => {
     const state = game.defaultState(NOW);
     state.customers[pilot.customerId] = { deliveries, hearts };
@@ -639,30 +648,34 @@ test("Mira, Old Moss, and Juniper arcs trigger exactly once across every support
     assert.deepEqual(commissionResult.narrative, pilot, `${pilot.kicker} must work through its canonical Special Request`);
   }
 
-  for (const pilot of newPilots.filter(entry => entry.customerId === "customer-0")) {
+  for (const pilot of newPilots.filter(entry => ["customer-0", "customer-3", "customer-6"].includes(entry.customerId))) {
     const afterStarsState = game.defaultState(NOW);
+    const step = game.AFTER_STARS_STEPS.findIndex(entry => entry.customerId === pilot.customerId);
+    const authored = game.AFTER_STARS_STEPS[step];
     afterStarsState.stats.prestiges = 1;
+    afterStarsState.level = game.recipeById(authored.recipeId).unlock;
+    afterStarsState.afterStars.step = step;
     game.ensureOrders(afterStarsState, () => 0);
     const afterStarsOrder = afterStarsState.orders.find(game.isAfterStarsOrder);
     afterStarsState.customers[pilot.customerId] = { deliveries: pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1, hearts: pilot.fromHearts };
-    afterStarsState.potions.tonic = 1;
+    afterStarsState.potions[authored.recipeId] = 1;
     const afterStarsResult = game.fulfillOrder(afterStarsState, afterStarsOrder.id, NOW, () => 0);
-    assert.deepEqual(afterStarsResult.afterStars, { step: 0, title: "The Oven Remembers", complete: false });
+    assert.deepEqual(afterStarsResult.afterStars, { step, title: authored.title, complete: false });
     assert.deepEqual(afterStarsResult.narrative, pilot, `${pilot.kicker} must work through the eligible canonical After the Stars order`);
   }
 
   const wrongVillager = game.defaultState(NOW);
-  wrongVillager.customers["customer-3"] = { deliveries: 2, hearts: 0 };
-  wrongVillager.orders = [{ id: 1, customerId: "customer-3", customer: game.CUSTOMERS[3][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+  wrongVillager.customers["customer-7"] = { deliveries: 2, hearts: 0 };
+  wrongVillager.orders = [{ id: 1, customerId: "customer-7", customer: game.CUSTOMERS[7][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
   wrongVillager.potions.tonic = 1;
-  assert.equal(game.fulfillOrder(wrongVillager, 1, NOW, () => 0).narrative, null, "an unapproved villager cannot receive another villager's narrative");
+  assert.equal(game.fulfillOrder(wrongVillager, 1, NOW, () => 0).narrative, null, "an unrelated villager cannot receive a new narrative");
 
   const forged = game.defaultState(NOW);
-  forged.customers["customer-0"] = { deliveries: 2, hearts: 0 };
-  forged.orders = [{ id: 1, customerId: "customer-0", customer: game.CUSTOMERS[0][0], recipeId: "tonic", quantity: 1, reward: 999, xp: 1, afterStarsStep: 0 }];
+  forged.customers["customer-3"] = { deliveries: 2, hearts: 0 };
+  forged.orders = [{ id: 1, customerId: "customer-3", customer: game.CUSTOMERS[3][0], recipeId: "clarity", quantity: 1, reward: 999, xp: 1, afterStarsStep: 0 }];
   forged.potions.tonic = 1;
   const forgedReload = game.parseSave(JSON.stringify(forged), NOW).state;
-  assert.equal(forgedReload.orders.length, 0, "a forged reserved order is discarded before it can trigger Mira's narrative");
+  assert.equal(forgedReload.orders.length, 0, "a forged reserved order is discarded before it can trigger Pip's narrative");
 });
 
 test("Fern's narrative pilot is exact, transition-only, and keeps every delivery path intact", () => {
@@ -684,8 +697,8 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
     body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.",
     footer: "3 of 3 trust hearts · Patience stays by the workshop window",
   };
-  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 12);
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-0", 1, 2], ["customer-0", 2, 3], ["customer-1", 0, 1], ["customer-1", 1, 2], ["customer-1", 2, 3], ["customer-2", 0, 1], ["customer-2", 1, 2], ["customer-2", 2, 3], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3]]);
+  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 21);
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-0", 1, 2], ["customer-0", 2, 3], ["customer-1", 0, 1], ["customer-1", 1, 2], ["customer-1", 2, 3], ["customer-2", 0, 1], ["customer-2", 1, 2], ["customer-2", 2, 3], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3], ["customer-3", 0, 1], ["customer-3", 1, 2], ["customer-3", 2, 3], ["customer-4", 0, 1], ["customer-4", 1, 2], ["customer-4", 2, 3], ["customer-5", 0, 1], ["customer-5", 1, 2], ["customer-5", 2, 3]]);
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[9], fernPilot, "Fern's first-heart entry remains byte-for-byte in catalog order");
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[10], fernSecondPilot, "Fern's second-heart entry is exact and follows the first-heart entry");
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[11], fernThirdPilot, "Fern's third-heart entry is exact and follows the second-heart entry");
@@ -744,7 +757,7 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
   assert.equal(Object.hasOwn(thirdHeart.state, "narrative"), false, "the third-heart payoff is not saved state");
   assert.deepEqual(Object.keys(thirdHeart.state).sort(), Object.keys(game.defaultState(NOW)).sort(), "the third-heart payoff adds no saved field");
   assert.equal(deliver("customer-6", 9, 3).result.narrative, null, "a maximum-heart delivery cannot replay the payoff");
-  assert.equal(deliver("customer-3", 8, 2).result.narrative, null, "another villager is ineligible at the boundary");
+  assert.equal(deliver("customer-7", 8, 2).result.narrative, null, "an unrelated villager is ineligible at the boundary");
   const failed = deliver("customer-6", 8, 2, { ready: false });
   assert.equal(failed.result, null, "failed delivery has no payload");
   assert.deepEqual(failed.state.customers["customer-6"], { deliveries: 8, hearts: 2 });

@@ -3,7 +3,7 @@
   "files": {
     "index.html": 16000,
     "style.css": 58000,
-    "relationship-content.js": 12000,
+    "relationship-content.js": 22000,
     "content-data.js": 16000,
     "game-logic.js": 80000,
     "ui-render.js": 16000,
