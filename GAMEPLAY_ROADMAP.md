@@ -41,15 +41,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 52 draft Captain Wren, Nell, and Rowan relationship arcs
+## Now - Task 53 implement Captain Wren, Nell, and Rowan relationship arcs
 
-Task 51 is complete. The exact owner-approved Pip, Lady Bramble, and Tink arcs now ship as entries thirteen through twenty-one in the frozen relationship catalog. Ordinary and canonical Special Request delivery paths, Pip's eligible After the Stars step, post-rebirth transitions, Journal claims, rewards, saves, economics, cache `ppw-shell-v71`, installed offline reload, both mobile surfaces, all nine exact live cards, and all deterministic locks passed PM review.
+Task 52 is complete. The owner approved the exact nine-scene Captain Wren, Nell of the Mill, and Rowan the Tailor draft. Captain Wren is now intentionally an older male ship captain whose decades of rough crossings and temporary ports left him detached from ordinary comforts; his three scenes move from finishing dock work and leaving, to deliberately returning and staying for one cup, to leaving a brass route tag beside the kettle because he intends to return. Nell and Rowan retain their approved continuity-checked arcs.
 
-Task 52 is an evidence-only writing and preview task for Captain Wren, Nell of the Mill, and Rowan the Tailor. Author exactly three connected trust-heart scenes per villager using the approved clear, charming, concrete-event standard; audit object, location, timing, and cause-and-effect continuity; and present all nine scenes for owner review at 390x844 and 360x740. Do not implement the draft or change repository/runtime files before owner approval.
+Task 53 implements only those nine approved scenes through the existing frozen relationship catalog and genuine heart-boundary fulfillment seam. It also applies the approved Wren maritime identity and supporting-copy corrections and changes relationship story cards from timed auto-collapse to explicit player acknowledgement so longer scenes remain readable until Continue or Close is tapped. This control must preserve originating-surface placement and return focus safely without changing rewards, saves, trust, Journal claims, or unrelated completion-card timing.
 
 ## Next - continue remaining relationship arcs in reviewed batches
 
-After the owner approves Task 52's exact copy, implement only the Captain Wren, Nell, and Rowan batch in a fresh bounded task. Then repeat the evidence-only review and implementation sequence for Sol and Bea. Do not mass-generate or implement all remaining scenes without staged owner review.
+After Task 53 is approved and shipped, repeat the evidence-only review and implementation sequence for Sol and Bea. Do not mass-generate or implement the remaining scenes without staged owner review.
 
 ## Near-term existing-loop and playtest candidates
 
@@ -77,6 +77,36 @@ Do not extend the level curve, add a second cauldron, introduce another recurrin
 - Permanent collection albums are Later work rather than rejected. Rolling request chains are finite and do not provide permanent collection progression.
 - Revisit native packaging, public promotion, store materials, privacy/legal publication, production services, and monetization only with explicit owner approval.
 - Add mix controls, more music, or large asset sets only when owner listening or device evidence shows a need and the runtime budget permits it.
+
+## Future content sequence - approved roadmap additions
+
+These additions begin only after the current relationship-arc sequence is complete. They are ordered by game fit and estimated coding complexity, with dependency order taking priority where it reduces duplicate systems or migrations. `F` numbers are roadmap slots, not coder-task numbers. Estimates include the bounded design/evidence, implementation, and validation tasks currently expected; the PM must still issue and approve each exact coder task. Placement here does not pre-approve economy values, new currencies, new assets, or production integrations.
+
+| Roadmap | Short description | Fit | Estimated coding tasks | Dependency or scope gate |
+| --- | --- | --- | ---: | --- |
+| F01 | While-you-were-away diary | High | 2 | Reuse the truthful Welcome Back and offline-progress seam; begin with narrative-only lines and no extra rewards. |
+| F02 | Ambient workshop touch layer | High | 3 | Begin with toy interactions and occasional acknowledgement; do not add a hidden economy or uncapped recurring reward. |
+| F03 | Optional cauldron stirring | High | 3 | Provide an accessible non-gesture alternative; the interaction must remain optional and never penalize idle play. |
+| F04 | Local window weather | High | 3 | Ship and validate cosmetic local weather first; any gathering modifier requires a separate economy and clock-manipulation decision. |
+| F05 | Folk recipe variants | High | 3 | Reuse existing trust, mastery, recipe, and delivery surfaces; approve exact recipes and copy before implementation. |
+| F06 | Cauldron moods and friendship arc | High | 4 | Build after the twelve villager arcs so it can reuse the proven content seam without redefining villager trust. |
+| F07 | Workshop familiar | High | 4 | Requires an approved creature choice and art/runtime-budget plan before behavior work; rare ingredient finds must be bounded. |
+| F08 | Villager workshop visits | High | 4 | Reuse completed villager characterization and generic presentation; avoid a second dialogue engine or required visit timer. |
+| F09 | Torn recipe pages and forgotten recipe | High | 4 | Define the bounded fragment track and recipe reward, then simulate progression and storage impact before shipping. |
+| F10 | Simmer versus quick-boil | High | 4 | Treat as the first major brewing-choice candidate; simulate timing, order value, overnight play, and assist interactions. |
+| F11 | Memory garden | High | 4 | Requires a small durable rebirth-state addition and a clear one-keepsake rule without weakening the clean-cycle reset. |
+| F12 | Infused potion variants | High | 5 | Follow the simpler brew-style decision; constrain combinations and validate ingredients, orders, mastery, and villager preferences. |
+| F13 | Occasional ingredient peddler | Medium | 4 | Keep swaps local, bounded, offline-safe, and non-expiring; approve the visitor treatment before adding art. |
+| F14 | Unprompted villager gifting | Medium | 5 | Define bounded inventory, reactions, trust exclusions, and micro-story ownership before implementation. |
+| F15 | Double-pour gift bottle | Medium | 2 | Implement only after F14 supplies the safe gifting destination; it must not become a saleable or farmable economy reward. |
+| F16 | Living potion shelf | Medium | 5 | Establish the shared collection/display surface before curiosities; separate rearrangement toys from any trust or economy effect. |
+| F17 | Experimental brews and curiosities | Medium | 5 | Reuse F16's shelf and collection model; constrain ingredient loss, combinations, discovery, saves, and content volume. |
+| F18 | Local festival days | Medium | 5 | Build on F04's local-calendar handling; festivals must remain offline-safe, non-punitive, and testable under clock changes. |
+| F19 | Rebirth sky omens | Conditional | 4 | Keep choices reversible and bounded; reject any version that becomes a branching build system or dominant economy path. |
+| F20 | Constellation comfort charms | Conditional | 4 | Define a bounded Stardust sink only after post-rebirth play evidence; comfort perks must not undermine the approved multiplier. |
+| F21 | Dream wisps | Conditional | 4 | Prefer collectible cosmetic outputs over a new currency; do not reward players more for leaving the cauldron unused. |
+| F22 | Moon brews | Conditional | 5 | Requires rigorous offline, clock-change, active-brew, accessibility, and failure-recovery rules; closing the app cannot be mandatory progression. |
+| F23 | Potion cellar and vintages | Conditional | 6 | Last because it adds a screen, multi-day aging, a new order class, save state, economy tuning, and substantial mobile QA. |
 
 ## Release boundary
 
