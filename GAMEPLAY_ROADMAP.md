@@ -41,7 +41,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 58 design the ambient workshop touch layer
+## Now - Task 59 implement the approved ambient workshop touches
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -49,11 +49,13 @@ Task 56 is complete. The owner approved four deterministic magical Workshop Diar
 
 Task 57 is complete. The four owner-approved Workshop Diary vignettes now use a frozen pure presentation selector inside the existing truthful Welcome Back modal. Positive returns show the real gained count, the exact Pantry confirmation, the four-hour statement, and Back to workshop; quick and zero-gain returns remain silent. No reward, history, saved field, or gameplay system was added. Cache identity is ppw-shell-v74.
 
-Task 58 begins F02 as an evidence-only interaction audit and owner-review proposal. It must identify a very small set of optional portrait-friendly Workshop touches that make the existing screen feel alive without adding movement controls, rewards, saved progression, timers, or another gameplay system.
+Task 58 is complete. The owner approved three optional, silent Workshop touches using the existing bottle shelf, hanging herbs, and workshop cat. Each uses a 44px-plus native button, one replacing 1.8-second local acknowledgement, visible focus, and a stationary reduced-motion treatment. The exact approved lines are "A bottle gives a tiny clink.", "The hanging herbs give a little wave.", and "The workshop cat gives a slow blink."
 
-## Next - implement only the owner-approved F02 treatment
+Task 59 implements only that approved three-touch batch through the existing static Workshop presentation and a small transient handler. It adds no gameplay value, save state, reward, audio, new screen, or generic interaction engine.
 
-After Task 58 passes PM review and owner acceptance, create one separate bounded implementation task for only the approved ambient touches. Do not implement F02 during the evidence-only design task.
+## Next - validate owner feel before extending F02
+
+After Task 59 passes PM review, ask the owner to confirm the touches feel discoverable, unobtrusive, and worth keeping in the real Workshop. Do not add more ambient targets or begin F03 without that evidence.
 
 ## Near-term existing-loop and playtest candidates
 
