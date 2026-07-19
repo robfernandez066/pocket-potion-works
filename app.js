@@ -199,9 +199,10 @@ function grantOfflineProgress(elapsed) {
   if (elapsed < 20) return;
   const gained = Logic.grantOfflineIngredients(state, elapsed);
   if (gained > 0) {
+    const diary = UI.offlineDiaryEntry(elapsed, gained);
     setTimeout(() => openModal({
       icon: "☾", kicker: "WELCOME BACK", title: "The garden kept growing.",
-      body: `<p>Your helpers gathered <strong>${gained} ingredients</strong> while you were away, and they have already been added to the Pantry. Offline progress is limited to 4 hours.</p>`,
+      body: `<p class="offline-factual">The ingredients have been added to the Pantry.</p><p class="offline-diary"><span class="offline-diary-label">WORKSHOP DIARY</span>${diary}</p><p>Offline progress is limited to 4 hours.</p>`,
       actions: [{ label: "Back to workshop", primary: true }],
     }), 350);
   }

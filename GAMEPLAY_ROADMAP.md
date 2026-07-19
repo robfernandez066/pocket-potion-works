@@ -20,7 +20,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - After the Stars owner acceptance passed: its post-rebirth tracker and three order cards were clear, Rowan's finale was readable, and Dawnthread could be selected, reversed to Midnight, and selected again without changing the economy.
 - Gameplay saves use schema v9 with v1-v8 migration, future-v10 overwrite protection, and frozen-reader rollback coverage through v8.
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
-- Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
+- Welcome Back now confirms that offline ingredients were added to the Pantry, adds one deterministic magical Workshop Diary vignette based on capped elapsed time and the real granted count, and returns to the workshop without offering or applying a second claim. Zero gain remains silent.
 - Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
 - All twelve recurring villagers now have owner-approved three-heart relationship arcs at the Workshop or Orders surface that earned them. The thirty-six scenes add no reward or saved state, preserve the separate unread Journal claims, and reuse one generic acknowledgement-controlled fulfillment-narrative seam with independent surface queues.
 - Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
@@ -41,17 +41,19 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 57 implement the while-you-were-away diary
+## Now - Task 58 design the ambient workshop touch layer
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
 Task 56 is complete. The owner approved four deterministic magical Workshop Diary vignettes for the existing Welcome Back modal: button-eyed sprites, a floating vial, enchanted bottles, and a patient little broom. Each uses the actual granted ingredient count, followed by the exact factual confirmation "The ingredients have been added to the Pantry." Zero gain remains silent, and the word "already" is removed from this treatment.
 
-Task 57 implements only that approved F01 treatment through a small pure presentation selector and the existing offline-progress modal seam. Preserve the current ingredient grant, elapsed-time cap, lifecycle, save, reward, focus, and Back to workshop behavior. Add no diary history, saved state, reward, screen, or gameplay system.
+Task 57 is complete. The four owner-approved Workshop Diary vignettes now use a frozen pure presentation selector inside the existing truthful Welcome Back modal. Positive returns show the real gained count, the exact Pantry confirmation, the four-hour statement, and Back to workshop; quick and zero-gain returns remain silent. No reward, history, saved field, or gameplay system was added. Cache identity is ppw-shell-v74.
 
-## Next - begin F02 ambient workshop touch design
+Task 58 begins F02 as an evidence-only interaction audit and owner-review proposal. It must identify a very small set of optional portrait-friendly Workshop touches that make the existing screen feel alive without adding movement controls, rewards, saved progression, timers, or another gameplay system.
 
-After Task 57 passes PM review and owner acceptance, F01 is complete. Begin F02 with a separate evidence-only interaction audit and owner-review proposal; do not start F02 inside Task 57.
+## Next - implement only the owner-approved F02 treatment
+
+After Task 58 passes PM review and owner acceptance, create one separate bounded implementation task for only the approved ambient touches. Do not implement F02 during the evidence-only design task.
 
 ## Near-term existing-loop and playtest candidates
 

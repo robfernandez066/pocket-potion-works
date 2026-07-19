@@ -1,5 +1,6 @@
 const fs = require("fs");
 const vm = require("vm");
+const assert = require("node:assert/strict");
 
 const files = ["index.html", "style.css", "relationship-content.js", "content-data.js", "game-logic.js", "ui-render.js", "platform-adapters.js", "audio-feedback.js", "app.js", "serve.cjs", "manifest.webmanifest", "service-worker.js", "icon.svg", "ASSET_PROVENANCE.md"];
 const missing = files.filter(file => !fs.existsSync(file));
@@ -17,9 +18,13 @@ const content = fs.readFileSync("content-data.js", "utf8");
 const uiSource = fs.readFileSync("ui-render.js", "utf8");
 const app = fs.readFileSync("app.js", "utf8");
 const style = fs.readFileSync("style.css", "utf8");
-if (!app.includes("already been added to the Pantry")) throw new Error("Welcome Back must state that offline ingredients were already added to the Pantry.");
+const offlinePath = app.slice(app.indexOf("function grantOfflineProgress"), app.indexOf("const lifecycle = new Platform.LifecycleCoordinator"));
+if (!offlinePath.includes("The ingredients have been added to the Pantry.")) throw new Error("Welcome Back must state the exact factual Pantry confirmation.");
+if (!offlinePath.includes("WORKSHOP DIARY") || !offlinePath.includes("UI.offlineDiaryEntry(elapsed, gained)")) throw new Error("Welcome Back must include the deterministic Workshop Diary entry.");
+if (offlinePath.includes("already") || offlinePath.includes("Your helpers gathered")) throw new Error("Welcome Back must remove the retired helper wording.");
 if (!app.includes('label: "Back to workshop", primary: true')) throw new Error("Welcome Back must use a non-claiming return action.");
-if (app.includes('label: "Collect ingredients"')) throw new Error("Welcome Back must not offer a second ingredient collection step.");
+if (offlinePath.includes('label: "Collect ingredients"')) throw new Error("Welcome Back must not offer a second ingredient collection step.");
+if (!offlinePath.includes("if (elapsed < 20) return;") || !offlinePath.includes("if (gained > 0)")) throw new Error("Offline modal behavior must retain its elapsed and positive-gain gates.");
 if (!html.includes('<script src="relationship-content.js"></script>')) throw new Error("Relationship content must load before the primary content catalog.");
 if (!html.includes('<script src="content-data.js"></script>')) throw new Error("Content data must load before pure game logic.");
 if (!html.includes('<script src="game-logic.js"></script>')) throw new Error("Pure game logic must load before the browser adapter.");
@@ -40,6 +45,28 @@ vm.runInNewContext(uiSource, uiSandbox, { filename: "ui-render.js" });
 const ui = uiSandbox.PPWUI;
 if (!ui || !Object.isFrozen(ui) || Object.keys(uiSandbox).filter(key => key.startsWith("PPW")).join(",") !== "PPWUI") throw new Error("UI helpers must expose exactly one frozen browser global.");
 if (/\b(?:document|window|require|module|setTimeout|setInterval|Date|Math\.random|localStorage|addEventListener|querySelector)\b/.test(uiSource)) throw new Error("UI helpers must remain dependency-free pure presentation code.");
+const diaryCopy = [
+  "A pair of button-eyed sprites gathered {gained} ingredients and gave the Pantry a solemn bow.",
+  "A floating vial glided in with {gained} ingredients, somehow without spilling a drop.",
+  "Three enchanted bottles organized {gained} ingredients into a very proper procession.",
+  "A patient little broom swept {gained} ingredients into a tidy waiting pile.",
+];
+const diaryExpected = [
+  [0, diaryCopy[0].replace("{gained}", "14")],
+  [1_799, diaryCopy[0].replace("{gained}", "14")],
+  [1_800, diaryCopy[1].replace("{gained}", "14")],
+  [5_399, diaryCopy[1].replace("{gained}", "14")],
+  [5_400, diaryCopy[2].replace("{gained}", "14")],
+  [10_799, diaryCopy[2].replace("{gained}", "14")],
+  [10_800, diaryCopy[3].replace("{gained}", "14")],
+  [14_400, diaryCopy[3].replace("{gained}", "14")],
+];
+for (const [elapsed, expected] of diaryExpected) assert.equal(ui.offlineDiaryEntry(elapsed, 14), expected, `diary boundary ${elapsed} must remain exact`);
+assert.equal(ui.offlineDiaryEntry(14_401, 93), diaryCopy[3].replace("{gained}", "93"), "over-cap elapsed must use the four-hour bucket");
+for (const malformed of [-1, Infinity, NaN, "not-a-duration", {}, null]) assert.equal(ui.offlineDiaryEntry(malformed, 14), diaryCopy[0].replace("{gained}", "14"), "malformed elapsed must safely use the first bucket");
+for (const gained of [0, -1, NaN, Infinity, null, "not-a-count"]) assert.equal(ui.offlineDiaryEntry(1_800, gained), null, "non-positive or malformed gained values must stay silent");
+for (const [elapsed, gained] of [[15 * 60, 14], [60 * 60, 36], [120 * 60, 54], [4 * 60 * 60, 93]]) assert.equal(ui.offlineDiaryEntry(elapsed, gained), diaryCopy[elapsed < 1_800 ? 0 : elapsed < 5_400 ? 1 : elapsed < 10_800 ? 2 : 3].replace("{gained}", String(gained)), `diary count ${elapsed} must interpolate exactly`);
+if (Object.keys(ui).sort().join(",") !== ["activeBrewMarkup", "commissionChoicesMarkup", "customerAvatarMarkup", "formatNumber", "idleBrewMarkup", "ingredientCards", "narrativeDeliveryMarkup", "offlineDiaryEntry", "orderListMarkup", "portraitMarkup", "readyDeliverStrip", "recipeListMarkup", "upgradeListMarkup"].sort().join(",")) throw new Error("PPWUI must expose only the approved selector addition.");
 if (!app.includes('const UI = window.PPWUI;') || !app.includes('PPWUI missing; load ui-render.js.')) throw new Error("The browser adapter must fail clearly when UI helpers are unavailable.");
 if (/const (?:INGREDIENT_SPRITES|POTION_SPRITES|PORTRAITS)\b|function (?:ingredientCostText|portraitMarkup|potionSpriteMarkup)\b/.test(app)) throw new Error("Moved UI helper definitions must not be duplicated in app.js.");
 if (!ui.activeBrewMarkup({ id: "tonic", icon: "⚗", color: "#123", name: "Meadow Tonic" }).includes('data-sprite="tonic"')) throw new Error("Potion sprite presentation output changed.");

@@ -2,12 +2,36 @@
 
 (() => {
   const PORTRAITS = { "customer-0": "mira", "customer-6": "fern" };
+  const OFFLINE_DIARY_TEMPLATES = Object.freeze([
+    "A pair of button-eyed sprites gathered {gained} ingredients and gave the Pantry a solemn bow.",
+    "A floating vial glided in with {gained} ingredients, somehow without spilling a drop.",
+    "Three enchanted bottles organized {gained} ingredients into a very proper procession.",
+    "A patient little broom swept {gained} ingredients into a tidy waiting pile.",
+  ]);
   const ingredientSpriteAttr = id => ` data-ingredient-sprite="${id}"`;
   const potionAttr = recipe => ` data-sprite="${recipe.id}"`;
   const potionSpriteMarkup = (recipe, className = "potion-inline") => `<span class="${className}"${potionAttr(recipe)} aria-hidden="true">${recipe.icon}</span>`;
   const portraitMarkup = id => PORTRAITS[id] ? `<span class="villager-portrait ${PORTRAITS[id]}-portrait" aria-hidden="true"></span>` : "";
   const customerAvatarMarkup = (id, avatar, color) => `<span class="customer-avatar" style="--avatar:${color}">${portraitMarkup(id) || avatar}</span>`;
   const formatNumber = value => Math.floor(value).toLocaleString("en-US");
+  const offlineDiaryEntry = (elapsedSeconds, gained) => {
+    let elapsed;
+    let amount;
+    try {
+      elapsed = Number(elapsedSeconds);
+      amount = Math.floor(Number(gained));
+    } catch (_) {
+      return null;
+    }
+    if (!Number.isFinite(elapsed)) elapsed = 0;
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    elapsed = Math.min(4 * 60 * 60, Math.max(0, elapsed));
+    const template = elapsed < 1_800 ? OFFLINE_DIARY_TEMPLATES[0]
+      : elapsed < 5_400 ? OFFLINE_DIARY_TEMPLATES[1]
+        : elapsed < 10_800 ? OFFLINE_DIARY_TEMPLATES[2]
+          : OFFLINE_DIARY_TEMPLATES[3];
+    return template.replace("{gained}", String(amount));
+  };
   const ingredientCostText = (recipe, ingredients) => Object.entries(recipe.ingredients).map(([id, count]) => `<span class="ingredient-cost-item"><span class="ingredient-cost-icon"${ingredientSpriteAttr(id)} aria-hidden="true">${ingredients[id].icon}</span>${count}</span>`).join("");
 
   const ingredientCards = (ingredients, level, targetId, counts) => Object.entries(ingredients).map(([id, item]) => {
@@ -83,7 +107,7 @@
 
   globalThis.PPWUI = Object.freeze({
     activeBrewMarkup, commissionChoicesMarkup, customerAvatarMarkup, formatNumber, idleBrewMarkup,
-    ingredientCards, narrativeDeliveryMarkup, orderListMarkup, portraitMarkup,
+    ingredientCards, narrativeDeliveryMarkup, offlineDiaryEntry, orderListMarkup, portraitMarkup,
     readyDeliverStrip, recipeListMarkup, upgradeListMarkup,
   });
 })();
