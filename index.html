@@ -64,9 +64,12 @@
               <span class="dawnthread-banner" aria-hidden="true"></span>
               <button id="aB" aria-label="Tap the bottle shelf"></button><button id="aH" aria-label="Tap the hanging herbs"></button><button id="aC" aria-label="Tap the workshop cat"></button>
               <p id="aS" role="status"></p>
+              <button class="stir-pictured-cauldron-button" id="stirPicturedCauldronButton" aria-label="Stir the pictured cauldron" disabled></button>
+              <button class="stir-cauldron-button" id="stirCauldronButton" disabled>Stir cauldron</button>
               <div class="scene-copy"><span id="workshopStatus">The kettle is warm</span><small id="incomeRate">Gathering 1.0 ingredient/sec</small></div>
             </div>
             <button class="gather-button" id="gatherButton"><span class="gather-satchel" aria-hidden="true">☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>
+            <p class="cauldron-stir-status" id="cauldronStirStatus" role="status" aria-live="polite" aria-atomic="true"></p>
           </article>
 
           <section class="ready-deliver-strip" id="readyDeliverStrip" aria-label="Orders ready to deliver" hidden></section>

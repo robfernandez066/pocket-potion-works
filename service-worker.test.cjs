@@ -52,12 +52,12 @@ function fetchEvent(url, mode = "same-origin") {
 }
 
 (async () => {
-  stores.set("ppw-shell-v74", new Map());
+  stores.set("ppw-shell-v75", new Map());
   const install = lifecycleEvent();
   listeners.install(install);
   await install.done();
-  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v74");
-  assert.equal(activeCache, "ppw-shell-v75", "install must rotate to the ambient workshop shell cache");
+  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v75");
+  assert.equal(activeCache, "ppw-shell-v76", "install must rotate to the cauldron-stirring shell cache");
   const shell = stores.get(activeCache);
   assert.ok(shell.has(cacheKey("./relationship-content.js")), "offline shell is missing the relationship content module");
   assert.ok(shell.has(cacheKey("./ui-render.js")), "offline shell is missing the presentation module");

@@ -333,6 +333,33 @@ function renderBeginnerQuest() {
 function activeView() { return $(".view.is-active")?.dataset.view || "workshop"; }
 function motionBehavior() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"; }
 
+const CAULDRON_STIR_COPY = "You give the cauldron a gentle stir. Nothing seems to happen, but it felt good.";
+let cauldronStirTimeout = null;
+
+function clearCauldronStir() {
+  clearTimeout(cauldronStirTimeout);
+  cauldronStirTimeout = null;
+  $(".workshop-scene").classList.remove("is-stirring");
+  $("#cauldronStirStatus").textContent = "";
+}
+
+function canStirCauldron() {
+  const view = $("#workshopView"), scene = $(".workshop-scene");
+  return Boolean(state.brew && activeView() === "workshop" && !view.hidden && !scene.inert && !$(".game-shell").inert);
+}
+
+function renderCauldronStirControls() {
+  document.querySelectorAll("#stirPicturedCauldronButton,#stirCauldronButton").forEach(button => { button.disabled = !canStirCauldron(); });
+}
+
+function stirCauldron() {
+  if (!canStirCauldron()) return;
+  clearCauldronStir();
+  $("#cauldronStirStatus").textContent = CAULDRON_STIR_COPY;
+  requestAnimationFrame(() => $(".workshop-scene").classList.add("is-stirring"));
+  cauldronStirTimeout = setTimeout(clearCauldronStir, 1800);
+}
+
 function goToTutorialTarget(quest) {
   if (!quest) return;
   hideTutorialBanner();
@@ -449,6 +476,7 @@ function renderDisclosures() {
 function renderBrew() {
   const slot = document.querySelector("#brewSlot");
   const scene = document.querySelector(".workshop-scene");
+  renderCauldronStirControls();
   if (!state.brew) {
     announcedReadyBrew = null;
     scene.classList.remove("is-brewing", "is-ready");
@@ -913,6 +941,7 @@ function switchView(view) {
     button.classList.toggle("is-active", active);
     if (active) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
   });
+  renderCauldronStirControls();
   window.scrollTo({ top: 0, behavior: motionBehavior() });
   if (view === "orders") document.querySelector("#orderDot").hidden = true;
   if (pendingTutorialTarget?.view === view) hideTutorialBanner();
@@ -1224,13 +1253,13 @@ function tick() {
 }
 
 function activateAudioFromGesture(event) {
-  if (event?.target?.closest?.("#aB,#aH,#aC")) return;
+  if (event?.target?.closest?.("#aB,#aH,#aC,#stirPicturedCauldronButton,#stirCauldronButton")) return;
   music.activate();
   sound.activate();
 }
 document.addEventListener("touchend", activateAudioFromGesture, { passive: true });
 document.addEventListener("click", activateAudioFromGesture, { passive: true });
-document.addEventListener("keydown", event => { if ((event.key === "Enter" || event.key === " ") && !event.target.closest?.("#aB,#aH,#aC")) activateAudioFromGesture(); });
+document.addEventListener("keydown", event => { if ((event.key === "Enter" || event.key === " ") && !event.target.closest?.("#aB,#aH,#aC,#stirPicturedCauldronButton,#stirCauldronButton")) activateAudioFromGesture(); });
 document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => { sound.play("tap"); switchView(button.dataset.nav); }));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
 document.querySelector("#requestGatherTarget").addEventListener("click", () => selectGatherTarget(null));
@@ -1252,11 +1281,12 @@ document.querySelector("#settingsButton").addEventListener("click", showSettings
 document.querySelector("#clearPantryButton").addEventListener("click", showPantryCleanup);
 document.querySelector("#resetSaveButton").addEventListener("click", confirmReset);
 document.querySelectorAll("#aB,#aH,#aC").forEach(button => button.addEventListener("click", activateWorkshopTouch));
+document.querySelectorAll("#stirPicturedCauldronButton,#stirCauldronButton").forEach(button => button.addEventListener("click", stirCauldron));
 $("#modalClose").addEventListener("click", closeModal);
 $("#modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
 document.addEventListener("click", event => {
   const button = event.target.closest?.("button");
-  if (button && !button.disabled && !button.matches("#aB,#aH,#aC")) sound.play("tap");
+  if (button && !button.disabled && !button.matches("#aB,#aH,#aC,#stirPicturedCauldronButton,#stirCauldronButton")) sound.play("tap");
 });
 window.addEventListener("scroll", () => updateBrewShortcut(), { passive: true });
 document.addEventListener("visibilitychange", () => music.setPaused(document.hidden));
