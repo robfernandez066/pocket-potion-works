@@ -64,7 +64,7 @@
     </article>`;
   }).join("");
 
-  const narrativeDeliveryMarkup = (detail, customers) => detail ? `${portraitMarkup(detail.customerId) || customerAvatarMarkup(detail.customerId, customers[Number(detail.customerId.slice(9))][1], customers[Number(detail.customerId.slice(9))][3])}<div class="narrative-copy"><p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small></div>` : "";
+  const narrativeDeliveryMarkup = (detail, customers) => detail ? `${portraitMarkup(detail.customerId) || customerAvatarMarkup(detail.customerId, customers[Number(detail.customerId.slice(9))][1], customers[Number(detail.customerId.slice(9))][3])}<div class="narrative-copy"><p class="eyebrow">${detail.kicker}</p><h2>${detail.title}</h2><p>${detail.body}</p><small>${detail.footer}</small><button type="button" class="narrative-continue" data-dismiss-narrative>Continue</button></div>` : "";
 
   const commissionChoicesMarkup = (choices, customers, recipeById, state, customerConfig) => choices.length ? `<p>Choose exactly who you want to help. Their request uses one noticeboard slot, builds their trust, and awards the keepsake shown.</p><div class="commission-choice-list">${choices.map(commission => {
     const customer = customers[Number(commission.customerId.slice(9))];

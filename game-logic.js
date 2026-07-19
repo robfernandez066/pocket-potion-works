@@ -91,7 +91,7 @@
     ["Lady Bramble", "♛", "Only your finest bottle, dear.", "#efd9df"],
     ["Tink the Smith", "⚒", "For science. Probably.", "#e8ddcc"],
     ["Fern the Gardener", "❀", "My seedlings could use a little encouragement.", "#dbe8cf"],
-    ["Captain Wren", "⚑", "A steady hand for the road ahead.", "#d8dfec"],
+    ["Captain Wren", "⚓", "Workshop light is on. Good enough bearing.", "#d8dfec"],
     ["Nell of the Mill", "≈", "The night shift could use some sparkle.", "#e8dec7"],
     ["Rowan the Tailor", "✂", "Something bright for a difficult hem.", "#ead7e2"],
     ["Archivist Sol", "⌘", "For a particularly stubborn footnote.", "#d9d5e9"],

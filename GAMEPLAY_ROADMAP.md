@@ -41,15 +41,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 53 implement Captain Wren, Nell, and Rowan relationship arcs
+## Now - Task 54 draft Archivist Sol and Bee Keeper Bea relationship arcs
 
-Task 52 is complete. The owner approved the exact nine-scene Captain Wren, Nell of the Mill, and Rowan the Tailor draft. Captain Wren is now intentionally an older male ship captain whose decades of rough crossings and temporary ports left him detached from ordinary comforts; his three scenes move from finishing dock work and leaving, to deliberately returning and staying for one cup, to leaving a brass route tag beside the kettle because he intends to return. Nell and Rowan retain their approved continuity-checked arcs.
+Task 53 is complete. The exact owner-approved Wren, Nell, and Rowan scenes now ship through the frozen relationship catalog. Captain Wren's active identity is consistently maritime and he/him. Relationship trust-heart cards remain visible until acknowledged, independently queue back-to-back Workshop and Orders scenes, and return focus safely after each surface queue drains. Rewards, saves, Journal claims, trust rules, chapters, quests, and unrelated completion timing remain unchanged.
 
-Task 53 implements only those nine approved scenes through the existing frozen relationship catalog and genuine heart-boundary fulfillment seam. It also applies the approved Wren maritime identity and supporting-copy corrections and changes relationship story cards from timed auto-collapse to explicit player acknowledgement so longer scenes remain readable until Continue or Close is tapped. This control must preserve originating-surface placement and return focus safely without changing rewards, saves, trust, Journal claims, or unrelated completion-card timing.
+Task 54 is the final evidence-only relationship-writing preview. Draft exactly three connected trust-heart scenes each for Archivist Sol and Bee Keeper Bea, audit continuity and active-content boundaries, and present all six scenes for owner review at 390x844 and 360x740. Keep the repository and runtime unchanged until the owner approves the exact copy.
 
-## Next - continue remaining relationship arcs in reviewed batches
+## Next - implement the final approved relationship batch
 
-After Task 53 is approved and shipped, repeat the evidence-only review and implementation sequence for Sol and Bea. Do not mass-generate or implement the remaining scenes without staged owner review.
+After the owner approves Task 54's exact copy, implement only the Sol and Bea batch in a fresh bounded task. Do not begin future-content roadmap additions until the twelve-villager relationship sequence is complete and reviewed.
 
 ## Near-term existing-loop and playtest candidates
 

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "releaseTarget": "local-browser-release-candidate",
   "candidateVersion": "0.1.0",
-  "runtimeCache": "ppw-shell-v71",
+  "runtimeCache": "ppw-shell-v72",
   "manualChecks": [
     {
       "id": "mobile-loop-390x844",
@@ -51,7 +51,7 @@
       "description": "Shell, service worker, gameplay, and local audio samples under delivered CSP without errors",
       "status": "pending",
       "environment": "",
-      "notes": "Runtime cache ppw-shell-v71 requires a complete delivered-environment check before release approval."
+      "notes": "Runtime cache ppw-shell-v72 requires a complete delivered-environment check before release approval."
     }
   ]
 }

@@ -31,6 +31,15 @@ const EXPECTED_DELIVERY_NARRATIVES = [
   { customerId: "customer-5", fromHearts: 0, toHearts: 1, kicker: "TINK THE SMITH · FIRST TRUST HEART", title: "The rolling washer", body: "Tink spots a small iron washer rolling under your worktable and drops to one knee before it can vanish behind the flour tins. He says it slipped from a hand-cranked label press he is making for workshop jars. You slide a shallow tray under the table while he nudges the washer into it with a spoon. At the forge, he fits it back onto the press and turns the handle. The label comes out crooked but readable: MINT, almost. Tink squints, then lets you add a pencil arrow showing which way the washer should face next time.", footer: "1 of 3 trust hearts · The washer sits correctly in Tink's label press, with a pencil arrow for its proper direction." },
   { customerId: "customer-5", fromHearts: 1, toHearts: 2, kicker: "TINK THE SMITH · SECOND TRUST HEART", title: "A steadier turn", body: "Two market days later, Tink brings the label press to the workshop with the washer still in place but the pencil arrow smudged from use. You hold the press steady while he turns its handle slowly, and the first label reads MINT without leaning. The second jams halfway through. Instead of yanking it free, Tink sets the press on the tray you used under the table and you both lift the paper back in one piece. He redraws the arrow on a small metal tab and ties the tab to the handle with twine. \"That should survive my enthusiasm,\" he says.", footer: "2 of 3 trust hearts · A metal direction tab now hangs from the press handle; the tray catches any jammed labels." },
   { customerId: "customer-5", fromHearts: 2, toHearts: 3, kicker: "TINK THE SMITH · THIRD TRUST HEART", title: "Labels before lunch", body: "The next Saturday, jars have gathered on your counter before the morning rush. Tink sets his press beside the shallow tray, checks the metal tab, and hands you the blank labels one at a time. You line up each jar while he gives the handle its steady turn. When one label starts to crease, you catch it in the tray and Tink resets the paper without fuss. Soon every jar has a straight name, including the smallest amber bottle. Tink reads that last label aloud, nods solemnly, and leaves the press by your counter for the afternoon.", footer: "3 of 3 trust hearts · Tink's label press, direction tab, and shallow tray make a reliable workshop counter routine." },
+  { customerId: "customer-7", fromHearts: 0, toHearts: 1, kicker: "CAPTAIN WREN · FIRST TRUST HEART", title: "The blue cord", body: "Captain Wren, silver at the temples, comes up from the docks with salt dried on his coat and a coil of blue tarred cord over one arm. Decades of rough crossings, departures, and temporary ports have taught him to treat a harbor as a place to leave once duty is done. The wooden berth marker beside the workshop-side quay has worked loose after a hard tide; without it, a returning vessel can drift toward the wrong piling in the dark. You hold the lantern steady while he lashes the marker fast and tests each knot with his weathered hands. He studies the water, then makes one small mark on the tide chart tucked in his jacket. \"It reads clear from the channel.\" Before you can point him toward the kettle, he turns for his ship. \"Tide won't wait.\" Then he leaves.", footer: "1 of 3 trust hearts · Blue tarred cord secures the workshop-side berth marker; Wren leaves once the immediate dock work is finished." },
+  { customerId: "customer-7", fromHearts: 1, toHearts: 2, kicker: "CAPTAIN WREN · SECOND TRUST HEART", title: "The next tide", body: "Three days later, Wren returns alone when the tide turns. He checks the blue tarred cord first, then the berth marker's angle against the channel. \"Held,\" he says. His ship is already safe at its mooring, but he unrolls his tide chart on your counter and asks whether the harbor bell sounded before dawn. You point out the workshop lamp you had left lit for the early boats. He adds a small lamp mark beside the berth. The chart is folded and the work is done, yet he notices the kettle beside the labels. \"You keep it there. Sensible.\" He stays for one cup.", footer: "2 of 3 trust hearts · The blue cord still holds the berth marker, and Wren's tide chart now carries a small lamp mark beside the workshop-side quay." },
+  { customerId: "customer-7", fromHearts: 2, toHearts: 3, kicker: "CAPTAIN WREN · THIRD TRUST HEART", title: "The brass tag", body: "A week later, fog settles over the harbor before evening. Wren arrives at the workshop door before his ship does and asks for the lantern by the label shelf. A small courier sloop has missed the berth marker in the haze. You carry the lantern to the quay while Wren calls calm directions from the piling; the blue tarred cord catches the light, and the sloop comes alongside without scraping its hull. When the line is made fast, Wren walks back with you instead of boarding at once. He sets a small brass route tag beside the kettle. \"Keep it there,\" he says. \"I'll come in on the next tide.\"", footer: "3 of 3 trust hearts · Wren's brass route tag remains beside the workshop kettle, a reason for him to return after the courier sloop reaches berth." },
+  { customerId: "customer-8", fromHearts: 0, toHearts: 1, kicker: "NELL OF THE MILL · FIRST TRUST HEART", title: "The quiet scoop", body: "Near closing, Nell brings a small wooden flour scoop to the workshop with a loose leather loop at its handle. It keeps slipping from the peg beside her shift basket, and she is tired of finding it under the clean cloths. You hold the scoop while she threads a fresh bit of twine through the handle, then she taps the knot with one floury finger. Back at the mill, she hangs it on the peg and gives the basket a cheerful little pat. \"There,\" she says. \"One less thing trying to join the floor.\"", footer: "1 of 3 trust hearts · Nell's wooden scoop hangs from a new twine loop beside her late-shift basket." },
+  { customerId: "customer-8", fromHearts: 1, toHearts: 2, kicker: "NELL OF THE MILL · SECOND TRUST HEART", title: "The folded list", body: "Four evenings later, Nell has tied a folded paper list to the same scoop loop. The list is for the next morning’s bakery sacks, but each time she reaches for the scoop, it swings against the paper and smudges the pencil. You bring a plain glass bead from the workshop’s odds-and-ends drawer, and she threads it between the scoop and the list. The bead keeps them apart. Nell tests the arrangement by measuring one careful scoop into a sack, then reads the list without a gray thumbprint across it. She leaves the bead in place and sends you home with a warm oat biscuit.", footer: "2 of 3 trust hearts · A glass bead separates Nell’s scoop from the morning-sack list, keeping the pencil notes clean." },
+  { customerId: "customer-8", fromHearts: 2, toHearts: 3, kicker: "NELL OF THE MILL · THIRD TRUST HEART", title: "Breakfast by the door", body: "The following market morning, a delivery boy arrives early for the bakery sacks and finds Nell already at the mill door with her shift basket. The wooden scoop is on its peg, the glass bead is between it and the folded list, and every sack is ready to count. You hold the door while she reads the last note aloud and hands over the correct bundle. After he hurries off, you set a warm oat biscuit in a clean paper sleeve beside her basket, returning the favor from the night before. Nell laughs, adds a second biscuit from her tin, and declares the door-side peg an excellent place for breakfast planning.", footer: "3 of 3 trust hearts · Nell keeps the scoop, bead, list, and a two-biscuit breakfast packet together by the mill door." },
+  { customerId: "customer-9", fromHearts: 0, toHearts: 1, kicker: "ROWAN THE TAILOR · FIRST TRUST HEART", title: "The wandering button", body: "Rowan spots a brass button rolling beneath your counter and catches it with the toe of his shoe. It belongs to a child's rain cape he is mending, but the button card in his work basket has a torn corner and let it escape. You flatten the card on the counter while he cuts a neat paper patch from an old potion-order slip. He stitches the patch on with blue thread, then slides the button into its proper hole. \"Small things travel surprisingly fast,\" he says, handing you the card to hold while he finishes the cape cuff.", footer: "1 of 3 trust hearts · The brass button rests on Rowan's patched card until it is sewn back onto the rain cape." },
+  { customerId: "customer-9", fromHearts: 1, toHearts: 2, kicker: "ROWAN THE TAILOR · SECOND TRUST HEART", title: "A pocket for the card", body: "Two afternoons later, Rowan returns with the finished rain cape and the patched button card still tucked in his basket. A gust from the open shop door lifts the card toward the floor. You catch it against a bottle crate, and Rowan studies the inside of the cape. With your help holding the lining flat, he sews a narrow pocket just large enough for the card. The original button goes back on the cuff; Rowan threads two spare brass buttons onto the patched card and slides it into the new pocket. He folds a small flap over the opening and fastens it with a blue-thread loop, then says the cape has become more organized than most desks.", footer: "2 of 3 trust hearts · The repaired cape’s inside pocket carries Rowan’s patched card and two spare brass buttons beneath a thread-loop flap." },
+  { customerId: "customer-9", fromHearts: 2, toHearts: 3, kicker: "ROWAN THE TAILOR · THIRD TRUST HEART", title: "Rainy-day return", body: "A week later, the child comes by in the rain wearing the cape, with a loose mitten string dragging from one sleeve. Rowan opens the blue-thread loop and finds the patched card exactly where he left it, along with the two spare buttons. You hold the sleeve straight while he anchors the mitten string with one of them. The child twirls once, pleased that nothing has fallen away. Rowan returns the card to its pocket and lets the child refasten the loop. Before they leave, he presses the remaining spare button into your palm for the workshop mending tin.", footer: "3 of 3 trust hearts · Rowan’s pocketed button card supports a second repair, and one spare brass button now waits in the workshop tin." },
 ];
 let passed = 0;
 function test(name, fn) {
@@ -75,6 +84,93 @@ test("content catalog exposes one browser global and game logic requires it", ()
   for (const key of CONTENT_KEYS) assert.strictEqual(browser.PPWLogic[key], browser.PPWContent[key]);
   assert.throws(() => vm.runInNewContext(contentSource, {}, { filename: "content-data.js" }), /relationship content is unavailable/);
   assert.throws(() => vm.runInNewContext(logicSource, {}, { filename: "game-logic.js" }), /content catalog is unavailable/);
+});
+
+test("Captain Wren uses only the approved maritime support copy", () => {
+  assert.deepEqual(game.CUSTOMERS[7], ["Captain Wren", "⚓", "Workshop light is on. Good enough bearing.", "#d8dfec"]);
+  assert.deepEqual(game.CUSTOMER_CONTENT[7].orderLines, ["Berth marker holds. Good.", "You keep the kettle where it belongs. Sensible.", "I'll come in on the next tide."]);
+  assert.deepEqual(game.CUSTOMER_CONTENT[7].stories, ["After decades at sea, Captain Wren marks the workshop-side berth on his tide chart, then closes the book before anyone can call it a habit; temporary ports taught him not to keep much.", "He returns on the next tide to see whether the blue tarred cord still holds the harbor marker true.", "A small brass route tag stays beside the workshop kettle; Wren says it is easier to find there when he comes back."]);
+  assert.deepEqual(game.SIGNATURE_COMMISSIONS.find(entry => entry.id === "wren-harbor"), { id: "wren-harbor", customerId: "customer-7", recipeId: "way", title: "A Safe Harbor", request: "A steady cordial for a ship captain bringing his vessel in after rough water, and one workshop he has begun to mark on the chart.", keepsake: { mark: "CR", name: "Compass Rose", description: "A worn brass compass rose Wren leaves beside the workshop kettle, so he can find the door again without pretending he forgot it." } });
+  assert.doesNotMatch(JSON.stringify({ customer: game.CUSTOMERS[7], content: game.CUSTOMER_CONTENT[7], commission: game.SIGNATURE_COMMISSIONS.find(entry => entry.id === "wren-harbor") }), /road|orchard|pear|inland|her compass|she adds|pirate|violent|romantic/i);
+});
+
+test("relationship cards require acknowledgement without changing other completion timing", () => {
+  const appSource = fs.readFileSync("app.js", "utf8");
+  const uiSource = fs.readFileSync("ui-render.js", "utf8");
+  const styleSource = fs.readFileSync("style.css", "utf8");
+  const completionPath = appSource.slice(appSource.indexOf("function beginCompletionState"), appSource.indexOf("function saveState"));
+  const narrativePath = appSource.slice(appSource.indexOf("function renderNarrativeDelivery"), appSource.indexOf("function chooseCommission"));
+  assert.doesNotMatch(completionPath, /narrative/, "relationship cards must not enter the timer-driven completion path");
+  assert.match(appSource, /narrativeWorkshop: \[\], narrativeOrders: \[\]/, "relationship cards use transient queues rather than saved acknowledgement state");
+  assert.match(narrativePath, /const narrative = queue\[0\] \|\| null/);
+  assert.match(narrativePath, /queue\.shift\(\)/);
+  assert.match(narrativePath, /data-dismiss-narrative/);
+  assert.match(narrativePath, /dismissNarrativeDelivery/);
+  assert.match(narrativePath, /visibleEnabledAction/);
+  assert.doesNotMatch(narrativePath, /setTimeout/, "relationship cards must not auto-dismiss");
+  assert.match(uiSource, /class="narrative-continue" data-dismiss-narrative>Continue/);
+  assert.match(styleSource, /\.narrative-continue \{ min-height: 44px;/);
+  assert.doesNotMatch(styleSource, /\.narrative-delivery-card\.is-collapsing/);
+  assert.match(completionPath, /Logic\.COMPLETION_CARD_CONFIG\.readableMs/, "unrelated completion cards retain their existing readable timing");
+});
+
+test("relationship story queues preserve order, acknowledgement, focus, and surface independence", () => {
+  const appSource = fs.readFileSync("app.js", "utf8");
+  const narrativePath = appSource.slice(appSource.indexOf("function renderNarrativeDelivery"), appSource.indexOf("function chooseCommission"));
+  const focused = [];
+  const makeCard = id => {
+    const button = { id: `${id}Continue`, addEventListener(type, listener) { if (type === "click") this.listener = listener; } };
+    return { id, hidden: true, innerHTML: "", button, querySelector(selector) { return selector === "[data-dismiss-narrative]" && this.innerHTML ? button : null; } };
+  };
+  const cards = { workshopNarrativeDelivery: makeCard("workshopNarrativeDelivery"), ordersNarrativeDelivery: makeCard("ordersNarrativeDelivery") };
+  const workshopSafe = { id: "workshopSafe", getClientRects: () => [{}] };
+  const ordersSafe = { id: "ordersSafe", getClientRects: () => [{}] };
+  const sandbox = {
+    transientCompletions: { narrativeWorkshop: [], narrativeOrders: [] },
+    CUSTOMERS: [],
+    UI: { narrativeDeliveryMarkup: detail => detail ? detail.title : "" },
+    requestAnimationFrame: callback => callback(),
+    focusTarget: target => focused.push(target?.id || null),
+    document: {
+      getElementById: id => cards[id] || null,
+      querySelector: selector => {
+        if (selector === "#workshopNarrativeDelivery [data-dismiss-narrative]") return cards.workshopNarrativeDelivery.button;
+        if (selector === "#ordersNarrativeDelivery [data-dismiss-narrative]") return cards.ordersNarrativeDelivery.button;
+        if (selector.includes("readyDeliverStrip") || selector.includes("#gatherButton") || selector.includes("[data-brew]")) return workshopSafe;
+        if (selector.includes("#orderList") || selector.includes("#claimDailyButton") || selector.includes("#refreshOrdersButton")) return ordersSafe;
+        return null;
+      },
+    },
+  };
+  vm.runInNewContext(narrativePath, sandbox, { filename: "app.js relationship queue" });
+  const workshopFirst = { title: "workshop first" };
+  const workshopSecond = { title: "workshop second" };
+  const ordersFirst = { title: "orders first" };
+
+  sandbox.showNarrativeDelivery("workshop", workshopFirst, 11);
+  sandbox.showNarrativeDelivery("workshop", workshopSecond, 12);
+  sandbox.renderNarrativeDelivery();
+  assert.deepEqual(sandbox.transientCompletions.narrativeWorkshop.map(entry => entry.detail.title), ["workshop first", "workshop second"], "same-surface scenes queue FIFO");
+  assert.equal(cards.workshopNarrativeDelivery.innerHTML, "workshop first", "the second scene cannot replace the first");
+
+  sandbox.showNarrativeDelivery("orders", ordersFirst, 21);
+  sandbox.renderNarrativeDelivery();
+  assert.equal(cards.workshopNarrativeDelivery.innerHTML, "workshop first", "Orders scenes do not affect Workshop's visible scene");
+  assert.equal(cards.ordersNarrativeDelivery.innerHTML, "orders first");
+
+  sandbox.dismissNarrativeDelivery("Workshop", sandbox.transientCompletions.narrativeWorkshop[0]);
+  assert.deepEqual(sandbox.transientCompletions.narrativeWorkshop.map(entry => entry.detail.title), ["workshop second"]);
+  assert.equal(cards.workshopNarrativeDelivery.innerHTML, "workshop second", "first Continue reveals the second scene");
+  assert.equal(focused[focused.length - 1], "workshopNarrativeDeliveryContinue", "queued Workshop scene receives focus on Continue");
+
+  sandbox.dismissNarrativeDelivery("Orders", sandbox.transientCompletions.narrativeOrders[0]);
+  assert.equal(sandbox.transientCompletions.narrativeOrders.length, 0, "Orders drains independently");
+  assert.equal(sandbox.transientCompletions.narrativeWorkshop.length, 1, "Orders dismissal leaves Workshop's queue intact");
+  assert.equal(focused[focused.length - 1], "ordersSafe", "Orders restores a same-surface action only after its queue drains");
+
+  sandbox.dismissNarrativeDelivery("Workshop", sandbox.transientCompletions.narrativeWorkshop[0]);
+  assert.equal(sandbox.transientCompletions.narrativeWorkshop.length, 0, "second Continue clears the Workshop queue");
+  assert.equal(focused[focused.length - 1], "workshopSafe", "Workshop restores a same-surface action only after its queue drains");
 });
 
 test("exact ingredient cost starts a brew and consumes exactly the cost", () => {
@@ -648,7 +744,7 @@ test("all relationship arcs trigger exactly once across every supported fulfillm
     assert.deepEqual(commissionResult.narrative, pilot, `${pilot.kicker} must work through its canonical Special Request`);
   }
 
-  for (const pilot of newPilots.filter(entry => ["customer-0", "customer-3", "customer-6"].includes(entry.customerId))) {
+  for (const pilot of newPilots.filter(entry => ["customer-0", "customer-3", "customer-6", "customer-9"].includes(entry.customerId))) {
     const afterStarsState = game.defaultState(NOW);
     const step = game.AFTER_STARS_STEPS.findIndex(entry => entry.customerId === pilot.customerId);
     const authored = game.AFTER_STARS_STEPS[step];
@@ -660,13 +756,13 @@ test("all relationship arcs trigger exactly once across every supported fulfillm
     afterStarsState.customers[pilot.customerId] = { deliveries: pilot.toHearts * game.CUSTOMER_CONFIG.deliveriesPerHeart - 1, hearts: pilot.fromHearts };
     afterStarsState.potions[authored.recipeId] = 1;
     const afterStarsResult = game.fulfillOrder(afterStarsState, afterStarsOrder.id, NOW, () => 0);
-    assert.deepEqual(afterStarsResult.afterStars, { step, title: authored.title, complete: false });
+    assert.deepEqual(afterStarsResult.afterStars, { step, title: authored.title, complete: step === game.AFTER_STARS_STEPS.length - 1 });
     assert.deepEqual(afterStarsResult.narrative, pilot, `${pilot.kicker} must work through the eligible canonical After the Stars order`);
   }
 
   const wrongVillager = game.defaultState(NOW);
-  wrongVillager.customers["customer-7"] = { deliveries: 2, hearts: 0 };
-  wrongVillager.orders = [{ id: 1, customerId: "customer-7", customer: game.CUSTOMERS[7][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
+  wrongVillager.customers["customer-10"] = { deliveries: 2, hearts: 0 };
+  wrongVillager.orders = [{ id: 1, customerId: "customer-10", customer: game.CUSTOMERS[10][0], recipeId: "tonic", quantity: 1, reward: 20, xp: 1 }];
   wrongVillager.potions.tonic = 1;
   assert.equal(game.fulfillOrder(wrongVillager, 1, NOW, () => 0).narrative, null, "an unrelated villager cannot receive a new narrative");
 
@@ -697,8 +793,8 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
     body: "Some time later, Fern visits the workshop again and takes one look at the blue pot. A small violet flower has opened above the leaves. \"It bloomed!\" she says, then laughs when you point to the folded order slip still supporting the stem. Fern brushes a little soil from the sill while you turn the flower toward the light. She adds a painted label: PATIENCE. \"It did most of the work,\" she says. \"But I think it liked having both of us around.\" When Fern reaches to take the pot home, you tap its place by the window. She smiles and leaves it there.",
     footer: "3 of 3 trust hearts · Patience stays by the workshop window",
   };
-  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 21);
-  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), [["customer-0", 0, 1], ["customer-0", 1, 2], ["customer-0", 2, 3], ["customer-1", 0, 1], ["customer-1", 1, 2], ["customer-1", 2, 3], ["customer-2", 0, 1], ["customer-2", 1, 2], ["customer-2", 2, 3], ["customer-6", 0, 1], ["customer-6", 1, 2], ["customer-6", 2, 3], ["customer-3", 0, 1], ["customer-3", 1, 2], ["customer-3", 2, 3], ["customer-4", 0, 1], ["customer-4", 1, 2], ["customer-4", 2, 3], ["customer-5", 0, 1], ["customer-5", 1, 2], ["customer-5", 2, 3]]);
+  assert.equal(game.DELIVERY_NARRATIVE_PILOTS.length, 30);
+  assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]), EXPECTED_DELIVERY_NARRATIVES.map(pilot => [pilot.customerId, pilot.fromHearts, pilot.toHearts]));
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[9], fernPilot, "Fern's first-heart entry remains byte-for-byte in catalog order");
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[10], fernSecondPilot, "Fern's second-heart entry is exact and follows the first-heart entry");
   assert.deepEqual(game.DELIVERY_NARRATIVE_PILOTS[11], fernThirdPilot, "Fern's third-heart entry is exact and follows the second-heart entry");
@@ -757,7 +853,7 @@ test("Fern's narrative pilot is exact, transition-only, and keeps every delivery
   assert.equal(Object.hasOwn(thirdHeart.state, "narrative"), false, "the third-heart payoff is not saved state");
   assert.deepEqual(Object.keys(thirdHeart.state).sort(), Object.keys(game.defaultState(NOW)).sort(), "the third-heart payoff adds no saved field");
   assert.equal(deliver("customer-6", 9, 3).result.narrative, null, "a maximum-heart delivery cannot replay the payoff");
-  assert.equal(deliver("customer-7", 8, 2).result.narrative, null, "an unrelated villager is ineligible at the boundary");
+  assert.equal(deliver("customer-10", 8, 2).result.narrative, null, "an unrelated villager is ineligible at the boundary");
   const failed = deliver("customer-6", 8, 2, { ready: false });
   assert.equal(failed.result, null, "failed delivery has no payload");
   assert.deepEqual(failed.state.customers["customer-6"], { deliveries: 8, hearts: 2 });

@@ -108,7 +108,7 @@ let pendingTutorialTarget = null;
 let lastTutorialPromptKey = null;
 let announcedReadyBrew = null;
 let renderedBrewKey = null;
-const transientCompletions = { daily: false, weekly: false, special: null, afterStars: null, narrativeWorkshop: null, narrativeOrders: null };
+const transientCompletions = { daily: false, weekly: false, special: null, afterStars: null, narrativeWorkshop: [], narrativeOrders: [] };
 const completionTimers = new Map();
 const completionTokens = new Map();
 let pendingDailyChooserToken = 0;
@@ -119,14 +119,14 @@ function beginCompletionState(kind, detail = true, onHidden = null) {
   const token = (completionTokens.get(kind) || 0) + 1;
   completionTokens.set(kind, token);
   transientCompletions[kind] = detail;
-  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete", afterStars: "#afterStarsCard", narrativeWorkshop: "#workshopNarrativeDelivery", narrativeOrders: "#ordersNarrativeDelivery" }[kind];
+  const selector = { daily: "#dailyCard", weekly: "#weeklyCard", special: "#specialRequestComplete", afterStars: "#afterStarsCard" }[kind];
   const readableTimer = setTimeout(() => {
     const node = document.querySelector(selector);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!reducedMotion) node?.classList.add("is-collapsing");
     const hideTimer = setTimeout(() => {
       if (completionTokens.get(kind) !== token) return;
-      transientCompletions[kind] = kind === "special" || kind === "afterStars" || kind.startsWith("narrative") ? null : false;
+      transientCompletions[kind] = kind === "special" || kind === "afterStars" ? null : false;
       document.querySelector(selector)?.classList.remove("is-collapsing");
       renderOrders();
       renderWeekly();
@@ -549,11 +549,45 @@ function routeOrderAction(orderId) {
 
 function renderNarrativeDelivery() {
   for (const surface of ["Workshop", "Orders"]) {
-    const detail = transientCompletions[`narrative${surface}`];
+    const queue = transientCompletions[`narrative${surface}`];
+    const narrative = queue[0] || null;
+    const detail = narrative?.detail || null;
     const card = document.getElementById(`${surface.toLowerCase()}NarrativeDelivery`);
     card.hidden=!detail;
     card.innerHTML = UI.narrativeDeliveryMarkup(detail, CUSTOMERS);
+    card.querySelector("[data-dismiss-narrative]")?.addEventListener("click", () => dismissNarrativeDelivery(surface, narrative));
   }
+}
+
+function visibleEnabledAction(selectors) {
+  for (const selector of selectors) {
+    const target = document.querySelector(selector);
+    if (target && !target.disabled && !target.hidden && target.getClientRects().length) return target;
+  }
+  return null;
+}
+
+function dismissNarrativeDelivery(surface, narrative) {
+  const kind = `narrative${surface}`;
+  const queue = transientCompletions[kind];
+  if (!narrative || queue[0] !== narrative) return;
+  queue.shift();
+  renderNarrativeDelivery();
+  if (queue.length) {
+    focusTarget(document.querySelector(`#${surface.toLowerCase()}NarrativeDelivery [data-dismiss-narrative]`));
+    return;
+  }
+  requestAnimationFrame(() => {
+    const deliverySelector = surface === "Workshop" ? `[data-quick-deliver="${narrative.orderId}"]:not(:disabled)` : `[data-order="${narrative.orderId}"]:not(:disabled)`;
+    const fallback = surface === "Workshop"
+      ? visibleEnabledAction(["#readyDeliverStrip [data-quick-deliver]:not(:disabled)", "#gatherButton:not(:disabled)", "[data-brew]:not(:disabled)"])
+      : visibleEnabledAction(["#orderList [data-order]:not(:disabled)", "#claimDailyButton:not([hidden]):not(:disabled)", "#refreshOrdersButton:not(:disabled)"]);
+    focusTarget(document.querySelector(deliverySelector) || fallback);
+  });
+}
+
+function showNarrativeDelivery(surface, detail, orderId) {
+  transientCompletions[`narrative${surface === "workshop" ? "Workshop" : "Orders"}`].push({ detail, orderId });
 }
 
 function chooseCommission(commissionId) {
@@ -747,7 +781,7 @@ function fulfillOrder(orderId, surface = "orders") {
   if (!result) return;
   if (result.commission) beginCompletionState("special", { title: result.commission.title, customer: CUSTOMERS[Number(result.commission.customerId.slice(9))][0], keepsake: result.commission.keepsake.name });
   if (result.afterStars?.complete) beginCompletionState("afterStars", result.afterStars);
-  if (result.narrative && !result.chapter) beginCompletionState(surface === "workshop" ? "narrativeWorkshop" : "narrativeOrders", result.narrative);
+  if (result.narrative && !result.chapter) showNarrativeDelivery(surface, result.narrative, orderId);
   announceLevels(result.levels);
   announceAchievements(result.achievements);
   const completion = result.commission ? ` · ${result.commission.keepsake.name} collected` : "";
