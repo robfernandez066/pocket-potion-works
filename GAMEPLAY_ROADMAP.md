@@ -36,13 +36,14 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Fern's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and first-heart inline payoff through the same illustrated-villager seam as Mira. The original 256x256 source is retained outside deployment; one 96x96 transparent WebP is cached for offline play while the other ten villagers retain their emoji avatars.
 - Pure browser presentation helpers now live in the dependency-free `ui-render.js` offline module. `app.js` retains state, DOM, event, focus, storage, audio, save, and gameplay ownership while returning below its fixed per-file cap without changing rendered behavior.
 - The Workshop bottle shelf, hanging herbs, and cat now provide three owner-approved optional ambient touches. Each uses one silent transient acknowledgement, visible focus, and a stationary reduced-motion treatment without changing gameplay, rewards, saves, or audio.
+- The Workshop cauldron now offers an optional direct target and visible `Stir cauldron` button while brewing or ready to collect. Both are silent and cosmetic, retain focus, and use the exact acknowledgement "You give the cauldron a gentle stir. Nothing seems to happen, but it felt good." without changing the brew or any saved state.
 - Owner mobile acceptance passed for the Mira/Fern presentation batch: the installed update, primary views, portraits beside emoji villagers, and normal interactions remained clear without distracting repetition or crowding.
 - All three background-music tracks now use the exact owner-approved 192 kbps CBR runtime copies. The three tracks remain intact with unchanged playback behavior and provenance, while the fixed 24,000,000-byte runtime now uses 18,387,564 bytes and retains 5,612,436 bytes of headroom; no further compression is required for the current budget goal.
 - GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `relationship-content.js` or `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 61 implement approved optional cauldron stirring
+## Now - Task 62 design and preview cosmetic local window weather
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -54,13 +55,15 @@ Task 58 is complete. The owner approved three optional, silent Workshop touches 
 
 Task 59 is complete and owner accepted. The approved three-touch batch now ships through the existing static Workshop presentation and a small transient handler. It adds no gameplay value, save state, reward, audio, new screen, or generic interaction engine. Cache identity is ppw-shell-v75.
 
-Task 60 is complete and owner accepted. The approved F03 treatment provides a small direct pictured-cauldron target plus a visible native `Stir cauldron` button while brewing or ready to collect. Both produce the exact acknowledgement "You give the cauldron a gentle stir. Nothing about the brew changes.", remain silent and cosmetic, retain focus, use a 1.8-second replacing response, and fall back to a stationary highlight under reduced motion. Idle controls remain disabled. The direct target is 58 by 44 pixels and does not intersect Gather or the three ambient Workshop touches at either required portrait size.
+Task 60 is complete and owner accepted. The approved F03 treatment provides a small direct pictured-cauldron target plus a visible native `Stir cauldron` button while brewing or ready to collect. Both remain silent and cosmetic, retain focus, use a 1.8-second replacing response, and fall back to a stationary highlight under reduced motion. Idle controls remain disabled. The direct target is 58 by 44 pixels and does not intersect Gather or the three ambient Workshop touches at either required portrait size.
 
-Task 61 implements only that approved treatment through the existing Workshop markup and a small independent transient handler. It must preserve brew timing, output, rewards, saves, progression, Task 59 behavior, and the menu-driven idle loop. Runtime changes rotate the shell cache exactly once from v75 to v76.
+Task 61 is complete and owner accepted. The approved treatment now ships through the existing Workshop markup and a small independent transient handler. The final exact acknowledgement is "You give the cauldron a gentle stir. Nothing seems to happen, but it felt good." Brew timing, output, rewards, saves, progression, Task 59 behavior, and the menu-driven idle loop remain unchanged. Cache identity is ppw-shell-v76.
 
-## Next - validate F03, then begin F04 local window weather
+Task 62 begins F04 with an evidence-only audit and owner-review preview for cosmetic local window weather. It must select a small, offline-safe treatment grounded in the existing Workshop window without using real-world location, network weather, rewards, gathering modifiers, clock-sensitive gameplay, or saved state.
 
-After Task 61 passes PM review and owner acceptance, close F03 without expanding it into gestures, timing bonuses, quality, rewards, audio, or a generic interaction system. Then begin F04 with a separate evidence-only local-window-weather design task.
+## Next - review F04 weather treatment, then implement only the approved cosmetic scope
+
+After Task 62 passes PM review and owner acceptance, issue a separate implementation task for only the approved cosmetic weather treatment. Any gathering modifier, real calendar behavior, clock-sensitive progression, weather API, geolocation, economy effect, new raster pack, or audio remains a separate unapproved decision.
 
 ## Near-term existing-loop and playtest candidates
 
