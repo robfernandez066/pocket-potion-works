@@ -42,7 +42,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 60 design optional cauldron stirring
+## Now - Task 61 implement approved optional cauldron stirring
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -54,11 +54,13 @@ Task 58 is complete. The owner approved three optional, silent Workshop touches 
 
 Task 59 is complete and owner accepted. The approved three-touch batch now ships through the existing static Workshop presentation and a small transient handler. It adds no gameplay value, save state, reward, audio, new screen, or generic interaction engine. Cache identity is ppw-shell-v75.
 
-Task 60 begins F03 as an evidence-only interaction audit and owner-review preview. It must compare a very small set of optional cauldron-stirring treatments, include an equivalent native-button alternative to any gesture, and preserve idle play without reward or penalty.
+Task 60 is complete and owner accepted. The approved F03 treatment provides a small direct pictured-cauldron target plus a visible native `Stir cauldron` button while brewing or ready to collect. Both produce the exact acknowledgement "You give the cauldron a gentle stir. Nothing about the brew changes.", remain silent and cosmetic, retain focus, use a 1.8-second replacing response, and fall back to a stationary highlight under reduced motion. Idle controls remain disabled. The direct target is 58 by 44 pixels and does not intersect Gather or the three ambient Workshop touches at either required portrait size.
 
-## Next - implement only an owner-approved F03 treatment
+Task 61 implements only that approved treatment through the existing Workshop markup and a small independent transient handler. It must preserve brew timing, output, rewards, saves, progression, Task 59 behavior, and the menu-driven idle loop. Runtime changes rotate the shell cache exactly once from v75 to v76.
 
-After Task 60 passes PM review and owner acceptance, create a separate bounded implementation task for only the approved optional stirring treatment. Do not implement F03 during the evidence-only design task.
+## Next - validate F03, then begin F04 local window weather
+
+After Task 61 passes PM review and owner acceptance, close F03 without expanding it into gestures, timing bonuses, quality, rewards, audio, or a generic interaction system. Then begin F04 with a separate evidence-only local-window-weather design task.
 
 ## Near-term existing-loop and playtest candidates
 
