@@ -41,15 +41,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 54 draft Archivist Sol and Bee Keeper Bea relationship arcs
+## Now - Task 55 implement Archivist Sol and Bee Keeper Bea relationship arcs
 
 Task 53 is complete. The exact owner-approved Wren, Nell, and Rowan scenes now ship through the frozen relationship catalog. Captain Wren's active identity is consistently maritime and he/him. Relationship trust-heart cards remain visible until acknowledged, independently queue back-to-back Workshop and Orders scenes, and return focus safely after each surface queue drains. Rewards, saves, Journal claims, trust rules, chapters, quests, and unrelated completion timing remain unchanged.
 
-Task 54 is the final evidence-only relationship-writing preview. Draft exactly three connected trust-heart scenes each for Archivist Sol and Bee Keeper Bea, audit continuity and active-content boundaries, and present all six scenes for owner review at 390x844 and 360x740. Keep the repository and runtime unchanged until the owner approves the exact copy.
+Task 54 is complete. The owner approved the exact three-scene Archivist Sol arc about the rain shelf, blue card, and bridge guides, plus the exact three-scene Bee Keeper Bea arc about the shaded water tray, blue-striped bench, and ribbon. The approved copy is locked in Task 55's bounded implementation prompt.
 
-## Next - implement the final approved relationship batch
+Task 55 implements only those six approved scenes through the existing frozen relationship catalog and acknowledgement-controlled originating-surface card. Preserve the current trigger, queue, focus, Journal, reward, save, economy, and offline behavior; add no narrative system or saved acknowledgement state.
 
-After the owner approves Task 54's exact copy, implement only the Sol and Bea batch in a fresh bounded task. Do not begin future-content roadmap additions until the twelve-villager relationship sequence is complete and reviewed.
+## Next - close the twelve-villager relationship sequence
+
+After Task 55 passes PM review and owner acceptance, close the twelve-villager relationship sequence and begin the approved future-content roadmap with F01. Do not start F01 inside Task 55.
 
 ## Near-term existing-loop and playtest candidates
 
