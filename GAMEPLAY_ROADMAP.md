@@ -41,15 +41,17 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 56 design the while-you-were-away diary
+## Now - Task 57 implement the while-you-were-away diary
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
-Task 56 begins F01 with an evidence-only owner-review proposal. Define and preview a small deterministic set of narrative-only diary lines inside the existing truthful Welcome Back modal. The proposal may use only capped elapsed time and the actual ingredient count already granted; it must not add rewards, saved history, another screen, or claims about events the game did not simulate.
+Task 56 is complete. The owner approved four deterministic magical Workshop Diary vignettes for the existing Welcome Back modal: button-eyed sprites, a floating vial, enchanted bottles, and a patient little broom. Each uses the actual granted ingredient count, followed by the exact factual confirmation "The ingredients have been added to the Pantry." Zero gain remains silent, and the word "already" is removed from this treatment.
 
-## Next - implement the approved F01 diary treatment
+Task 57 implements only that approved F01 treatment through a small pure presentation selector and the existing offline-progress modal seam. Preserve the current ingredient grant, elapsed-time cap, lifecycle, save, reward, focus, and Back to workshop behavior. Add no diary history, saved state, reward, screen, or gameplay system.
 
-After the owner approves Task 56's exact diary copy, deterministic mapping, and mobile treatment, implement only that approved Welcome Back enhancement in a fresh bounded task. Do not begin F02 inside the F01 implementation task.
+## Next - begin F02 ambient workshop touch design
+
+After Task 57 passes PM review and owner acceptance, F01 is complete. Begin F02 with a separate evidence-only interaction audit and owner-review proposal; do not start F02 inside Task 57.
 
 ## Near-term existing-loop and playtest candidates
 
