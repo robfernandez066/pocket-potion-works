@@ -128,7 +128,7 @@ assert.equal(Object.keys(pkg.dependencies || {}).length, 0, "production dependen
 assert.equal(Object.keys(pkg.optionalDependencies || {}).length, 0, "optional production dependencies require release review");
 assert.equal(Object.keys(pkg.devDependencies || {}).length, 0, "development dependencies require release review");
 assert.equal(Object.keys(pkg.peerDependencies || {}).length, 0, "peer dependencies require release review");
-const productionSdkSignal = /firebase|sentry|segment|amplitude|mixpanel|stripe|revenuecat|admob|doubleclick|appsflyer|supabase/i;
+const productionSdkSignal = /firebase|sentry|segment|amplitude|mixpanel|(?<!blue )\bstripe\b|revenuecat|admob|doubleclick|appsflyer|supabase/i;
 for (const [file, source] of Object.entries(text)) assert.doesNotMatch(source, productionSdkSignal, `${file} contains a production SDK signal`);
 assert.match(text["app.js"], /new Platform\.FakeRewardedAdAdapter\(\)/);
 assert.match(text["app.js"], /new Platform\.FakeIapAdapter\(\)/);
@@ -146,7 +146,7 @@ const forbiddenProduct = new RegExp(["daily", "detective"].join("\\s+"), "i");
 for (const file of allReleaseFiles) assert.doesNotMatch(fs.readFileSync(file, "utf8"), forbiddenProduct, `forbidden product reference found in ${file}`);
 
 assert.match(text["game-logic.js"], /const SAVE_VERSION = 9/);
-assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v72`/);
+assert.match(text["service-worker.js"], /const CACHE = `\$\{CACHE_PREFIX\}v73`/);
 assert.match(text["relationship-content.js"], /root\.PPWRelationshipContent = api/, "relationship module must expose its browser global");
 assert.doesNotMatch(text["relationship-content.js"], /\brequire\s*\(/, "relationship module must remain dependency-free");
 assert.match(text["content-data.js"], /require\("\.\/relationship-content\.js"\)/, "content catalog must consume the extracted relationship module");
@@ -224,11 +224,11 @@ for (const [file, ceiling] of Object.entries(budgets.files)) {
   assert.ok(bytes <= ceiling, `${file} is ${bytes} bytes, above its ${ceiling}-byte release budget`);
 }
 assert.ok(total <= budgets.totalRuntimeBytes, `runtime shell is ${total} bytes, above its ${budgets.totalRuntimeBytes}-byte budget`);
-assert.equal(total, 18397552, "Task 53 runtime inventory must match the expanded relationship catalog");
-assert.equal(budgets.totalRuntimeBytes - total, 5602448, "Task 53 runtime inventory must retain the approved headroom");
+assert.equal(total, 18402315, "Task 55 runtime inventory must match the final relationship catalog");
+assert.equal(budgets.totalRuntimeBytes - total, 5597685, "Task 55 runtime inventory must retain the approved headroom");
 assert.ok(budgets.totalRuntimeBytes - total >= 2000000, "current runtime headroom must already satisfy the no-further-compression threshold");
 assert.ok(!swShell.some(file => streamedAssets.includes(file.slice(2))), "background music must remain streamed instead of entering the offline shell");
-assert.doesNotMatch(text["service-worker.js"], /v71/, "Task 53 must rotate the cache identity exactly once");
+assert.doesNotMatch(text["service-worker.js"], /v72/, "Task 55 must rotate the cache identity exactly once");
 const task38RuntimeBytes = 23993911;
 assert.ok(normalizedReleaseBytes("app.js") <= 74000, "app.js must retain Task 53 relationship acknowledgement headroom");
 assert.ok(normalizedReleaseBytes("ui-render.js") <= 16000, "ui-render.js must remain within its fixed presentation cap");

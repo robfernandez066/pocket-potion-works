@@ -52,12 +52,12 @@ function fetchEvent(url, mode = "same-origin") {
 }
 
 (async () => {
-  stores.set("ppw-shell-v71", new Map());
+  stores.set("ppw-shell-v72", new Map());
   const install = lifecycleEvent();
   listeners.install(install);
   await install.done();
-  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v71");
-  assert.equal(activeCache, "ppw-shell-v72", "install must rotate to the expanded relationship-content shell cache");
+  const activeCache = [...stores.keys()].find(name => name !== "ppw-shell-v72");
+  assert.equal(activeCache, "ppw-shell-v73", "install must rotate to the final relationship-content shell cache");
   const shell = stores.get(activeCache);
   assert.ok(shell.has(cacheKey("./relationship-content.js")), "offline shell is missing the relationship content module");
   assert.ok(shell.has(cacheKey("./ui-render.js")), "offline shell is missing the presentation module");

@@ -22,7 +22,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Storage failures now fall back to truthful session-only play without overwriting an unreadable or previously valid save. Manual saves report success only after a confirmed write, and reset restarts only after guarded gameplay-save removal succeeds.
 - Welcome Back now states that offline ingredients were already added to the Pantry and returns to the workshop without offering or applying a second claim.
 - Daily Goals roll forward safely during an open foreground session: the first post-midnight delivery counts toward the new day, stale previous-day rewards cannot be claimed, and clock rollback cannot reopen rewards.
-- Mira, Old Moss, Juniper, Postmaster Pip, Lady Bramble, and Tink the Smith now each have an owner-approved three-heart relationship arc at the Workshop or Orders surface that earned it. The eighteen scenes add no reward or saved state, preserve the separate unread Journal claims, and reuse one generic fulfillment-narrative seam.
+- All twelve recurring villagers now have owner-approved three-heart relationship arcs at the Workshop or Orders surface that earned them. The thirty-six scenes add no reward or saved state, preserve the separate unread Journal claims, and reuse one generic acknowledgement-controlled fulfillment-narrative seam with independent surface queues.
 - Current and migratable saves now bound hostile numeric values, cap runtime progression at level 10,000, recover unique order IDs, and clear a known active brew when its recipe is above the saved level without granting compensation or unrelated progress.
 - All eight achievements now unlock on the action that satisfies them while remaining manual one-time Journal claims. Lifetime coins now prospectively include every non-purchased gameplay coin grant while excluding starting coins, spending, and bundle currency.
 - Untargeted charged gathering is now Request Mix: every unlocked ingredient remains possible, while active-request deficits receive a small capped weight after bottled potions and Pantry stock are considered. Exact ingredient targeting, passive gathering, and offline gathering remain unchanged.
@@ -41,17 +41,15 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 55 implement Archivist Sol and Bee Keeper Bea relationship arcs
+## Now - Task 56 design the while-you-were-away diary
 
-Task 53 is complete. The exact owner-approved Wren, Nell, and Rowan scenes now ship through the frozen relationship catalog. Captain Wren's active identity is consistently maritime and he/him. Relationship trust-heart cards remain visible until acknowledged, independently queue back-to-back Workshop and Orders scenes, and return focus safely after each surface queue drains. Rewards, saves, Journal claims, trust rules, chapters, quests, and unrelated completion timing remain unchanged.
+Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
-Task 54 is complete. The owner approved the exact three-scene Archivist Sol arc about the rain shelf, blue card, and bridge guides, plus the exact three-scene Bee Keeper Bea arc about the shaded water tray, blue-striped bench, and ribbon. The approved copy is locked in Task 55's bounded implementation prompt.
+Task 56 begins F01 with an evidence-only owner-review proposal. Define and preview a small deterministic set of narrative-only diary lines inside the existing truthful Welcome Back modal. The proposal may use only capped elapsed time and the actual ingredient count already granted; it must not add rewards, saved history, another screen, or claims about events the game did not simulate.
 
-Task 55 implements only those six approved scenes through the existing frozen relationship catalog and acknowledgement-controlled originating-surface card. Preserve the current trigger, queue, focus, Journal, reward, save, economy, and offline behavior; add no narrative system or saved acknowledgement state.
+## Next - implement the approved F01 diary treatment
 
-## Next - close the twelve-villager relationship sequence
-
-After Task 55 passes PM review and owner acceptance, close the twelve-villager relationship sequence and begin the approved future-content roadmap with F01. Do not start F01 inside Task 55.
+After the owner approves Task 56's exact diary copy, deterministic mapping, and mobile treatment, implement only that approved Welcome Back enhancement in a fresh bounded task. Do not begin F02 inside the F01 implementation task.
 
 ## Near-term existing-loop and playtest candidates
 
