@@ -78,6 +78,31 @@ const queriedIds = [...app.matchAll(/querySelector\(["'`]#([A-Za-z0-9_-]+)["'`]\
 const dynamicIds = new Set(["collectBrewButton"]);
 const absentIds = [...new Set(queriedIds.filter(id => !ids.has(id) && !dynamicIds.has(id)))];
 if (absentIds.length) throw new Error(`JavaScript references absent HTML IDs: ${absentIds.join(", ")}`);
+const ambientTouches = [
+  ["aB", "b", "Tap the bottle shelf", "A bottle gives a tiny clink."],
+  ["aH", "h", "Tap the hanging herbs", "The hanging herbs give a little wave."],
+  ["aC", "c", "Tap the workshop cat", "The workshop cat gives a slow blink."],
+];
+for (const [id, touch, name, copy] of ambientTouches) {
+  assert.ok(html.includes(`<button id="${id}" aria-label="${name}"></button>`), `${name} needs its exact native target`);
+  assert.equal((html.match(new RegExp(`data-x="${touch}"`, "g")) || []).length, 1, `${name} needs its existing decorative anchor`);
+  assert.ok(app.includes(copy), `${name} needs its approved acknowledgement copy`);
+}
+assert.equal((html.match(/id="aS" role="status"/g) || []).length, 1, "Ambient touches need one local acknowledgement region");
+const ambientTouchStart = app.indexOf("const AMBIENT_WORKSHOP_TOUCH_COPY");
+const ambientTouchEnd = app.indexOf("let gameplaySaveWritesBlocked", ambientTouchStart);
+const ambientTouchPath = app.slice(ambientTouchStart, ambientTouchEnd);
+assert.ok(ambientTouchStart >= 0 && ambientTouchEnd > ambientTouchStart, "Ambient workshop behavior must stay in its local app seam");
+assert.ok(ambientTouchPath.includes("let activeWorkshopTouch = null;") && ambientTouchPath.includes("let workshopTouchTimeout = null;"), "Ambient touches need one transient active value and one timeout");
+assert.ok(ambientTouchPath.includes("if (workshopTouchTimeout) clearTimeout(workshopTouchTimeout);") && ambientTouchPath.includes("clearWorkshopTouch();") && ambientTouchPath.includes("setTimeout(clearWorkshopTouch, 1800)"), "Ambient acknowledgement must replace, restart for 1800ms, and clean up");
+assert.ok(ambientTouchPath.includes("classList.remove(\"i\")") && ambientTouchPath.includes('$("#aS").textContent = "";'), "Ambient cleanup must clear both decoration and acknowledgement");
+assert.ok(ambientTouchPath.includes('target.focus({ preventScroll: true });'), "Ambient activation must retain focus on its pressed target");
+assert.doesNotMatch(ambientTouchPath, /\b(?:Logic|state|save|storage|analytics|reward|sound|audio|music|toast|feedback|localStorage|sessionStorage)\b/i, "Ambient handler must not use gameplay, persistence, analytics, reward, or audio paths");
+assert.ok(app.includes('!event.target.closest?.("#aB,#aH,#aC")') && app.includes('!button.matches("#aB,#aH,#aC")'), "Ambient targets must bypass generic audio activation and UI-tap sound");
+for (const selector of ["#aB{left:24px;top:22px;width:132px;height:46px}", "#aH{right:40px;top:10px;width:68px;height:52px}", "#aC{right:20px;bottom:28px;width:78px;height:88px}"]) assert.ok(style.includes(selector), "Ambient hit areas must retain their non-overlapping Workshop placement");
+assert.ok(style.includes("#aB,#aH,#aC{position:absolute"), "Ambient controls must retain their absolute hit-area layout");
+assert.ok(style.includes("[data-x=b].i") && style.includes("[data-x=h].i") && style.includes("[data-x=c].i"), "Ambient touches need decoration treatment");
+assert.ok(style.includes("[data-x].i{animation:none!important"), "Reduced motion must use stationary ambient highlights");
 if (!html.includes('id="brewStatusAnnouncement" role="status" aria-live="polite" aria-atomic="true"')) throw new Error("Brew transitions require one stable atomic live status node.");
 for (const id of ["workshopNarrativeDelivery", "ordersNarrativeDelivery"]) if (!html.includes(`id="${id}" role="status" aria-live="polite" aria-atomic="true"`)) throw new Error("Narrative delivery surfaces require stable atomic live status nodes.");
 if (!html.includes('id="reservedStoryKicker"') || !app.includes("Logic.reservedStoryTracker(state)")) throw new Error("The reserved-story tracker must support After the Stars and The Village Loaf through one surface.");

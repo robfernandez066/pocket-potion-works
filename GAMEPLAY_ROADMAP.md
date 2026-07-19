@@ -35,13 +35,14 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Fern's owner-approved three-heart delivery arc now follows the blue pot continuously from the cauldron to the workshop window and its eventual bloom. The three substantive scenes reuse the existing data-driven originating-surface card, add no reward or saved state, and preserve all separate unread Journal claims.
 - Fern's owner-approved portrait now appears on her orders, Villager Special Request choice, Journal relationship card, and first-heart inline payoff through the same illustrated-villager seam as Mira. The original 256x256 source is retained outside deployment; one 96x96 transparent WebP is cached for offline play while the other ten villagers retain their emoji avatars.
 - Pure browser presentation helpers now live in the dependency-free `ui-render.js` offline module. `app.js` retains state, DOM, event, focus, storage, audio, save, and gameplay ownership while returning below its fixed per-file cap without changing rendered behavior.
+- The Workshop bottle shelf, hanging herbs, and cat now provide three owner-approved optional ambient touches. Each uses one silent transient acknowledgement, visible focus, and a stationary reduced-motion treatment without changing gameplay, rewards, saves, or audio.
 - Owner mobile acceptance passed for the Mira/Fern presentation batch: the installed update, primary views, portraits beside emoji villagers, and normal interactions remained clear without distracting repetition or crowding.
 - All three background-music tracks now use the exact owner-approved 192 kbps CBR runtime copies. The three tracks remain intact with unchanged playback behavior and provenance, while the fixed 24,000,000-byte runtime now uses 18,387,564 bytes and retains 5,612,436 bytes of headroom; no further compression is required for the current budget goal.
 - GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `relationship-content.js` or `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 59 implement the approved ambient workshop touches
+## Now - Task 60 design optional cauldron stirring
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -51,11 +52,13 @@ Task 57 is complete. The four owner-approved Workshop Diary vignettes now use a 
 
 Task 58 is complete. The owner approved three optional, silent Workshop touches using the existing bottle shelf, hanging herbs, and workshop cat. Each uses a 44px-plus native button, one replacing 1.8-second local acknowledgement, visible focus, and a stationary reduced-motion treatment. The exact approved lines are "A bottle gives a tiny clink.", "The hanging herbs give a little wave.", and "The workshop cat gives a slow blink."
 
-Task 59 implements only that approved three-touch batch through the existing static Workshop presentation and a small transient handler. It adds no gameplay value, save state, reward, audio, new screen, or generic interaction engine.
+Task 59 is complete and owner accepted. The approved three-touch batch now ships through the existing static Workshop presentation and a small transient handler. It adds no gameplay value, save state, reward, audio, new screen, or generic interaction engine. Cache identity is ppw-shell-v75.
 
-## Next - validate owner feel before extending F02
+Task 60 begins F03 as an evidence-only interaction audit and owner-review preview. It must compare a very small set of optional cauldron-stirring treatments, include an equivalent native-button alternative to any gesture, and preserve idle play without reward or penalty.
 
-After Task 59 passes PM review, ask the owner to confirm the touches feel discoverable, unobtrusive, and worth keeping in the real Workshop. Do not add more ambient targets or begin F03 without that evidence.
+## Next - implement only an owner-approved F03 treatment
+
+After Task 60 passes PM review and owner acceptance, create a separate bounded implementation task for only the approved optional stirring treatment. Do not implement F03 during the evidence-only design task.
 
 ## Near-term existing-loop and playtest candidates
 

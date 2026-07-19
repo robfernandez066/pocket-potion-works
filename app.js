@@ -75,6 +75,35 @@ function playCoinArrivals(amount) {
   }
 }
 
+const AMBIENT_WORKSHOP_TOUCH_COPY = Object.freeze({
+  aB: "A bottle gives a tiny clink.",
+  aH: "The hanging herbs give a little wave.",
+  aC: "The workshop cat gives a slow blink.",
+});
+let activeWorkshopTouch = null;
+let workshopTouchTimeout = null;
+
+function clearWorkshopTouch() {
+  if (activeWorkshopTouch) document.querySelector(`[data-x="${activeWorkshopTouch}"]`)?.classList.remove("i");
+  activeWorkshopTouch = null;
+  workshopTouchTimeout = null;
+  $("#aS").textContent = "";
+}
+
+function activateWorkshopTouch(event) {
+  const target = event.currentTarget;
+  const touch = target.id.slice(1).toLowerCase();
+  const message = AMBIENT_WORKSHOP_TOUCH_COPY[target.id];
+  if (!message) return;
+  if (workshopTouchTimeout) clearTimeout(workshopTouchTimeout);
+  clearWorkshopTouch();
+  activeWorkshopTouch = touch;
+  document.querySelector(`[data-x="${touch}"]`)?.classList.add("i");
+  $("#aS").textContent = message;
+  target.focus({ preventScroll: true });
+  workshopTouchTimeout = setTimeout(clearWorkshopTouch, 1800);
+}
+
 let gameplaySaveWritesBlocked = false;
 let gameplaySaveSessionOnly = gameplayStorage.sessionOnly;
 let unsupportedSaveVersion = null;
@@ -1194,13 +1223,14 @@ function tick() {
   if (Date.now() > state.boostUntil && state.boostUntil !== 0) { state.boostUntil = 0; renderAll(); }
 }
 
-function activateAudioFromGesture() {
+function activateAudioFromGesture(event) {
+  if (event?.target?.closest?.("#aB,#aH,#aC")) return;
   music.activate();
   sound.activate();
 }
 document.addEventListener("touchend", activateAudioFromGesture, { passive: true });
 document.addEventListener("click", activateAudioFromGesture, { passive: true });
-document.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") activateAudioFromGesture(); });
+document.addEventListener("keydown", event => { if ((event.key === "Enter" || event.key === " ") && !event.target.closest?.("#aB,#aH,#aC")) activateAudioFromGesture(); });
 document.querySelectorAll("[data-nav]").forEach(button => button.addEventListener("click", () => { sound.play("tap"); switchView(button.dataset.nav); }));
 document.querySelector("#gatherButton").addEventListener("click", manualGather);
 document.querySelector("#requestGatherTarget").addEventListener("click", () => selectGatherTarget(null));
@@ -1221,11 +1251,12 @@ document.querySelector("#marketButton").addEventListener("click", showMarket);
 document.querySelector("#settingsButton").addEventListener("click", showSettings);
 document.querySelector("#clearPantryButton").addEventListener("click", showPantryCleanup);
 document.querySelector("#resetSaveButton").addEventListener("click", confirmReset);
+document.querySelectorAll("#aB,#aH,#aC").forEach(button => button.addEventListener("click", activateWorkshopTouch));
 $("#modalClose").addEventListener("click", closeModal);
 $("#modalBackdrop").addEventListener("click", event => { if (event.target.id === "modalBackdrop") closeModal(); });
 document.addEventListener("click", event => {
   const button = event.target.closest?.("button");
-  if (button && !button.disabled) sound.play("tap");
+  if (button && !button.disabled && !button.matches("#aB,#aH,#aC")) sound.play("tap");
 });
 window.addEventListener("scroll", () => updateBrewShortcut(), { passive: true });
 document.addEventListener("visibilitychange", () => music.setPaused(document.hidden));

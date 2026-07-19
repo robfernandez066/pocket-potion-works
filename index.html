@@ -53,15 +53,17 @@
 
           <article class="workshop-card">
             <div class="workshop-scene is-idle" aria-label="A cozy alchemy workbench">
-              <span class="hanging-herbs" aria-hidden="true">⌇⌇⌇</span>
-              <span class="shelf shelf-one" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="hanging-herbs" data-x="h" aria-hidden="true">⌇⌇⌇</span>
+      <span class="shelf shelf-one" data-x="b" aria-hidden="true"><i></i><i></i><i></i></span>
               <span class="shelf shelf-two" aria-hidden="true"><i></i><i></i></span>
               <div class="cauldron" aria-hidden="true"><span class="bubble b1"></span><span class="bubble b2"></span><span class="bubble b3"></span></div>
-              <div class="cat" aria-hidden="true"></div>
+      <div class="cat" data-x="c" aria-hidden="true"></div>
               <span class="prestige-keepsake" aria-hidden="true"></span>
               <span class="guild-ribbon" aria-hidden="true"></span>
               <span class="heirloom-garland" aria-hidden="true"></span>
               <span class="dawnthread-banner" aria-hidden="true"></span>
+              <button id="aB" aria-label="Tap the bottle shelf"></button><button id="aH" aria-label="Tap the hanging herbs"></button><button id="aC" aria-label="Tap the workshop cat"></button>
+              <p id="aS" role="status"></p>
               <div class="scene-copy"><span id="workshopStatus">The kettle is warm</span><small id="incomeRate">Gathering 1.0 ingredient/sec</small></div>
             </div>
             <button class="gather-button" id="gatherButton"><span class="gather-satchel" aria-hidden="true">☘</span><strong>Gather ingredients</strong><small>Tap for a quick harvest</small></button>

@@ -138,6 +138,7 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 .b1 { left: 41px; top: 37px; }.b2 { left: 70px; top: 32px; animation-delay: -.7s; }.b3 { left: 91px; top: 39px; animation-delay: -1.2s; width: 8px; height: 8px; }
 @keyframes bubble { 0% { transform: translateY(0) scale(.62); opacity: 0; } 18% { opacity: .96; } 78% { opacity: .76; } 100% { transform: translateY(-58px) scale(.35); opacity: 0; } }
 .cat { position: absolute; right: 26px; bottom: 34px; width: 72px; height: 80px; background: url("assets/images/misc/workshop-cat.png") center / 170% no-repeat; filter: drop-shadow(0 8px 7px rgba(23,15,29,.32)); }
+#aB,#aH,#aC{position:absolute;border:0;background:0}#aB{left:24px;top:22px;width:132px;height:46px}#aH{right:40px;top:10px;width:68px;height:52px}#aC{right:20px;bottom:28px;width:78px;height:88px}#aS{position:absolute;top:7px;left:14px;right:14px;margin:0;color:#fff;font:800 11px sans-serif;text-align:center;pointer-events:none}[data-x=b].i{animation:aw .5s}[data-x=h].i{animation:ah .7s}[data-x=c].i{animation:ac .7s}@keyframes aw{25%,75%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}@keyframes ah{25%,75%{transform:rotate(176deg)}50%{transform:rotate(184deg)}}@keyframes ac{50%{filter:brightness(1.2) drop-shadow(0 0 10px #f1d479)}}
 .scene-copy { position: absolute; left: 18px; right: 18px; bottom: 13px; display: flex; justify-content: space-between; gap: 8px; color: white; text-shadow: 0 1px 4px #35242d; }
 .scene-copy span { font-size: 12px; font-weight: 800; }.scene-copy small { font-size: 10px; }
 .gather-button { position: relative; display: grid; grid-template-columns: 48px 1fr; width: 100%; min-height: 76px; padding: 13px 18px; text-align: left; border: 0; border-top: var(--border); background: #1a161f; cursor: pointer; }
@@ -328,6 +329,7 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
   .workshop-scene:not(.is-idle) .b1 { transform: translateY(-11px) scale(.8); }
   .workshop-scene:not(.is-idle) .b2 { transform: translateY(-25px) scale(.66); }
   .workshop-scene:not(.is-idle) .b3 { transform: translateY(-8px) scale(.9); }
+  [data-x].i{animation:none!important;filter:brightness(1.2) drop-shadow(0 0 10px #f1d479)}
   .potion-bottle[data-sprite="aurora"] { animation: none !important; background-position: var(--aurora-start) 50%; }
   .feedback-brew, .feedback-collect, .feedback-delivery, .feedback-upgrade, .feedback-gather, .feedback-ready, .feedback-level, .feedback-reward { animation: none !important; }
 }
