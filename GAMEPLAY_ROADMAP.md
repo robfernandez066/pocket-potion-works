@@ -44,7 +44,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 64 design and preview folk recipe variants
+## Now - Task 65 design and preview stored compound potions
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -64,13 +64,13 @@ Task 62 is complete and owner accepted. The approved F04 treatment adds one 40 b
 
 Task 63 is complete and owner accepted. The approved 40 by 56 pixel clear/gentle-rain window now ships through the existing Workshop presentation and one independent session-local cadence. It preserves Task 59 and Task 61 target geometry, all gameplay and saves, and the menu-driven idle loop. Cache identity is ppw-shell-v77.
 
-Task 64 begins F05 with an evidence-only audit and owner-review preview for folk recipe variants. It must compare a small set of treatments grounded in the existing recipe, villager trust, mastery, Journal, and delivery surfaces, then select exact bounded content and behavior without implementing it.
+Task 64 is complete as a product decision, with no runtime or repository implementation. The audit's content-only folk-name treatment passed technical review, but the owner rejected it because it added words around brewing rather than meaningful alchemy. The owner instead selected stored compound potions as F05's direction: combine two already-brewed canonical potions into one uniquely named persistent bottle, use the two existing vial images together instead of adding potion art, and keep the feature small, optional, understandable, and separate from relationship or story arcs.
 
-PM handoff: The owner requested that no Task 64 coder prompt be presented or started in the Task 63 closeout session. The next PM should begin by running `npm.cmd run handoff`, confirm it prints Task 64, and then present the queued fresh-task direction.
+Task 65 must audit and preview the smallest coherent stored-compound system before implementation. It must select the exact cauldron interaction, first three potion pairs and names, inventory and order behavior, unlocks, mixing time, rewards, save/migration treatment, mastery exclusions, mobile presentation, and deterministic balance. It must not implement runtime behavior.
 
-## Next - review the F05 content treatment, then implement only the approved bounded variant batch
+## Next - review the F05 compound treatment, then implement only the approved bounded first batch
 
-After Task 64 passes PM review and owner acceptance, issue a separate implementation task for only the approved folk-variant treatment and exact copy. Any ingredient substitution, distinct output, order-value change, new mastery track, saved progress, or trust reward must be explicitly selected and validated rather than inferred from the theme.
+After Task 65 passes PM review and owner acceptance, issue a separate implementation task for only the approved three-compound batch. Do not infer free-form pairing, failed brews, a second mastery track, a new story arc, new potion art, compound gifts, or a broad recurring system from the stored-compound direction.
 
 ## Near-term existing-loop and playtest candidates
 
@@ -109,14 +109,14 @@ These additions begin only after the current relationship-arc sequence is comple
 | F02 | Ambient workshop touch layer | High | 3 | Begin with toy interactions and occasional acknowledgement; do not add a hidden economy or uncapped recurring reward. |
 | F03 | Optional cauldron stirring | High | 3 | Provide an accessible non-gesture alternative; the interaction must remain optional and never penalize idle play. |
 | F04 | Local window weather | High | 3 | Ship and validate cosmetic local weather first; any gathering modifier requires a separate economy and clock-manipulation decision. |
-| F05 | Folk recipe variants | High | 3 | Reuse existing trust, mastery, recipe, and delivery surfaces; approve exact recipes and copy before implementation. |
+| F05 | Stored compound potions | High | 4 | Combine two bottled canonical potions into one named stored compound; approve exact pairs, interaction, saves, orders, and balance before implementation. |
 | F06 | Cauldron moods and friendship arc | High | 4 | Build after the twelve villager arcs so it can reuse the proven content seam without redefining villager trust. |
 | F07 | Workshop familiar | High | 4 | Requires an approved creature choice and art/runtime-budget plan before behavior work; rare ingredient finds must be bounded. |
 | F08 | Villager workshop visits | High | 4 | Reuse completed villager characterization and generic presentation; avoid a second dialogue engine or required visit timer. |
 | F09 | Torn recipe pages and forgotten recipe | High | 4 | Define the bounded fragment track and recipe reward, then simulate progression and storage impact before shipping. |
 | F10 | Simmer versus quick-boil | High | 4 | Treat as the first major brewing-choice candidate; simulate timing, order value, overnight play, and assist interactions. |
 | F11 | Memory garden | High | 4 | Requires a small durable rebirth-state addition and a clear one-keepsake rule without weakening the clean-cycle reset. |
-| F12 | Infused potion variants | High | 5 | Follow the simpler brew-style decision; constrain combinations and validate ingredients, orders, mastery, and villager preferences. |
+| F12 | Ingredient-infused potion variants | High | 5 | Revisit only after F05 compound evidence; keep ingredient infusions distinct from two-potion compounds and constrain combinations, orders, mastery, and preferences. |
 | F13 | Occasional ingredient peddler | Medium | 4 | Keep swaps local, bounded, offline-safe, and non-expiring; approve the visitor treatment before adding art. |
 | F14 | Unprompted villager gifting | Medium | 5 | Define bounded inventory, reactions, trust exclusions, and micro-story ownership before implementation. |
 | F15 | Double-pour gift bottle | Medium | 2 | Implement only after F14 supplies the safe gifting destination; it must not become a saleable or farmable economy reward. |
