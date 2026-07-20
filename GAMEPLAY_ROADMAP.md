@@ -37,13 +37,14 @@ This is the active product roadmap. Completed task reports and superseded planni
 - Pure browser presentation helpers now live in the dependency-free `ui-render.js` offline module. `app.js` retains state, DOM, event, focus, storage, audio, save, and gameplay ownership while returning below its fixed per-file cap without changing rendered behavior.
 - The Workshop bottle shelf, hanging herbs, and cat now provide three owner-approved optional ambient touches. Each uses one silent transient acknowledgement, visible focus, and a stationary reduced-motion treatment without changing gameplay, rewards, saves, or audio.
 - The Workshop cauldron now offers an optional direct target and visible `Stir cauldron` button while brewing or ready to collect. Both are silent and cosmetic, retain focus, and use the exact acknowledgement "You give the cauldron a gentle stir. Nothing seems to happen, but it felt good." without changing the brew or any saved state.
+- A 40 by 56 pixel decorative Workshop window now alternates between clear moonlight and gentle rain every 24 seconds only while the Workshop is active and visible. It is session-local, silent, stationary under reduced motion, and has no gameplay, save, network, location, or reward behavior.
 - Owner mobile acceptance passed for the Mira/Fern presentation batch: the installed update, primary views, portraits beside emoji villagers, and normal interactions remained clear without distracting repetition or crowding.
 - All three background-music tracks now use the exact owner-approved 192 kbps CBR runtime copies. The three tracks remain intact with unchanged playback behavior and provenance, while the fixed 24,000,000-byte runtime now uses 18,387,564 bytes and retains 5,612,436 bytes of headroom; no further compression is required for the current budget goal.
 - GitHub Pages artifact validation now derives from the complete root runtime inventory, preventing a required module such as `relationship-content.js` or `content-data.js` from being omitted while static HTML still deploys.
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 63 implement approved cosmetic local window weather
+## Now - Task 64 design and preview folk recipe variants
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -61,11 +62,15 @@ Task 61 is complete and owner accepted. The approved treatment now ships through
 
 Task 62 is complete and owner accepted. The approved F04 treatment adds one 40 by 56 pixel decorative Workshop window in the tested gap between the bottle shelf and hanging herbs. It begins clear and alternates with gentle rain every 24 seconds only while the Workshop is active and the document is visible. Both states use code-native stationary imagery; reduced motion removes the state transition. The treatment has no interaction, label, sound, reward, gameplay effect, real-weather lookup, or saved state.
 
-Task 63 implements only that approved clear/gentle-rain window through the existing Workshop presentation and a small independent session-local cadence. It must preserve Task 59 and Task 61 target geometry, all gameplay and saves, and the menu-driven idle loop. Runtime changes rotate the shell cache exactly once from v76 to v77.
+Task 63 is complete and owner accepted. The approved 40 by 56 pixel clear/gentle-rain window now ships through the existing Workshop presentation and one independent session-local cadence. It preserves Task 59 and Task 61 target geometry, all gameplay and saves, and the menu-driven idle loop. Cache identity is ppw-shell-v77.
 
-## Next - validate F04, then begin F05 folk recipe variants
+Task 64 begins F05 with an evidence-only audit and owner-review preview for folk recipe variants. It must compare a small set of treatments grounded in the existing recipe, villager trust, mastery, Journal, and delivery surfaces, then select exact bounded content and behavior without implementing it.
 
-After Task 63 passes PM review and owner acceptance, close F04 without adding weather controls, more states, gathering modifiers, calendar behavior, clock-sensitive progression, weather APIs, geolocation, economy effects, raster packs, or audio. Then begin F05 with a separate evidence-only folk-recipe-variant design task.
+PM handoff: The owner requested that no Task 64 coder prompt be presented or started in the Task 63 closeout session. The next PM should begin by running `npm.cmd run handoff`, confirm it prints Task 64, and then present the queued fresh-task direction.
+
+## Next - review the F05 content treatment, then implement only the approved bounded variant batch
+
+After Task 64 passes PM review and owner acceptance, issue a separate implementation task for only the approved folk-variant treatment and exact copy. Any ingredient substitution, distinct output, order-value change, new mastery track, saved progress, or trust reward must be explicitly selected and validated rather than inferred from the theme.
 
 ## Near-term existing-loop and playtest candidates
 
