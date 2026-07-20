@@ -106,6 +106,7 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
 .shelf i:nth-child(2) { height: 33px; background: #87a776; }
 .shelf i:nth-child(3) { height: 27px; background: #9172ae; }
 .hanging-herbs { position: absolute; right: 48px; top: 18px; color: #4e7550; font-size: 45px; transform: rotate(180deg); }
+.workshop-weather-window{position:absolute;z-index:1;right:110px;top:10px;width:40px;height:56px;overflow:hidden;border:2px solid rgba(191,220,255,.5);border-radius:3px;background:#3d659f;box-shadow:inset 0 0 9px rgba(218,239,255,.32),0 2px 4px rgba(15,11,27,.42);pointer-events:none;transition:background .25s}.weather-pane,.weather-moon,.weather-rain{position:absolute;inset:0;pointer-events:none}.weather-pane{background:linear-gradient(145deg,rgba(151,200,255,.28),transparent 58%)}.weather-moon{inset:8px 9px auto auto;width:11px;height:11px;border-radius:50%;background:#dbeaff;box-shadow:0 0 8px rgba(219,234,255,.72);opacity:.72;transition:opacity .25s}.weather-rain{opacity:0;background:repeating-linear-gradient(125deg,transparent 0 7px,rgba(211,232,255,.42) 8px 9px,transparent 10px 16px);transition:opacity .25s}.workshop-weather-window.is-rain{background:#29466f}.workshop-weather-window.is-rain .weather-moon{opacity:.28}.workshop-weather-window.is-rain .weather-rain{opacity:.52}
 .cauldron { position: absolute; left: 50%; top: 72px; width: 140px; height: 140px; transform: translateX(-50%); background: url("assets/images/misc/workshop-cauldron.png") center / contain no-repeat; filter: drop-shadow(0 15px 14px rgba(23,15,29,.34)); }
 .cauldron::before { content: ""; position: absolute; z-index: 1; left: 40px; top: 41px; width: 60px; height: 13px; border-radius: 50%; opacity: 0; background: color-mix(in srgb, var(--brew-color, #81c49a) 76%, white); box-shadow: 0 0 11px color-mix(in srgb, var(--brew-color, #81c49a) 70%, transparent), inset 0 1px 4px rgba(255,255,255,.72); filter: blur(.4px); mix-blend-mode: screen; pointer-events: none; transition: opacity .25s, background .25s, box-shadow .25s; }
 .cauldron::after { content: none; }
@@ -327,6 +328,7 @@ h2 { margin-bottom: 7px; font-size: 23px; line-height: 1.1; }
   .tap-particle { display: none !important; }
   .workshop-scene:not(.is-idle) .bubble { display: block !important; animation: none !important; opacity: .82; }
   .workshop-scene.is-idle .bubble { display: none !important; }
+  .workshop-weather-window,.weather-moon,.weather-rain{transition:none!important}
   .workshop-scene:not(.is-idle) .b1 { transform: translateY(-11px) scale(.8); }
   .workshop-scene:not(.is-idle) .b2 { transform: translateY(-25px) scale(.66); }
   .workshop-scene:not(.is-idle) .b3 { transform: translateY(-8px) scale(.9); }

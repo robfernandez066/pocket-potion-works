@@ -333,6 +333,29 @@ function renderBeginnerQuest() {
 function activeView() { return $(".view.is-active")?.dataset.view || "workshop"; }
 function motionBehavior() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"; }
 
+const WORKSHOP_WEATHER_CADENCE_MS = 24000;
+let workshopWeather = "clear";
+let workshopWeatherInterval = null;
+
+function renderWorkshopWeather() {
+  $(".workshop-weather-window").classList.toggle("is-rain", workshopWeather === "rain");
+  $(".workshop-weather-window").classList.toggle("is-clear", workshopWeather === "clear");
+}
+
+function syncWorkshopWeatherCadence() {
+  const eligible = activeView() === "workshop" && !document.hidden;
+  if (!eligible) {
+    if (workshopWeatherInterval) clearInterval(workshopWeatherInterval);
+    workshopWeatherInterval = null;
+    return;
+  }
+  if (workshopWeatherInterval) return;
+  workshopWeatherInterval = setInterval(() => {
+    workshopWeather = workshopWeather === "clear" ? "rain" : "clear";
+    renderWorkshopWeather();
+  }, WORKSHOP_WEATHER_CADENCE_MS);
+}
+
 const CAULDRON_STIR_COPY = "You give the cauldron a gentle stir. Nothing seems to happen, but it felt good.";
 let cauldronStirTimeout = null;
 
@@ -941,6 +964,7 @@ function switchView(view) {
     button.classList.toggle("is-active", active);
     if (active) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
   });
+  syncWorkshopWeatherCadence();
   renderCauldronStirControls();
   window.scrollTo({ top: 0, behavior: motionBehavior() });
   if (view === "orders") document.querySelector("#orderDot").hidden = true;
@@ -1301,7 +1325,9 @@ document.addEventListener("keydown", event => {
   }
 });
 window.addEventListener("pagehide", saveState);
+window.addEventListener("pageshow", syncWorkshopWeatherCadence);
 document.addEventListener("visibilitychange", () => {
+  syncWorkshopWeatherCadence();
   if (document.hidden) {
     saveState();
     lifecycleAdapter.emit("background", Date.now());
@@ -1360,6 +1386,8 @@ setupServiceWorkerUpdates();
 reconcileOfflineProgress();
 announceAchievements(Logic.evaluateAchievements(state));
 renderAll();
+renderWorkshopWeather();
+syncWorkshopWeatherCadence();
 setInterval(tick, 1000);
 setTimeout(() => gameplaySaveWritesBlocked ? showFutureSaveGuard() : showTutorial(), 500);
 
