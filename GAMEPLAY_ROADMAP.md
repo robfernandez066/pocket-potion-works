@@ -43,7 +43,7 @@ This is the active product roadmap. Completed task reports and superseded planni
 - The owner-approved Task 24 seeded first cycle reaches level 7 in 2,600-2,695 seconds with 31-33 orders. Compared with Task 23, the three-seed averages changed by 1.02% in time and 4.33% in lifetime coins; the exact Task 24 outputs are the current regression lock.
 - The charcoal-black and purple interface, supplied Sprixen sprites, local sound effects, three-track music loop, safe areas, reduced motion, 44px targets, and installable update prompt are live in the public tester build.
 
-## Now - Task 62 design and preview cosmetic local window weather
+## Now - Task 63 implement approved cosmetic local window weather
 
 Task 55 is complete. The exact owner-approved Sol and Bea scenes now ship as entries 31-36 of the frozen relationship catalog. The complete twelve-villager relationship sequence preserves the existing trigger, queue, focus, Journal, reward, save, economy, and offline behavior. Cache identity is ppw-shell-v73 and the runtime remains within its fixed budget.
 
@@ -59,11 +59,13 @@ Task 60 is complete and owner accepted. The approved F03 treatment provides a sm
 
 Task 61 is complete and owner accepted. The approved treatment now ships through the existing Workshop markup and a small independent transient handler. The final exact acknowledgement is "You give the cauldron a gentle stir. Nothing seems to happen, but it felt good." Brew timing, output, rewards, saves, progression, Task 59 behavior, and the menu-driven idle loop remain unchanged. Cache identity is ppw-shell-v76.
 
-Task 62 begins F04 with an evidence-only audit and owner-review preview for cosmetic local window weather. It must select a small, offline-safe treatment grounded in the existing Workshop window without using real-world location, network weather, rewards, gathering modifiers, clock-sensitive gameplay, or saved state.
+Task 62 is complete and owner accepted. The approved F04 treatment adds one 40 by 56 pixel decorative Workshop window in the tested gap between the bottle shelf and hanging herbs. It begins clear and alternates with gentle rain every 24 seconds only while the Workshop is active and the document is visible. Both states use code-native stationary imagery; reduced motion removes the state transition. The treatment has no interaction, label, sound, reward, gameplay effect, real-weather lookup, or saved state.
 
-## Next - review F04 weather treatment, then implement only the approved cosmetic scope
+Task 63 implements only that approved clear/gentle-rain window through the existing Workshop presentation and a small independent session-local cadence. It must preserve Task 59 and Task 61 target geometry, all gameplay and saves, and the menu-driven idle loop. Runtime changes rotate the shell cache exactly once from v76 to v77.
 
-After Task 62 passes PM review and owner acceptance, issue a separate implementation task for only the approved cosmetic weather treatment. Any gathering modifier, real calendar behavior, clock-sensitive progression, weather API, geolocation, economy effect, new raster pack, or audio remains a separate unapproved decision.
+## Next - validate F04, then begin F05 folk recipe variants
+
+After Task 63 passes PM review and owner acceptance, close F04 without adding weather controls, more states, gathering modifiers, calendar behavior, clock-sensitive progression, weather APIs, geolocation, economy effects, raster packs, or audio. Then begin F05 with a separate evidence-only folk-recipe-variant design task.
 
 ## Near-term existing-loop and playtest candidates
 
